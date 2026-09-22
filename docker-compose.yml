@@ -1,0 +1,78 @@
+services:
+  db:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${DB_HOST_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-change_me_access}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change_me_refresh}
+      - JWT_ACCESS_TTL=${JWT_ACCESS_TTL:-15m}
+      - JWT_REFRESH_TTL=${JWT_REFRESH_TTL:-7d}
+      - CORS_ORIGIN=http://localhost:5173
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+    ports:
+      - "${BACKEND_HOST_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ai-agent:
+    build: ./ai-agent
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - BACKEND_API_URL=http://backend:3000/api
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-1536}
+      - LLM_TEMPERATURE=0
+      - AGENT_TOP_K=12
+      - MAX_HISTORY_TURNS=20
+      - CHUNK_SIZE=1000
+      - CHUNK_OVERLAP=200
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${AI_DB_USER:-ai_agent}
+      - DB_PASSWORD=${AI_DB_PASSWORD:-ai_agent_secret}
+      - INGEST_DB_USER=${POSTGRES_USER}
+      - INGEST_DB_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:${BACKEND_HOST_PORT:-3000}/api
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

@@ -1,0 +1,23 @@
+{
+  "name": "inventory-rag",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WMS berbasis web dengan asisten AI (RAG) via Telegram",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:ai-agent": "npm --prefix ai-agent run dev",
+    "install:all": "npm --prefix backend install && npm --prefix frontend install && npm --prefix ai-agent install",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build && npm --prefix ai-agent run build",
+    "lint": "npm --prefix backend run lint && npm --prefix frontend run lint && npm --prefix ai-agent run lint",
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck && npm --prefix ai-agent run typecheck",
+    "test": "npm --prefix backend run test && npm --prefix frontend run test && npm --prefix ai-agent run test",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "up": "docker compose up --build",
+    "up:detached": "docker compose up --build -d"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

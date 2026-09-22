@@ -1,0 +1,40 @@
+{
+  "name": "ai-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chat bot + RAG (LangChain + Telegraf) untuk WMS",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "NODE_OPTIONS=--max-old-space-size=6144 tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "rag:ingest": "tsx src/rag/ingest.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.30",
+    "@langchain/openai": "^0.3.17",
+    "axios": "^1.7.9",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.4.7",
+    "langchain": "^0.3.11",
+    "pg": "^8.13.1",
+    "telegraf": "^4.16.3",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^2.1.8"
+  }
+}

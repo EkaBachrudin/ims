@@ -1,0 +1,362 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ----------------------------------------------------------------------
+// 1. AUTH & USERS
+// ----------------------------------------------------------------------
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  passwordHash   String
+  name           String
+  role           UserRole @default(ADMIN)
+  telegramId     String?  @unique
+  whatsappNumber String?  @unique
+  isActive       Boolean  @default(true)
+
+  refreshTokens  RefreshToken[]
+  auditLogs      AuditLog[]
+  conversations  AiConversationLog[]
+  transactions   StockTransaction[]
+  purchaseOrders PurchaseOrder[]
+  deliveryNotes  DeliveryNote[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  OWNER
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ----------------------------------------------------------------------
+// 2. MASTER DATA
+// ----------------------------------------------------------------------
+
+model Warehouse {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  address   String?
+  isActive  Boolean  @default(true)
+
+  inventories    Inventory[]
+  transactions   StockTransaction[]
+  purchaseOrders PurchaseOrder[]
+  deliveryNotes  DeliveryNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("warehouses")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("categories")
+}
+
+model Product {
+  id          String  @id @default(uuid())
+  sku         String  @unique
+  name        String
+  description String?
+  unit        String
+  stock       Int     @default(0) // denormalized aggregate of Inventory
+  minStock    Int     @default(0)
+
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  inventories        Inventory[]
+  transactions       StockTransaction[]
+  poItems            PurchaseOrderItem[]
+  deliveryNoteItems  DeliveryNoteItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model Inventory {
+  id          String @id @default(uuid())
+  productId   String
+  warehouseId String
+  quantity    Int    @default(0)
+
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, warehouseId])
+  @@map("inventories")
+}
+
+model Partner {
+  id      String      @id @default(uuid())
+  name    String
+  type    PartnerType
+  phone   String?
+  email   String?
+  address String?
+
+  purchaseOrders PurchaseOrder[]
+  deliveryNotes  DeliveryNote[]
+  transactions   StockTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@map("partners")
+}
+
+enum PartnerType {
+  SUPPLIER
+  CUSTOMER
+}
+
+// ----------------------------------------------------------------------
+// 3. INVENTORY TRANSACTIONS
+// ----------------------------------------------------------------------
+
+model StockTransaction {
+  id              String          @id @default(uuid())
+  type            TransactionType
+  quantity        Int
+  referenceNo     String?
+  notes           String?
+
+  productId       String
+  product         Product         @relation(fields: [productId], references: [id])
+  warehouseId     String
+  warehouse       Warehouse       @relation(fields: [warehouseId], references: [id])
+
+  partnerId       String?
+  partner         Partner?        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+  deliveryNoteId  String?
+  deliveryNote    DeliveryNote?   @relation(fields: [deliveryNoteId], references: [id], onDelete: SetNull)
+
+  createdById     String
+  createdBy       User            @relation(fields: [createdById], references: [id])
+
+  createdAt       DateTime        @default(now())
+
+  @@index([productId, createdAt])
+  @@index([type, createdAt])
+  @@index([warehouseId])
+  @@map("stock_transactions")
+}
+
+enum TransactionType {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+// ----------------------------------------------------------------------
+// 4. PURCHASE ORDER
+// ----------------------------------------------------------------------
+
+model PurchaseOrder {
+  id          String    @id @default(uuid())
+  poNumber    String    @unique
+  status      PoStatus  @default(DRAFT)
+  source      PoSource  @default(WEB)
+  targetDate  DateTime?
+  notes       String?
+
+  partnerId   String
+  partner     Partner   @relation(fields: [partnerId], references: [id])
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+
+  items         PurchaseOrderItem[]
+  deliveryNotes DeliveryNote[]
+  transactions  StockTransaction[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([partnerId])
+  @@index([createdAt])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id        String  @id @default(uuid())
+  quantity  Int
+  unitPrice Decimal? @db.Decimal(12, 2)
+
+  poId      String
+  po        PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product       @relation(fields: [productId], references: [id])
+
+  @@map("purchase_order_items")
+}
+
+enum PoStatus {
+  DRAFT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PoSource {
+  WEB
+  AI_CHAT
+}
+
+// ----------------------------------------------------------------------
+// 5. DELIVERY NOTE (SURAT JALAN)
+// ----------------------------------------------------------------------
+
+model DeliveryNote {
+  id          String    @id @default(uuid())
+  dnNumber    String    @unique
+  status      DnStatus  @default(DRAFT)
+  shipDate    DateTime
+  notes       String?
+
+  poId        String?
+  po          PurchaseOrder? @relation(fields: [poId], references: [id], onDelete: SetNull)
+  partnerId   String
+  partner     Partner       @relation(fields: [partnerId], references: [id])
+  warehouseId String
+  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+
+  createdById String
+  createdBy   User          @relation(fields: [createdById], references: [id])
+
+  items         DeliveryNoteItem[]
+  transactions  StockTransaction[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+  @@index([shipDate])
+  @@map("delivery_notes")
+}
+
+model DeliveryNoteItem {
+  id        String @id @default(uuid())
+  quantity  Int
+
+  dnId      String
+  dn        DeliveryNote @relation(fields: [dnId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product      @relation(fields: [productId], references: [id])
+
+  @@map("delivery_note_items")
+}
+
+enum DnStatus {
+  DRAFT
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// ----------------------------------------------------------------------
+// 6. AUDIT & AI LOG
+// ----------------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  before    Json?
+  after     Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AiConversationLog {
+  id          String       @id @default(uuid())
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  platform    ChatPlatform
+  chatId      String
+  messageIn   String
+  messageOut  String?
+  intent      String?
+  toolName    String?
+  toolPayload Json?
+  toolResult  Json?
+  latencyMs   Int?
+  createdAt   DateTime     @default(now())
+
+  @@index([chatId, createdAt])
+  @@index([intent])
+  @@map("ai_conversation_logs")
+}
+
+enum ChatPlatform {
+  TELEGRAM
+  WHATSAPP
+}
+
+// ----------------------------------------------------------------------
+// 7. RAG VECTOR STORE (KNOWLEDGE/SOP, READ-ONLY DI RUNTIME AI AGENT)
+// ----------------------------------------------------------------------
+
+model DocumentChunk {
+  id        String                       @id @default(uuid())
+  source    String
+  content   String
+  embedding Unsupported("vector(1536)")
+  createdAt DateTime                     @default(now())
+
+  @@index([source])
+  @@map("document_chunks")
+}

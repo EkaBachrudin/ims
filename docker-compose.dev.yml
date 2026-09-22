@@ -1,0 +1,26 @@
+# Override development: hot reload via bind mount.
+# Pakai: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  backend:
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run dev"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - ./backend/tsconfig.json:/app/tsconfig.json
+      - ./backend/tsconfig.build.json:/app/tsconfig.build.json
+      - /app/node_modules
+
+  frontend:
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  ai-agent:
+    command: npm run dev
+    volumes:
+      - ./ai-agent/src:/app/src
+      - ./ai-agent/docs:/app/docs
+      - ./ai-agent/tsconfig.json:/app/tsconfig.json
+      - ./ai-agent/tsconfig.build.json:/app/tsconfig.build.json
+      - /app/node_modules

@@ -2,12 +2,16 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 COMPOSE ?= docker compose
+COMPOSE_DEV := $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
 BACKEND := npm --prefix backend
 FRONTEND := npm --prefix frontend
 AI := npm --prefix ai-agent
 
 .PHONY: help env install setup db-up db-wait db-down db-shell migrate migrate-deploy \
-        seed db-reset test-db dev dev-backend dev-frontend dev-ai-agent rag-ingest \
+        seed seed-docker shell-backend db-reset test-db \
+        dev dev-down dev-logs dev-backend dev-frontend dev-ai-agent \
+        dev-native dev-backend-native dev-frontend-native dev-ai-agent-native \
+        rag-ingest rag-ingest-docker \
         lint typecheck test build up down logs ps nuke nuke-global
 
 ## help: tampilkan daftar perintah
@@ -63,9 +67,17 @@ migrate: db-up
 migrate-deploy: db-up
 	$(BACKEND) run db:deploy
 
-## seed: isi data awal (user, produk, partner, gudang)
+## seed: isi data awal (user, produk, partner, gudang) - native
 seed: db-up
 	$(BACKEND) run db:seed
+
+## seed-docker: isi data awal lewat container backend (Docker dev)
+seed-docker: env
+	$(COMPOSE_DEV) run --rm backend sh -c "npx prisma migrate deploy && npm run db:seed"
+
+## shell-backend: buka shell di container backend (Docker dev)
+shell-backend: env
+	$(COMPOSE_DEV) run --rm backend sh
 
 ## db-reset: reset database + migration + seed
 db-reset: db-up
@@ -77,31 +89,62 @@ test-db: db-up
 	@echo "Database wms_test siap."
 
 # ------------------------------------------------------------ Local dev ----
+# Development via Docker (hot reload). Ctrl+C untuk berhenti.
 
-## dev: jalankan backend + frontend + ai-agent (Ctrl+C untuk berhenti)
-dev: db-up
-	@echo "Menjalankan backend, frontend, ai-agent. Tekan Ctrl+C untuk berhenti."
+## dev: jalankan semua service via Docker + hot reload (Ctrl+C untuk berhenti)
+dev: env
+	@echo "Menjalankan db + backend + frontend + ai-agent (Docker, hot reload)."
+	@echo "Tekan Ctrl+C untuk berhenti."
+	$(COMPOSE_DEV) up --build
+
+## dev-down: hentikan stack development (data DB tetap tersimpan)
+dev-down:
+	$(COMPOSE_DEV) down
+
+## dev-logs: ikuti log semua service development
+dev-logs:
+	$(COMPOSE_DEV) logs -f --tail=100
+
+## dev-backend: jalankan backend (Docker) beserta dependensinya
+dev-backend: env
+	$(COMPOSE_DEV) up --build backend
+
+## dev-frontend: jalankan frontend (Docker) beserta dependensinya
+dev-frontend: env
+	$(COMPOSE_DEV) up --build frontend
+
+## dev-ai-agent: jalankan ai-agent (Docker) beserta dependensinya
+dev-ai-agent: env
+	$(COMPOSE_DEV) up --build ai-agent
+
+## dev-native: jalankan semua service tanpa Docker (butuh DB lokal)
+dev-native: db-up
+	@echo "Menjalankan backend, frontend, ai-agent (native). Tekan Ctrl+C untuk berhenti."
 	@trap 'kill 0' INT TERM; \
 	 $(BACKEND) run dev 2>&1 | sed 's/^/[backend]  /' & \
 	 $(FRONTEND) run dev 2>&1 | sed 's/^/[frontend] /' & \
 	 $(AI) run dev 2>&1 | sed 's/^/[ai-agent] /' & \
 	 wait
 
-## dev-backend: jalankan backend saja
-dev-backend: db-up
+## dev-backend-native: jalankan backend native (butuh DB lokal)
+dev-backend-native: db-up
 	$(BACKEND) run dev
 
-## dev-frontend: jalankan frontend saja
-dev-frontend:
+## dev-frontend-native: jalankan frontend native
+dev-frontend-native:
 	$(FRONTEND) run dev
 
-## dev-ai-agent: jalankan ai-agent saja
-dev-ai-agent: db-up
+## dev-ai-agent-native: jalankan ai-agent native (butuh DB lokal)
+dev-ai-agent-native: db-up
 	$(AI) run dev
 
-## rag-ingest: embed dokumen SOP ke tabel document_chunks
+## rag-ingest: embed dokumen SOP ke tabel document_chunks (native)
 rag-ingest: db-up
 	$(AI) run rag:ingest
+
+## rag-ingest-docker: embed dokumen SOP lewat container ai-agent (Docker dev)
+rag-ingest-docker: env
+	$(COMPOSE_DEV) run --rm ai-agent npm run rag:ingest
 
 # -------------------------------------------------------------- Quality ----
 

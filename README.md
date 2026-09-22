@@ -167,41 +167,52 @@ cp ai-agent/.env.example ai-agent/.env
 
 Isi variabel penting: `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `INTERNAL_API_KEY`, dan `JWT_*` (lihat [TECHNICAL §5](./docs/TECHNICAL.md)).
 
-### 2. Jalankan database (PostgreSQL + pgvector)
+### 2. Jalankan semua service (Docker, hot reload)
+
+Satu perintah untuk menyalakan DB + backend + frontend + ai-agent:
 
 ```bash
-docker compose up -d db
+make dev
 ```
 
-### 3. Backend
+Image dibuild otomatis, source di-mount ke container sehingga perubahan kode
+langsung ter-reload (`tsx watch` dan Vite HMR). Tekan `Ctrl+C` untuk berhenti,
+atau `make dev-down` dari terminal lain.
+
+| Service  | URL                     |
+| :------- | :---------------------- |
+| Frontend | http://localhost:5173   |
+| Backend  | http://localhost:3001   |
+| AI Agent | http://localhost:8080   |
+| Database | localhost:5433 (psql)   |
+
+Migrasi dijalankan otomatis oleh container backend saat start. Isi data awal
+dan embed dokumen SOP (opsional) lewat container:
 
 ```bash
-cd backend
-npm install
-npx prisma generate
-npx prisma migrate dev --name init
-npx prisma db seed
-npm run dev         # http://localhost:3000
+make seed-docker
+make rag-ingest-docker   # opsional: embed dokumen SOP
 ```
 
-### 4. Frontend
+Target lain yang sering dipakai: `make dev-logs`, `make shell-backend`,
+`make ps`.
+
+> **Produksi / tanpa hot reload:** `make up` (build & jalankan detached) dan
+> `make down`.
+
+### 3. Alternatif: jalankan native (tanpa Docker untuk app)
+
+Butuh Node.js 20+ di host dan database sudah jalan (`make db-up`).
 
 ```bash
-cd frontend
-npm install
-npm run dev         # http://localhost:5173
+make setup          # install dependency semua service
+make migrate
+make seed
+make dev-native     # backend + frontend + ai-agent
 ```
 
-### 5. AI Agent
-
-```bash
-cd ai-agent
-npm install
-npm run rag:ingest  # opsional: embed dokumen SOP ke document_chunks
-npm run dev         # bot long-polling di http://localhost:8080
-```
-
-> **Alternatif:** jalankan seluruh stack sekaligus dengan `docker compose up --build`.
+Per service: `make dev-backend-native`, `make dev-frontend-native`,
+`make dev-ai-agent-native`.
 
 ---
 

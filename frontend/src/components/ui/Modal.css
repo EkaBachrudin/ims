@@ -1,0 +1,50 @@
+@reference "../../index.css";
+
+.modal {
+  @apply fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 transition-opacity duration-150 sm:items-center;
+}
+
+.modal.is-open {
+  @apply opacity-100;
+}
+
+.modal:not(.is-open) {
+  @apply opacity-0;
+}
+
+.modal__panel {
+  @apply w-full max-w-lg rounded-xl border border-border bg-surface shadow-pop outline-none transition-[opacity,transform] duration-150;
+  @apply scale-[0.98] opacity-0;
+}
+
+.modal.is-open .modal__panel {
+  @apply scale-100 opacity-100;
+}
+
+.modal__panel--wide {
+  @apply max-w-3xl;
+}
+
+.modal__header {
+  @apply flex items-center justify-between border-b border-border px-5 py-3;
+}
+
+.modal__title {
+  @apply text-base font-semibold tracking-tight text-foreground;
+}
+
+.modal__close {
+  @apply rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground;
+}
+
+.modal__body {
+  @apply max-h-[70vh] overflow-y-auto px-5 py-4;
+}
+
+.modal__footer {
+  @apply flex justify-end gap-2 border-t border-border px-5 py-3;
+}
+
+.modal__text {
+  @apply text-sm text-muted-foreground;
+}

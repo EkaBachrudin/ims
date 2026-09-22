@@ -5,6 +5,7 @@ import {
   ClipboardText,
   Cube,
   List,
+  Monitor,
   Moon,
   Package,
   Scroll,
@@ -24,6 +25,7 @@ import { useAuth } from "@/app/AuthContext";
 import { useTheme } from "@/app/ThemeContext";
 import { roleLabel } from "@/lib/format";
 import type { Role } from "@/types";
+import "./AppLayout.css";
 
 interface NavItem {
   to: string;
@@ -73,26 +75,24 @@ function initials(name?: string): string {
 
 function BrandMark({ size = 32 }: { size?: number }) {
   return (
-    <span
-      className="flex items-center justify-center rounded-lg bg-accent text-accent-foreground"
-      style={{ width: size, height: size }}
-      aria-hidden="true"
-    >
+    <span className="brand-mark" style={{ width: size, height: size }} aria-hidden="true">
       <Cube size={size * 0.6} weight="duotone" />
     </span>
   );
 }
 
 function ThemeToggle() {
-  const { resolved, toggle } = useTheme();
+  const { theme, toggle } = useTheme();
+  const label =
+    theme === "light" ? "Tema terang" : theme === "dark" ? "Tema gelap" : "Tema sistem";
   return (
     <button
       onClick={toggle}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      aria-label={resolved === "dark" ? "Ganti ke tema terang" : "Ganti ke tema gelap"}
-      title="Ganti tema"
+      className="theme-toggle"
+      aria-label={`Ganti tema — saat ini ${label}`}
+      title={label}
     >
-      {resolved === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+      {theme === "light" ? <Sun size={17} /> : theme === "dark" ? <Moon size={17} /> : <Monitor size={17} />}
     </button>
   );
 }
@@ -115,14 +115,10 @@ export function AppLayout() {
   }
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-      isActive
-        ? "bg-accent-subtle font-medium text-accent-subtle-foreground"
-        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-    }`;
+    ["nav-link", isActive && "is-active"].filter(Boolean).join(" ");
 
   const navList = (
-    <nav className="space-y-0.5 p-2">
+    <nav className="nav">
       {visible.map((item) => (
         <NavLink key={item.to} to={item.to} end={item.to === "/"} className={navLinkClass}>
           {item.icon}
@@ -133,22 +129,17 @@ export function AppLayout() {
   );
 
   const sidebarFooter = (
-    <div className="border-t border-border p-2">
-      <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-subtle text-xs font-semibold text-accent-subtle-foreground">
-          {initials(user?.name)}
-        </span>
-        <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{user ? roleLabel[user.role] : ""}</p>
+    <div className="sidebar__footer">
+      <div className="user-chip">
+        <span className="user-chip__avatar">{initials(user?.name)}</span>
+        <div className="user-chip__text">
+          <p className="user-chip__name">{user?.name}</p>
+          <p className="user-chip__role">{user ? roleLabel[user.role] : ""}</p>
         </div>
       </div>
-      <div className="mt-1 flex items-center gap-1.5">
+      <div className="sidebar__actions">
         <ThemeToggle />
-        <button
-          onClick={handleLogout}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
+        <button onClick={handleLogout} className="logout-btn">
           <SignOut size={16} />
           Keluar
         </button>
@@ -157,61 +148,49 @@ export function AppLayout() {
   );
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-background">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface md:flex">
-        <div className="flex h-16 items-center gap-2.5 border-b border-border px-4">
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar__brand">
           <BrandMark />
-          <div className="leading-tight">
-            <p className="text-sm font-semibold tracking-tight text-foreground">WMS</p>
-            <p className="text-xs text-muted-foreground">AI Assistant</p>
+          <div className="brand">
+            <p className="brand__name">WMS</p>
+            <p className="brand__sub">AI Assistant</p>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto">{navList}</div>
+        <div className="sidebar__nav">{navList}</div>
         {sidebarFooter}
       </aside>
 
       {drawerOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setDrawerOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-border bg-surface shadow-pop">
-            <div className="flex h-16 items-center justify-between border-b border-border px-4">
-              <div className="flex items-center gap-2.5">
+        <div className="drawer">
+          <div className="drawer__overlay" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
+          <div className="drawer__panel">
+            <div className="drawer__header">
+              <div className="drawer__brand">
                 <BrandMark />
-                <p className="text-sm font-semibold tracking-tight text-foreground">WMS</p>
+                <p className="brand__name">WMS</p>
               </div>
-              <button
-                onClick={() => setDrawerOpen(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Tutup menu"
-              >
+              <button onClick={() => setDrawerOpen(false)} className="drawer__close" aria-label="Tutup menu">
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">{navList}</div>
+            <div className="drawer__nav">{navList}</div>
             {sidebarFooter}
           </div>
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center gap-3 border-b border-border bg-surface px-4 md:hidden">
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="Buka menu"
-          >
+      <div className="app-content">
+        <header className="app-header">
+          <button onClick={() => setDrawerOpen(true)} className="app-header__menu" aria-label="Buka menu">
             <List size={18} />
           </button>
-          <div className="flex items-center gap-2">
+          <div className="app-header__brand">
             <BrandMark size={28} />
-            <span className="text-sm font-semibold tracking-tight text-foreground">WMS</span>
+            <span className="app-header__name">WMS</span>
           </div>
         </header>
-        <main className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="app-main">
           <Outlet />
         </main>
       </div>

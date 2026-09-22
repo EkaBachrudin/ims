@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { warehouseApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -10,6 +11,7 @@ import { DataTable, type Column } from "@/components/ui/Table";
 import { Modal, ConfirmModal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import type { Warehouse } from "@/types";
+import "./WarehousesPage.css";
 
 interface FormState {
   code: string;
@@ -90,7 +92,7 @@ export function WarehousesPage() {
   }
 
   const columns: Column<Warehouse>[] = [
-    { key: "code", header: "Kode", render: (w) => <span className="font-mono text-xs">{w.code}</span> },
+    { key: "code", header: "Kode", render: (w) => <span className="mono-xs">{w.code}</span> },
     { key: "name", header: "Nama", render: (w) => w.name },
     { key: "address", header: "Alamat", render: (w) => w.address ?? "-" },
     {
@@ -103,14 +105,26 @@ export function WarehousesPage() {
           {
             key: "actions",
             header: "",
-            className: "text-right",
+            className: "cell-right",
             render: (w: Warehouse) => (
-              <div className="flex justify-end gap-2">
-                <Button size="sm" variant="secondary" onClick={() => openEdit(w)}>
-                  Ubah
+              <div className="row-actions">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  aria-label={`Ubah ${w.name}`}
+                  title="Ubah"
+                  onClick={() => openEdit(w)}
+                >
+                  <PencilSimple size={16} />
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => setDeleting(w)}>
-                  Hapus
+                <Button
+                  size="icon"
+                  variant="danger-ghost"
+                  aria-label={`Hapus ${w.name}`}
+                  title="Hapus"
+                  onClick={() => setDeleting(w)}
+                >
+                  <Trash size={16} />
                 </Button>
               </div>
             ),
@@ -120,15 +134,21 @@ export function WarehousesPage() {
   ];
 
   return (
-    <div>
+    <div className="warehouses-page">
       <PageHeader
         title="Gudang"
         description="Lokasi penyimpanan"
         actions={canManage && <Button onClick={openCreate}>+ Tambah Gudang</Button>}
       />
 
-      <div className="mb-3 max-w-xs">
-        <Input aria-label="Cari gudang" placeholder="Cari gudang..." value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="filter-bar">
+        <Input
+          aria-label="Cari gudang"
+          placeholder="Cari gudang..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="filter-bar__search"
+        />
       </div>
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
@@ -150,7 +170,7 @@ export function WarehousesPage() {
           </>
         }
       >
-        <form id="warehouse-form" onSubmit={submit} className="space-y-3">
+        <form id="warehouse-form" onSubmit={submit} className="form">
           <ErrorText>{error}</ErrorText>
           <Field label="Kode" required>
             <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} required />
@@ -161,7 +181,7 @@ export function WarehousesPage() {
           <Field label="Alamat">
             <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </Field>
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <label className="warehouses-page__check">
             <input
               type="checkbox"
               checked={form.isActive}

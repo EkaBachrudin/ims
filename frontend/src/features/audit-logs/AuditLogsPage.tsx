@@ -7,6 +7,7 @@ import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import { formatDateTime } from "@/lib/format";
 import type { AuditLog } from "@/types";
+import "./AuditLogsPage.css";
 
 const actionTone: Record<string, "green" | "blue" | "red" | "yellow" | "slate"> = {
   CREATE: "green",
@@ -36,16 +37,16 @@ export function AuditLogsPage() {
     {
       key: "entityId",
       header: "ID",
-      render: (r) => <span className="font-mono text-xs">{r.entityId?.slice(0, 8) ?? "-"}</span>,
+      render: (r) => <span className="mono-xs">{r.entityId?.slice(0, 8) ?? "-"}</span>,
     },
     { key: "ip", header: "IP", render: (r) => r.ipAddress ?? "-" },
     {
       key: "after",
       header: "Detail",
       render: (r) => (
-        <details className="max-w-xs">
-          <summary className="cursor-pointer text-xs text-accent">lihat</summary>
-          <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-muted p-2 font-mono text-[10px] leading-tight">
+        <details className="audit-page__details">
+          <summary className="audit-page__summary">lihat</summary>
+          <pre className="audit-page__pre">
             {JSON.stringify(r.after ?? r.before ?? {}, null, 1)}
           </pre>
         </details>
@@ -54,10 +55,10 @@ export function AuditLogsPage() {
   ];
 
   return (
-    <div>
+    <div className="audit-page">
       <PageHeader title="Audit Log" description="Jejak perubahan data penting" />
 
-      <div className="mb-3 flex flex-wrap gap-2">
+      <div className="filter-bar">
         <Input
           aria-label="Filter entitas"
           placeholder="Filter entitas (mis. Product)"
@@ -66,7 +67,7 @@ export function AuditLogsPage() {
             setEntity(e.target.value);
             setPage(1);
           }}
-          className="max-w-[220px]"
+          className="audit-page__filter-entity"
         />
         <Select
           value={action}
@@ -74,7 +75,7 @@ export function AuditLogsPage() {
             setAction(e.target.value);
             setPage(1);
           }}
-          className="max-w-[160px]"
+          className="audit-page__filter-action"
         >
           <option value="">Semua aksi</option>
           <option value="CREATE">CREATE</option>

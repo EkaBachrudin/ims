@@ -1,0 +1,53 @@
+@reference "../../index.css";
+
+.reports-page__grid {
+  @apply grid gap-4 lg:grid-cols-3;
+}
+
+.reports-page__main {
+  @apply lg:col-span-2;
+}
+
+.reports-page__filters {
+  @apply mb-3 flex flex-wrap items-end gap-2;
+}
+
+.reports-page__field-search {
+  @apply w-56;
+}
+
+.reports-page__field-category {
+  @apply w-48;
+}
+
+.reports-page__section-title {
+  @apply mb-3 text-sm font-semibold text-foreground;
+}
+
+.reports-page__date {
+  @apply mt-2 text-xs text-muted-foreground;
+}
+
+.reports-page__shipments {
+  @apply mt-3 space-y-2 text-sm;
+}
+
+.reports-page__shipment {
+  @apply rounded-lg border border-border p-2;
+}
+
+.reports-page__shipment-partner {
+  @apply font-medium text-foreground;
+}
+
+.reports-page__shipment-meta {
+  @apply text-muted-foreground;
+}
+
+.reports-page__empty {
+  @apply text-muted-foreground;
+}
+
+.reports-page__stock--low {
+  @apply font-semibold text-danger;
+}

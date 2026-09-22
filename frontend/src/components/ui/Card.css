@@ -1,0 +1,82 @@
+@reference "../../index.css";
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+}
+
+.badge--slate,
+.badge--neutral {
+  @apply bg-muted text-muted-foreground;
+}
+
+.badge--green {
+  @apply bg-success-subtle text-success-foreground;
+}
+
+.badge--red {
+  @apply bg-danger-subtle text-danger-foreground;
+}
+
+.badge--yellow {
+  @apply bg-warning-subtle text-warning-foreground;
+}
+
+.badge--blue {
+  @apply bg-info-subtle text-info-foreground;
+}
+
+.badge--indigo {
+  @apply bg-accent-subtle text-accent-subtle-foreground;
+}
+
+.card {
+  @apply rounded-xl border border-border bg-surface p-4 shadow-card;
+}
+
+.stat-card__label {
+  @apply text-xs font-medium uppercase tracking-wide text-muted-foreground;
+}
+
+.stat-card__value {
+  @apply mt-2 font-mono text-2xl font-semibold tabular-nums;
+}
+
+.stat-card--indigo .stat-card__value {
+  @apply text-accent;
+}
+
+.stat-card--green .stat-card__value {
+  @apply text-success;
+}
+
+.stat-card--red .stat-card__value {
+  @apply text-danger;
+}
+
+.stat-card--amber .stat-card__value {
+  @apply text-warning;
+}
+
+.page-header {
+  @apply mb-5 flex flex-wrap items-center justify-between gap-3;
+}
+
+.page-header__title {
+  @apply text-lg font-semibold tracking-tight text-foreground;
+}
+
+.page-header__text {
+  @apply mt-0.5 text-sm text-muted-foreground;
+}
+
+.page-header__actions {
+  @apply flex items-center gap-2;
+}
+
+.spinner {
+  @apply flex items-center gap-2 py-8 text-sm text-muted-foreground;
+}
+
+.spinner__icon {
+  @apply h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent;
+}

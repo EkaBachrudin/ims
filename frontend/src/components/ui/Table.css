@@ -1,0 +1,45 @@
+@reference "../../index.css";
+
+.data-table {
+  @apply overflow-hidden rounded-xl border border-border bg-surface shadow-card;
+}
+
+.data-table__scroll {
+  @apply overflow-x-auto;
+}
+
+.data-table__table {
+  @apply min-w-full divide-y divide-border text-sm tabular-nums;
+}
+
+.data-table__head {
+  @apply bg-muted;
+}
+
+.data-table__th {
+  @apply px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+}
+
+.data-table__body {
+  @apply divide-y divide-border;
+}
+
+.data-table__row {
+  @apply transition-colors hover:bg-muted/60;
+}
+
+.data-table__td {
+  @apply px-3 py-2.5 text-foreground;
+}
+
+.pagination {
+  @apply mt-3 flex items-center justify-between text-sm text-muted-foreground;
+}
+
+.pagination__value {
+  @apply font-mono tabular-nums;
+}
+
+.pagination__actions {
+  @apply flex gap-2;
+}

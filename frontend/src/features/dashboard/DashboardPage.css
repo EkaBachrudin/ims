@@ -1,0 +1,65 @@
+@reference "../../index.css";
+
+.dashboard-page__stats {
+  @apply grid grid-cols-2 gap-3 lg:grid-cols-4;
+}
+
+.dashboard-page__panels {
+  @apply mt-6 grid gap-4 lg:grid-cols-3;
+}
+
+.dashboard-page__panel-side {
+  @apply lg:col-span-1;
+}
+
+.dashboard-page__panel-main {
+  @apply lg:col-span-2;
+}
+
+.dashboard-page__section-title {
+  @apply mb-3 text-sm font-semibold text-foreground;
+}
+
+.dashboard-page__count {
+  @apply font-mono tabular-nums text-muted-foreground;
+}
+
+.dashboard-page__low-stock {
+  @apply space-y-2;
+}
+
+.dashboard-page__low-stock-item {
+  @apply flex items-center justify-between text-sm;
+}
+
+.dashboard-page__low-stock-name {
+  @apply text-foreground;
+}
+
+.dashboard-page__low-stock-skeleton {
+  @apply space-y-3;
+}
+
+.dashboard-page__low-stock-skeleton-row {
+  @apply flex items-center justify-between;
+}
+
+.dashboard-page__safe {
+  @apply text-sm text-success;
+}
+
+.dashboard-page__skeleton-label {
+  @apply h-3 w-24;
+}
+
+.dashboard-page__skeleton-value {
+  @apply mt-3 h-7 w-16;
+}
+
+.dashboard-page__skeleton-text {
+  @apply h-4 w-32;
+}
+
+.dashboard-page__skeleton-pill {
+  @apply h-5 w-20;
+}

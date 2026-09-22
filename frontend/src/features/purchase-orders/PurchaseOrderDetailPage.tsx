@@ -11,6 +11,7 @@ import { ErrorText } from "@/components/ui/Input";
 import { Badge, Card, PageHeader, Spinner } from "@/components/ui/Card";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { formatCurrency, formatDate, poStatusTone, todayInput } from "@/lib/format";
+import "./PurchaseOrderDetailPage.css";
 
 export function PurchaseOrderDetailPage() {
   const { id = "" } = useParams();
@@ -77,15 +78,12 @@ export function PurchaseOrderDetailPage() {
   };
 
   return (
-    <div>
+    <div className="po-detail-page">
       <PageHeader
         title={po.poNumber}
         description={`Dibuat oleh ${po.createdBy.name} • ${formatDate(po.createdAt)}`}
         actions={
-          <Link
-            to="/purchase-orders"
-            className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
-          >
+          <Link to="/purchase-orders" className="po-detail-page__back">
             <ArrowLeft size={15} /> Kembali
           </Link>
         }
@@ -93,53 +91,53 @@ export function PurchaseOrderDetailPage() {
 
       <ErrorText>{error}</ErrorText>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
+      <div className="po-detail-page__grid">
+        <Card className="po-detail-page__main">
+          <div className="po-detail-page__meta">
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Status</p>
+              <p className="po-detail-page__meta-label">Status</p>
               <Badge tone={poStatusTone[po.status]}>{po.status}</Badge>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Sumber</p>
-              <p className="font-medium">{po.source === "AI_CHAT" ? "AI Chat" : "Web"}</p>
+              <p className="po-detail-page__meta-label">Sumber</p>
+              <p className="po-detail-page__meta-value">{po.source === "AI_CHAT" ? "AI Chat" : "Web"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Partner</p>
-              <p className="font-medium">{po.partner.name}</p>
+              <p className="po-detail-page__meta-label">Partner</p>
+              <p className="po-detail-page__meta-value">{po.partner.name}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Gudang</p>
-              <p className="font-medium">{po.warehouse?.name ?? "-"}</p>
+              <p className="po-detail-page__meta-label">Gudang</p>
+              <p className="po-detail-page__meta-value">{po.warehouse?.name ?? "-"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Tanggal Target</p>
-              <p className="font-medium">{formatDate(po.targetDate)}</p>
+              <p className="po-detail-page__meta-label">Tanggal Target</p>
+              <p className="po-detail-page__meta-value">{formatDate(po.targetDate)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Catatan</p>
-              <p className="font-medium">{po.notes ?? "-"}</p>
+              <p className="po-detail-page__meta-label">Catatan</p>
+              <p className="po-detail-page__meta-value">{po.notes ?? "-"}</p>
             </div>
           </div>
 
-          <table className="min-w-full divide-y divide-border text-sm">
-            <thead className="bg-muted">
+          <table className="po-detail-page__table">
+            <thead className="po-detail-page__thead">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Produk</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Qty</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Harga</th>
+                <th className="po-detail-page__th">Produk</th>
+                <th className="po-detail-page__th">Qty</th>
+                <th className="po-detail-page__th">Harga</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="po-detail-page__tbody">
               {po.items.map((item) => (
                 <tr key={item.id}>
-                  <td className="px-3 py-2">
-                    {item.product.name} <span className="text-xs text-muted-foreground">({item.product.sku})</span>
+                  <td className="po-detail-page__td">
+                    {item.product.name} <span className="po-detail-page__sku">({item.product.sku})</span>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="po-detail-page__td">
                     {item.quantity} {item.product.unit}
                   </td>
-                  <td className="px-3 py-2">{formatCurrency(item.unitPrice)}</td>
+                  <td className="po-detail-page__td">{formatCurrency(item.unitPrice)}</td>
                 </tr>
               ))}
             </tbody>
@@ -147,15 +145,15 @@ export function PurchaseOrderDetailPage() {
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Aksi</h2>
-          <div className="space-y-2">
+          <h2 className="po-detail-page__actions-title">Aksi</h2>
+          <div className="po-detail-page__actions">
             {po.status === "DRAFT" && (
               <>
-                <Button className="w-full" onClick={() => setConfirmAction("confirm")} disabled={!canManage}>
+                <Button className="po-detail-page__action" onClick={() => setConfirmAction("confirm")} disabled={!canManage}>
                   Konfirmasi PO
                 </Button>
                 <Button
-                  className="w-full"
+                  className="po-detail-page__action"
                   variant="danger"
                   onClick={() => setConfirmAction("cancel")}
                   disabled={!canManage}
@@ -163,7 +161,7 @@ export function PurchaseOrderDetailPage() {
                   Batalkan
                 </Button>
                 <Button
-                  className="w-full"
+                  className="po-detail-page__action"
                   variant="secondary"
                   onClick={() => setConfirmAction("delete")}
                   disabled={!canManage}
@@ -174,14 +172,14 @@ export function PurchaseOrderDetailPage() {
             )}
             {po.status === "CONFIRMED" && (
               <>
-                <Button className="w-full" variant="success" onClick={() => setConfirmAction("complete")} disabled={!canManage}>
+                <Button className="po-detail-page__action" variant="success" onClick={() => setConfirmAction("complete")} disabled={!canManage}>
                   Tandai Selesai
                 </Button>
-                <Button className="w-full" variant="secondary" loading={dnLoading} onClick={createDeliveryNote} disabled={!canManage}>
+                <Button className="po-detail-page__action" variant="secondary" loading={dnLoading} onClick={createDeliveryNote} disabled={!canManage}>
                   Buat Surat Jalan
                 </Button>
                 <Button
-                  className="w-full"
+                  className="po-detail-page__action"
                   variant="danger"
                   onClick={() => setConfirmAction("cancel")}
                   disabled={!canManage}
@@ -191,14 +189,14 @@ export function PurchaseOrderDetailPage() {
               </>
             )}
             {po.status === "COMPLETED" && (
-              <Button className="w-full" variant="secondary" loading={dnLoading} onClick={createDeliveryNote} disabled={!canManage}>
+              <Button className="po-detail-page__action" variant="secondary" loading={dnLoading} onClick={createDeliveryNote} disabled={!canManage}>
                 Buat Surat Jalan
               </Button>
             )}
             {(po.status === "COMPLETED" || po.status === "CANCELLED") && (
-              <p className="text-xs text-muted-foreground">Tidak ada aksi lanjutan untuk status ini.</p>
+              <p className="po-detail-page__note">Tidak ada aksi lanjutan untuk status ini.</p>
             )}
-            {!canManage && <p className="text-xs text-warning">Owner hanya dapat melihat PO.</p>}
+            {!canManage && <p className="po-detail-page__warning">Owner hanya dapat melihat PO.</p>}
           </div>
         </Card>
       </div>

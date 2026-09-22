@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { EmptyState } from "./EmptyState";
 import { TableSkeleton } from "./Skeleton";
+import "./Table.css";
 import type { Meta } from "@/types";
 
 export interface Column<T> {
@@ -25,25 +26,25 @@ export function DataTable<T>({
   rowKey: (row: T) => string;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+    <div className="data-table">
       {loading ? (
         <TableSkeleton columns={Math.min(columns.length, 5)} />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border text-sm tabular-nums">
-            <thead className="bg-muted">
+        <div className="data-table__scroll">
+          <table className="data-table__table">
+            <thead className="data-table__head">
               <tr>
                 {columns.map((c) => (
                   <th
                     key={c.key}
-                    className={`px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground ${c.className ?? ""}`}
+                    className={["data-table__th", c.className].filter(Boolean).join(" ")}
                   >
                     {c.header}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="data-table__body">
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={columns.length}>
@@ -52,9 +53,12 @@ export function DataTable<T>({
                 </tr>
               )}
               {rows.map((row) => (
-                <tr key={rowKey(row)} className="transition-colors hover:bg-muted/60">
+                <tr key={rowKey(row)} className="data-table__row">
                   {columns.map((c) => (
-                    <td key={c.key} className={`px-3 py-2.5 text-foreground ${c.className ?? ""}`}>
+                    <td
+                      key={c.key}
+                      className={["data-table__td", c.className].filter(Boolean).join(" ")}
+                    >
                       {c.render(row)}
                     </td>
                   ))}
@@ -77,13 +81,13 @@ export function Pagination({
 }) {
   if (!meta || meta.totalPages <= 1) return null;
   return (
-    <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+    <div className="pagination">
       <span>
-        Halaman <span className="font-mono tabular-nums">{meta.page}</span> dari{" "}
-        <span className="font-mono tabular-nums">{meta.totalPages}</span> (
-        <span className="font-mono tabular-nums">{meta.total}</span> data)
+        Halaman <span className="pagination__value">{meta.page}</span> dari{" "}
+        <span className="pagination__value">{meta.totalPages}</span> (
+        <span className="pagination__value">{meta.total}</span> data)
       </span>
-      <div className="flex gap-2">
+      <div className="pagination__actions">
         <Button
           size="sm"
           variant="secondary"

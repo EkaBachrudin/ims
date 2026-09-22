@@ -1,0 +1,13 @@
+@reference "../../index.css";
+
+.products-page__stock {
+  @apply text-foreground;
+}
+
+.products-page__stock--low {
+  @apply font-semibold text-danger;
+}
+
+.products-page__note {
+  @apply text-xs text-muted-foreground sm:col-span-2;
+}

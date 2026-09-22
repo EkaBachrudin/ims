@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { categoryApi, productApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -10,6 +11,7 @@ import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Modal, ConfirmModal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import type { Product } from "@/types";
+import "./ProductsPage.css";
 
 interface FormState {
   sku: string;
@@ -113,7 +115,7 @@ export function ProductsPage() {
   }
 
   const columns: Column<Product>[] = [
-    { key: "sku", header: "SKU", render: (p) => <span className="font-mono text-xs">{p.sku}</span> },
+    { key: "sku", header: "SKU", render: (p) => <span className="mono-xs">{p.sku}</span> },
     { key: "name", header: "Nama", render: (p) => p.name },
     { key: "category", header: "Kategori", render: (p) => p.category.name },
     { key: "unit", header: "Satuan", render: (p) => p.unit },
@@ -121,7 +123,7 @@ export function ProductsPage() {
       key: "stock",
       header: "Stok",
       render: (p) => (
-        <span className={p.stock <= p.minStock ? "font-semibold text-danger" : "text-foreground"}>
+        <span className={p.stock <= p.minStock ? "products-page__stock--low" : "products-page__stock"}>
           {p.stock}
           {p.stock <= p.minStock && <Badge tone="red">low</Badge>}
         </span>
@@ -133,14 +135,26 @@ export function ProductsPage() {
           {
             key: "actions",
             header: "",
-            className: "text-right",
+            className: "cell-right",
             render: (p: Product) => (
-              <div className="flex justify-end gap-2">
-                <Button size="sm" variant="secondary" onClick={() => openEdit(p)}>
-                  Ubah
+              <div className="row-actions">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  aria-label={`Ubah ${p.name}`}
+                  title="Ubah"
+                  onClick={() => openEdit(p)}
+                >
+                  <PencilSimple size={16} />
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => setDeleting(p)}>
-                  Hapus
+                <Button
+                  size="icon"
+                  variant="danger-ghost"
+                  aria-label={`Hapus ${p.name}`}
+                  title="Hapus"
+                  onClick={() => setDeleting(p)}
+                >
+                  <Trash size={16} />
                 </Button>
               </div>
             ),
@@ -150,14 +164,14 @@ export function ProductsPage() {
   ];
 
   return (
-    <div>
+    <div className="products-page">
       <PageHeader
         title="Produk"
         description="Master barang gudang"
         actions={canManage && <Button onClick={openCreate}>+ Tambah Produk</Button>}
       />
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="filter-bar">
         <Input
           aria-label="Cari produk"
           placeholder="Cari nama / SKU..."
@@ -166,7 +180,7 @@ export function ProductsPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="max-w-xs"
+          className="filter-bar__search"
         />
         <Select
           value={categoryId}
@@ -174,7 +188,7 @@ export function ProductsPage() {
             setCategoryId(e.target.value);
             setPage(1);
           }}
-          className="max-w-[180px]"
+          className="filter-bar__select"
         >
           <option value="">Semua kategori</option>
           {categories.data?.map((c) => (
@@ -183,7 +197,7 @@ export function ProductsPage() {
             </option>
           ))}
         </Select>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <label className="filter-bar__check">
           <input
             type="checkbox"
             checked={lowStock}
@@ -217,7 +231,7 @@ export function ProductsPage() {
           </>
         }
       >
-        <form id="product-form" onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <form id="product-form" onSubmit={submit} className="form form--grid">
           <ErrorText>{error}</ErrorText>
           <Field label="SKU" required>
             <Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} required />
@@ -250,7 +264,7 @@ export function ProductsPage() {
               onChange={(e) => setForm({ ...form, minStock: e.target.value })}
             />
           </Field>
-          <div className="sm:col-span-2">
+          <div className="form__full">
             <Field label="Deskripsi">
               <Input
                 value={form.description}
@@ -259,9 +273,7 @@ export function ProductsPage() {
             </Field>
           </div>
           {editing && (
-            <p className="sm:col-span-2 text-xs text-muted-foreground">
-              Stok hanya berubah melalui transaksi masuk/keluar.
-            </p>
+            <p className="products-page__note">Stok hanya berubah melalui transaksi masuk/keluar.</p>
           )}
         </form>
       </Modal>

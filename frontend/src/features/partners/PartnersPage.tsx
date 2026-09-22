@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { partnerApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -10,6 +11,7 @@ import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Modal, ConfirmModal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import type { Partner, PartnerType } from "@/types";
+import "./PartnersPage.css";
 
 interface FormState {
   name: string;
@@ -119,14 +121,26 @@ export function PartnersPage() {
           {
             key: "actions",
             header: "",
-            className: "text-right",
+            className: "cell-right",
             render: (p: Partner) => (
-              <div className="flex justify-end gap-2">
-                <Button size="sm" variant="secondary" onClick={() => openEdit(p)}>
-                  Ubah
+              <div className="row-actions">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  aria-label={`Ubah ${p.name}`}
+                  title="Ubah"
+                  onClick={() => openEdit(p)}
+                >
+                  <PencilSimple size={16} />
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => setDeleting(p)}>
-                  Hapus
+                <Button
+                  size="icon"
+                  variant="danger-ghost"
+                  aria-label={`Hapus ${p.name}`}
+                  title="Hapus"
+                  onClick={() => setDeleting(p)}
+                >
+                  <Trash size={16} />
                 </Button>
               </div>
             ),
@@ -136,14 +150,14 @@ export function PartnersPage() {
   ];
 
   return (
-    <div>
+    <div className="partners-page">
       <PageHeader
         title="Partner"
         description="Supplier & customer"
         actions={canManage && <Button onClick={openCreate}>+ Tambah Partner</Button>}
       />
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="filter-bar">
         <Input
           aria-label="Cari partner"
           placeholder="Cari nama / telepon..."
@@ -152,7 +166,7 @@ export function PartnersPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="max-w-xs"
+          className="filter-bar__search"
         />
         <Select
           value={type}
@@ -160,7 +174,7 @@ export function PartnersPage() {
             setType(e.target.value);
             setPage(1);
           }}
-          className="max-w-[180px]"
+          className="filter-bar__select"
         >
           <option value="">Semua tipe</option>
           <option value="SUPPLIER">Supplier</option>
@@ -188,7 +202,7 @@ export function PartnersPage() {
           </>
         }
       >
-        <form id="partner-form" onSubmit={submit} className="space-y-3">
+        <form id="partner-form" onSubmit={submit} className="form">
           <ErrorText>{error}</ErrorText>
           <Field label="Nama" required>
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />

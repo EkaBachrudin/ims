@@ -1,0 +1,21 @@
+@reference "../../index.css";
+
+.audit-page__filter-entity {
+  @apply max-w-[220px];
+}
+
+.audit-page__filter-action {
+  @apply max-w-[160px];
+}
+
+.audit-page__details {
+  @apply max-w-xs;
+}
+
+.audit-page__summary {
+  @apply cursor-pointer text-xs text-accent;
+}
+
+.audit-page__pre {
+  @apply mt-1 max-h-40 overflow-auto rounded-lg bg-muted p-2 font-mono text-[10px] leading-tight;
+}

@@ -1,0 +1,31 @@
+@reference "../../index.css";
+
+.field {
+  @apply block space-y-1.5;
+}
+
+.field__label {
+  @apply text-sm font-medium text-foreground;
+}
+
+.field__required {
+  @apply text-danger;
+}
+
+.field__hint {
+  @apply block text-xs text-muted-foreground;
+}
+
+.field__error {
+  @apply block text-xs text-danger-foreground;
+}
+
+.input,
+.select,
+.textarea {
+  @apply w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm text-foreground shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground;
+}
+
+.error-text {
+  @apply rounded-lg bg-danger-subtle px-3 py-2 text-sm text-danger-foreground;
+}

@@ -1,0 +1,69 @@
+@reference "../../index.css";
+
+.po-detail-page__back {
+  @apply inline-flex items-center gap-1.5 text-sm text-accent hover:underline;
+}
+
+.po-detail-page__grid {
+  @apply grid gap-4 lg:grid-cols-3;
+}
+
+.po-detail-page__main {
+  @apply lg:col-span-2;
+}
+
+.po-detail-page__meta {
+  @apply mb-4 grid grid-cols-2 gap-3 text-sm;
+}
+
+.po-detail-page__meta-label {
+  @apply text-xs uppercase text-muted-foreground;
+}
+
+.po-detail-page__meta-value {
+  @apply font-medium;
+}
+
+.po-detail-page__table {
+  @apply min-w-full divide-y divide-border text-sm;
+}
+
+.po-detail-page__thead {
+  @apply bg-muted;
+}
+
+.po-detail-page__th {
+  @apply px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground;
+}
+
+.po-detail-page__tbody {
+  @apply divide-y divide-border;
+}
+
+.po-detail-page__td {
+  @apply px-3 py-2;
+}
+
+.po-detail-page__sku {
+  @apply text-xs text-muted-foreground;
+}
+
+.po-detail-page__actions-title {
+  @apply mb-3 text-sm font-semibold text-foreground;
+}
+
+.po-detail-page__actions {
+  @apply space-y-2;
+}
+
+.po-detail-page__action {
+  @apply w-full;
+}
+
+.po-detail-page__note {
+  @apply text-xs text-muted-foreground;
+}
+
+.po-detail-page__warning {
+  @apply text-xs text-warning;
+}

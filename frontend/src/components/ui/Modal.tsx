@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { X } from "@phosphor-icons/react";
 import { Button } from "./Button";
+import "./Modal.css";
 
 export function Modal({
   open,
@@ -65,9 +66,7 @@ export function Modal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 transition-opacity duration-150 sm:items-center ${
-        shown ? "opacity-100" : "opacity-0"
-      }`}
+      className={["modal", shown && "is-open"].filter(Boolean).join(" ")}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -78,26 +77,16 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`w-full ${
-          wide ? "max-w-3xl" : "max-w-lg"
-        } rounded-xl border border-border bg-surface shadow-pop outline-none transition-[opacity,transform] duration-150 ${
-          shown ? "scale-100 opacity-100" : "scale-[0.98] opacity-0"
-        }`}
+        className={["modal__panel", wide && "modal__panel--wide"].filter(Boolean).join(" ")}
       >
-        <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h2 className="text-base font-semibold tracking-tight text-foreground">{title}</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="Tutup"
-          >
+        <div className="modal__header">
+          <h2 className="modal__title">{title}</h2>
+          <button onClick={onClose} className="modal__close" aria-label="Tutup">
             <X size={18} />
           </button>
         </div>
-        <div className="max-h-[70vh] overflow-y-auto px-5 py-4">{children}</div>
-        {footer && (
-          <div className="flex justify-end gap-2 border-t border-border px-5 py-3">{footer}</div>
-        )}
+        <div className="modal__body">{children}</div>
+        {footer && <div className="modal__footer">{footer}</div>}
       </div>
     </div>
   );
@@ -136,7 +125,7 @@ export function ConfirmModal({
         </>
       }
     >
-      <div className="text-sm text-muted-foreground">{message}</div>
+      <div className="modal__text">{message}</div>
     </Modal>
   );
 }

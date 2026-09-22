@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { categoryApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -10,6 +11,7 @@ import { DataTable, type Column } from "@/components/ui/Table";
 import { Modal, ConfirmModal } from "@/components/ui/Modal";
 import { PageHeader } from "@/components/ui/Card";
 import type { Category } from "@/types";
+import "./CategoriesPage.css";
 
 export function CategoriesPage() {
   const canManage = useCanManage();
@@ -85,14 +87,26 @@ export function CategoriesPage() {
           {
             key: "actions",
             header: "",
-            className: "text-right",
+            className: "cell-right",
             render: (c: Category) => (
-              <div className="flex justify-end gap-2">
-                <Button size="sm" variant="secondary" onClick={() => openEdit(c)}>
-                  Ubah
+              <div className="row-actions">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  aria-label={`Ubah ${c.name}`}
+                  title="Ubah"
+                  onClick={() => openEdit(c)}
+                >
+                  <PencilSimple size={16} />
                 </Button>
-                <Button size="sm" variant="danger" onClick={() => setDeleting(c)}>
-                  Hapus
+                <Button
+                  size="icon"
+                  variant="danger-ghost"
+                  aria-label={`Hapus ${c.name}`}
+                  title="Hapus"
+                  onClick={() => setDeleting(c)}
+                >
+                  <Trash size={16} />
                 </Button>
               </div>
             ),
@@ -102,15 +116,21 @@ export function CategoriesPage() {
   ];
 
   return (
-    <div>
+    <div className="categories-page">
       <PageHeader
         title="Kategori"
         description="Kelompok produk gudang"
         actions={canManage && <Button onClick={openCreate}>+ Tambah Kategori</Button>}
       />
 
-      <div className="mb-3 max-w-xs">
-        <Input aria-label="Cari kategori" placeholder="Cari kategori..." value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="filter-bar">
+        <Input
+          aria-label="Cari kategori"
+          placeholder="Cari kategori..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="filter-bar__search"
+        />
       </div>
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
@@ -132,7 +152,7 @@ export function CategoriesPage() {
           </>
         }
       >
-        <form id="category-form" onSubmit={submit} className="space-y-3">
+        <form id="category-form" onSubmit={submit} className="form">
           <ErrorText>{error}</ErrorText>
           <Field label="Nama" required>
             <Input value={name} onChange={(e) => setName(e.target.value)} required autoFocus />

@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import { formatDateTime } from "@/lib/format";
 import type { StockTransaction } from "@/types";
+import "./TransactionTypePage.css";
 
 const config: Record<"IN" | "OUT", { title: string; description: string; button: string }> = {
   IN: { title: "Barang Masuk", description: "Catat penerimaan barang", button: "+ Catat Barang Masuk" },
@@ -112,7 +113,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
       key: "qty",
       header: "Qty",
       render: (r) => (
-        <span className={type === "IN" ? "font-medium text-success" : "font-medium text-danger"}>
+        <span className={type === "IN" ? "txn-page__qty--in" : "txn-page__qty--out"}>
           {type === "IN" ? "+" : "−"}
           {r.quantity} {r.product.unit}
         </span>
@@ -132,10 +133,10 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
           {
             key: "actions",
             header: "",
-            className: "text-right",
+            className: "cell-right",
             render: (r: StockTransaction) =>
               r.type === "ADJUSTMENT" ? (
-                <span className="text-xs text-muted-foreground">koreksi</span>
+                <span className="txn-page__void-note">koreksi</span>
               ) : (
                 <Button
                   size="sm"
@@ -154,7 +155,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
   ];
 
   return (
-    <div>
+    <div className="txn-page">
       <PageHeader
         title={config[type].title}
         description={config[type].description}
@@ -181,7 +182,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
           </>
         }
       >
-        <form id="txn-form" onSubmit={submit} className="space-y-3">
+        <form id="txn-form" onSubmit={submit} className="form">
           <ErrorText>{error}</ErrorText>
           <Field label="Produk" required>
             <Select value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} required>
@@ -257,9 +258,9 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
           </>
         }
       >
-        <div className="space-y-3">
+        <div className="txn-page__void">
           <ErrorText>{error}</ErrorText>
-          <p className="text-sm text-muted-foreground">
+          <p className="txn-page__void-text">
             Stok akan dikoreksi otomatis (soft reversal) dan tercatat pada audit log.
           </p>
           <Field label="Alasan" required>

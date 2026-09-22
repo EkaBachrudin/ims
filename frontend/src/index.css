@@ -1,9 +1,10 @@
 @import "tailwindcss";
+@import "./styles/shared.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* --------------------------------------------
-   Design tokens - Graphite + Cobalt
+   Design tokens - Graphite + Stone
    Shape lock: controls = radius-lg (8px),
    containers = radius-xl (12px), badges = pill.
    -------------------------------------------- */
@@ -21,12 +22,12 @@
 
   --border: #e4e6ea;
   --input: #dcdfe4;
-  --ring: #1f4bd8;
+  --ring: #3f4348;
 
-  --accent: #1f4bd8;
+  --accent: #3f4348;
   --accent-foreground: #ffffff;
-  --accent-subtle: #eaefff;
-  --accent-subtle-foreground: #1c3fb0;
+  --accent-subtle: #eef0f2;
+  --accent-subtle-foreground: #33373c;
 
   --success: #067a55;
   --success-subtle: #e6f5ef;
@@ -59,12 +60,12 @@
 
   --border: #26292f;
   --input: #2c3038;
-  --ring: #6f8cf7;
+  --ring: #c4c8ce;
 
-  --accent: #6f8cf7;
-  --accent-foreground: #10131a;
-  --accent-subtle: #1b2340;
-  --accent-subtle-foreground: #a9bbfb;
+  --accent: #c4c8ce;
+  --accent-foreground: #16181c;
+  --accent-subtle: #24272b;
+  --accent-subtle-foreground: #d5d9de;
 
   --success: #34d399;
   --success-subtle: #10231d;

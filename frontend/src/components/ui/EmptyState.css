@@ -1,0 +1,21 @@
+@reference "../../index.css";
+
+.empty-state {
+  @apply flex flex-col items-center justify-center px-6 py-12 text-center;
+}
+
+.empty-state__icon {
+  @apply mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground;
+}
+
+.empty-state__title {
+  @apply text-sm font-medium text-foreground;
+}
+
+.empty-state__desc {
+  @apply mt-1 max-w-sm text-sm text-muted-foreground;
+}
+
+.empty-state__action {
+  @apply mt-4;
+}

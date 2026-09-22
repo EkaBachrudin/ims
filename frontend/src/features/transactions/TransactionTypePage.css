@@ -1,0 +1,21 @@
+@reference "../../index.css";
+
+.txn-page__qty--in {
+  @apply font-medium text-success;
+}
+
+.txn-page__qty--out {
+  @apply font-medium text-danger;
+}
+
+.txn-page__void-note {
+  @apply text-xs text-muted-foreground;
+}
+
+.txn-page__void {
+  @apply space-y-3;
+}
+
+.txn-page__void-text {
+  @apply text-sm text-muted-foreground;
+}

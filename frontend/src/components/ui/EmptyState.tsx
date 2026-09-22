@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Tray } from "@phosphor-icons/react";
+import "./EmptyState.css";
 
 export function EmptyState({
   icon,
@@ -15,13 +16,11 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col items-center justify-center px-6 py-12 text-center ${className}`}>
-      <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-        {icon ?? <Tray size={22} weight="duotone" />}
-      </div>
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      {description && <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>}
-      {action && <div className="mt-4">{action}</div>}
+    <div className={["empty-state", className].filter(Boolean).join(" ")}>
+      <div className="empty-state__icon">{icon ?? <Tray size={22} weight="duotone" />}</div>
+      <p className="empty-state__title">{title}</p>
+      {description && <p className="empty-state__desc">{description}</p>}
+      {action && <div className="empty-state__action">{action}</div>}
     </div>
   );
 }

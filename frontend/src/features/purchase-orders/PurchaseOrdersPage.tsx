@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import { formatDate, poStatusTone } from "@/lib/format";
 import type { PoStatus, PurchaseOrder } from "@/types";
+import "./PurchaseOrdersPage.css";
 
 interface ItemRow {
   productId: string;
@@ -89,7 +90,7 @@ export function PurchaseOrdersPage() {
       key: "poNumber",
       header: "No. PO",
       render: (po) => (
-        <Link to={`/purchase-orders/${po.id}`} className="font-medium text-accent hover:underline">
+        <Link to={`/purchase-orders/${po.id}`} className="link">
           {po.poNumber}
         </Link>
       ),
@@ -111,14 +112,14 @@ export function PurchaseOrdersPage() {
   ];
 
   return (
-    <div>
+    <div className="po-page">
       <PageHeader
         title="Purchase Order"
         description="Pesanan pembelian / pengiriman"
         actions={canManage && <Button onClick={openForm}>+ Buat PO</Button>}
       />
 
-      <div className="mb-3 max-w-[200px]">
+      <div className="po-page__filter">
         <Select
           value={status}
           onChange={(e) => {
@@ -155,9 +156,9 @@ export function PurchaseOrdersPage() {
           </>
         }
       >
-        <form id="po-form" onSubmit={submit} className="space-y-4">
+        <form id="po-form" onSubmit={submit} className="form form--spaced">
           <ErrorText>{error}</ErrorText>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="form--grid">
             <Field label="Partner" required>
               <Select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required>
                 <option value="">Pilih partner</option>
@@ -187,8 +188,8 @@ export function PurchaseOrdersPage() {
           </div>
 
           <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">Item</span>
+            <div className="po-page__items-header">
+              <span className="po-page__items-title">Item</span>
                 <Button
                   type="button"
                   size="sm"
@@ -198,9 +199,9 @@ export function PurchaseOrdersPage() {
                   <Plus size={14} weight="bold" /> Item
                 </Button>
             </div>
-            <div className="space-y-2">
+            <div className="po-page__items">
               {items.map((item, idx) => (
-                <div key={idx} className="flex gap-2">
+                <div key={idx} className="po-page__item">
                   <Select
                     value={item.productId}
                     onChange={(e) => {
@@ -208,7 +209,7 @@ export function PurchaseOrdersPage() {
                       next[idx] = { ...item, productId: e.target.value };
                       setItems(next);
                     }}
-                    className="flex-1"
+                    className="po-page__item-product"
                   >
                     <option value="">Pilih produk</option>
                     {products.data?.data.map((p) => (
@@ -226,7 +227,7 @@ export function PurchaseOrdersPage() {
                       next[idx] = { ...item, quantity: e.target.value };
                       setItems(next);
                     }}
-                    className="w-24"
+                    className="po-page__item-qty"
                   />
                   <Button
                     type="button"

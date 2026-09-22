@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import { dnStatusTone, formatDate, todayInput } from "@/lib/format";
 import type { DeliveryNote, DnStatus } from "@/types";
+import "./DeliveryNotesPage.css";
 
 export function DeliveryNotesPage() {
   const canManage = useCanManage();
@@ -84,9 +85,9 @@ export function DeliveryNotesPage() {
           {
             key: "actions",
             header: "",
-            className: "text-right",
+            className: "cell-right",
             render: (d: DeliveryNote) => (
-              <div className="flex justify-end gap-2">
+              <div className="row-actions">
                 {d.status === "DRAFT" && (
                   <Button size="sm" onClick={() => statusMut.mutate({ id: d.id, status: "SHIPPED" })}>
                     Kirim
@@ -118,14 +119,14 @@ export function DeliveryNotesPage() {
   ];
 
   return (
-    <div>
+    <div className="delivery-page">
       <PageHeader
         title="Surat Jalan"
         description="Delivery note dari PO"
         actions={canManage && <Button onClick={openForm}>+ Buat Surat Jalan</Button>}
       />
 
-      <div className="mb-3 max-w-[200px]">
+      <div className="delivery-page__filter">
         <Select
           value={status}
           onChange={(e) => {
@@ -161,7 +162,7 @@ export function DeliveryNotesPage() {
           </>
         }
       >
-        <form id="dn-form" onSubmit={submit} className="space-y-3">
+        <form id="dn-form" onSubmit={submit} className="form">
           <ErrorText>{error}</ErrorText>
           <Field label="PO Sumber" required hint="Hanya PO berstatus CONFIRMED/COMPLETED">
             <Select value={poId} onChange={(e) => setPoId(e.target.value)} required>
@@ -180,7 +181,7 @@ export function DeliveryNotesPage() {
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
           {eligiblePos.length === 0 && (
-            <p className="text-xs text-warning">
+            <p className="delivery-page__warning">
               Belum ada PO CONFIRMED/COMPLETED. Konfirmasi PO terlebih dahulu.
             </p>
           )}

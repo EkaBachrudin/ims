@@ -1,0 +1,81 @@
+@reference "../../index.css";
+
+.login-page {
+  @apply flex min-h-[100dvh] bg-background;
+}
+
+.login-page__aside {
+  @apply relative hidden w-1/2 flex-col justify-between overflow-hidden bg-foreground p-10 text-background lg:flex;
+}
+
+.login-page__brand {
+  @apply flex items-center gap-2.5;
+}
+
+.login-page__brand-mark {
+  @apply flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground;
+}
+
+.login-page__brand-name {
+  @apply text-sm font-semibold tracking-tight;
+}
+
+.login-page__intro {
+  @apply max-w-md;
+}
+
+.login-page__headline {
+  @apply text-3xl font-semibold leading-tight tracking-tight;
+}
+
+.login-page__highlights {
+  @apply mt-8 space-y-4;
+}
+
+.login-page__highlight {
+  @apply flex items-start gap-3 text-sm opacity-90;
+}
+
+.login-page__highlight-icon {
+  @apply mt-0.5 shrink-0;
+}
+
+.login-page__footnote {
+  @apply text-xs opacity-60;
+}
+
+.login-page__main {
+  @apply flex flex-1 items-center justify-center p-6;
+}
+
+.login-page__form-panel {
+  @apply w-full max-w-sm;
+}
+
+.login-page__mobile-brand {
+  @apply mb-8 flex items-center gap-2.5 lg:hidden;
+}
+
+.login-page__mobile-brand-name {
+  @apply text-sm font-semibold tracking-tight text-foreground;
+}
+
+.login-page__title {
+  @apply text-xl font-semibold tracking-tight text-foreground;
+}
+
+.login-page__subtitle {
+  @apply mt-1 text-sm text-muted-foreground;
+}
+
+.login-page__form {
+  @apply mt-6 space-y-4;
+}
+
+.login-page__submit {
+  @apply w-full;
+}
+
+.login-page__demo {
+  @apply mt-6 rounded-lg border border-border bg-muted px-3 py-2 text-center text-xs text-muted-foreground;
+}

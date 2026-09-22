@@ -1,7 +1,5 @@
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
-
-const baseField =
-  "w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm text-foreground shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-accent focus:ring-2 focus:ring-accent/25 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground";
+import "./Input.css";
 
 export function Field({
   label,
@@ -17,37 +15,37 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <label className="block space-y-1.5">
+    <label className="field">
       {label && (
-        <span className="text-sm font-medium text-foreground">
+        <span className="field__label">
           {label}
-          {required && <span className="text-danger"> *</span>}
+          {required && <span className="field__required"> *</span>}
         </span>
       )}
       {children}
-      {hint && !error && <span className="block text-xs text-muted-foreground">{hint}</span>}
-      {error && <span className="block text-xs text-danger-foreground">{error}</span>}
+      {hint && !error && <span className="field__hint">{hint}</span>}
+      {error && <span className="field__error">{error}</span>}
     </label>
   );
 }
 
 export function Input({ className = "", ...rest }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`${baseField} ${className}`} {...rest} />;
+  return <input className={["input", className].filter(Boolean).join(" ")} {...rest} />;
 }
 
 export function Select({ className = "", children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={`${baseField} ${className}`} {...rest}>
+    <select className={["select", className].filter(Boolean).join(" ")} {...rest}>
       {children}
     </select>
   );
 }
 
 export function Textarea({ className = "", ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={`${baseField} ${className}`} rows={3} {...rest} />;
+  return <textarea className={["textarea", className].filter(Boolean).join(" ")} rows={3} {...rest} />;
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {
   if (!children) return null;
-  return <p className="rounded-lg bg-danger-subtle px-3 py-2 text-sm text-danger-foreground">{children}</p>;
+  return <p className="error-text">{children}</p>;
 }

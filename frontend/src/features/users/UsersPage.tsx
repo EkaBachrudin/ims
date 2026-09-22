@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PencilSimple, Prohibit } from "@phosphor-icons/react";
 import { userApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -10,6 +11,7 @@ import { Modal, ConfirmModal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import { roleLabel } from "@/lib/format";
 import type { Role, User } from "@/types";
+import "./UsersPage.css";
 
 interface FormState {
   email: string;
@@ -134,15 +136,27 @@ export function UsersPage() {
     {
       key: "actions",
       header: "",
-      className: "text-right",
+      className: "cell-right",
       render: (u) => (
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>
-            Ubah
+        <div className="row-actions">
+          <Button
+            size="icon"
+            variant="secondary"
+            aria-label={`Ubah ${u.name}`}
+            title="Ubah"
+            onClick={() => openEdit(u)}
+          >
+            <PencilSimple size={16} />
           </Button>
           {u.isActive && (
-            <Button size="sm" variant="danger" onClick={() => setDeactivating(u)}>
-              Nonaktifkan
+            <Button
+              size="icon"
+              variant="danger-ghost"
+              aria-label={`Nonaktifkan ${u.name}`}
+              title="Nonaktifkan"
+              onClick={() => setDeactivating(u)}
+            >
+              <Prohibit size={16} />
             </Button>
           )}
         </div>
@@ -151,15 +165,21 @@ export function UsersPage() {
   ];
 
   return (
-    <div>
+    <div className="users-page">
       <PageHeader
         title="Pengguna"
         description="Kelola user & role"
         actions={<Button onClick={openCreate}>+ Tambah User</Button>}
       />
 
-      <div className="mb-3 max-w-xs">
-        <Input aria-label="Cari pengguna" placeholder="Cari nama / email..." value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="filter-bar">
+        <Input
+          aria-label="Cari pengguna"
+          placeholder="Cari nama / email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="filter-bar__search"
+        />
       </div>
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
@@ -182,7 +202,7 @@ export function UsersPage() {
           </>
         }
       >
-        <form id="user-form" onSubmit={submit} className="space-y-3">
+        <form id="user-form" onSubmit={submit} className="form">
           <ErrorText>{error}</ErrorText>
           <Field label="Nama" required>
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
@@ -212,7 +232,7 @@ export function UsersPage() {
             <Input value={form.whatsappNumber} onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })} />
           </Field>
           {editing && (
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <label className="users-page__check">
               <input
                 type="checkbox"
                 checked={form.isActive}

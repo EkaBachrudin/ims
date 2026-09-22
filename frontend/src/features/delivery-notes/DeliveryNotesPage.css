@@ -1,0 +1,9 @@
+@reference "../../index.css";
+
+.delivery-page__filter {
+  @apply mb-3 max-w-[200px];
+}
+
+.delivery-page__warning {
+  @apply text-xs text-warning;
+}

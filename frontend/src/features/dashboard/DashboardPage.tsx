@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { DataTable, type Column } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
 import type { StockTransaction } from "@/types";
+import "./DashboardPage.css";
 
 export function DashboardPage() {
   const { data, isLoading } = useQuery({ queryKey: qk.dashboard, queryFn: reportApi.dashboard });
@@ -27,7 +28,7 @@ export function DashboardPage() {
       key: "qty",
       header: "Qty",
       render: (r) => (
-        <span className="font-mono tabular-nums">{`${r.quantity} ${r.product?.unit ?? ""}`.trim()}</span>
+        <span className="mono-num">{`${r.quantity} ${r.product?.unit ?? ""}`.trim()}</span>
       ),
     },
     { key: "warehouse", header: "Gudang", render: (r) => r.warehouse?.name ?? "-" },
@@ -35,15 +36,15 @@ export function DashboardPage() {
   ];
 
   return (
-    <div>
+    <div className="dashboard-page">
       <PageHeader title="Dashboard" description="Ringkasan operasional gudang hari ini" />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="dashboard-page__stats">
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
               <Card key={i}>
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="mt-3 h-7 w-16" />
+                <Skeleton className="dashboard-page__skeleton-label" />
+                <Skeleton className="dashboard-page__skeleton-value" />
               </Card>
             ))
           : (
@@ -56,30 +57,30 @@ export function DashboardPage() {
           )}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <h2 className="mb-3 text-sm font-semibold text-foreground">
+      <div className="dashboard-page__panels">
+        <Card className="dashboard-page__panel-side">
+          <h2 className="dashboard-page__section-title">
             Stok Kritis{" "}
-            <span className="font-mono tabular-nums text-muted-foreground">
+            <span className="dashboard-page__count">
               ({data?.lowStockCount ?? 0})
             </span>
           </h2>
           {lowStock.isLoading ? (
-            <div className="space-y-3">
+            <div className="dashboard-page__low-stock-skeleton">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-5 w-20" />
+                <div key={i} className="dashboard-page__low-stock-skeleton-row">
+                  <Skeleton className="dashboard-page__skeleton-text" />
+                  <Skeleton className="dashboard-page__skeleton-pill" />
                 </div>
               ))}
             </div>
           ) : lowStock.data && lowStock.data.length > 0 ? (
-            <ul className="space-y-2">
+            <ul className="dashboard-page__low-stock">
               {lowStock.data.map((p) => (
-                <li key={p.id} className="flex items-center justify-between text-sm">
-                  <span className="text-foreground">{p.name}</span>
+                <li key={p.id} className="dashboard-page__low-stock-item">
+                  <span className="dashboard-page__low-stock-name">{p.name}</span>
                   <Badge tone="red">
-                    <span className="font-mono tabular-nums">
+                    <span className="mono-num">
                       {p.stock} / min {p.minStock}
                     </span>
                   </Badge>
@@ -87,12 +88,12 @@ export function DashboardPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-success">Semua stok aman.</p>
+            <p className="dashboard-page__safe">Semua stok aman.</p>
           )}
         </Card>
 
-        <div className="lg:col-span-2">
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Transaksi Terbaru</h2>
+        <div className="dashboard-page__panel-main">
+          <h2 className="dashboard-page__section-title">Transaksi Terbaru</h2>
           <DataTable
             columns={columns}
             rows={data?.recentTransactions ?? []}

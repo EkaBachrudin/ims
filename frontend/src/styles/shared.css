@@ -1,0 +1,66 @@
+/* --------------------------------------------
+   Shared BEM blocks reused across features.
+   Imported by index.css, so @apply resolves
+   theme tokens without @reference.
+   -------------------------------------------- */
+@layer components {
+  .form {
+    @apply space-y-3;
+  }
+
+  .form--spaced {
+    @apply space-y-4;
+  }
+
+  .form--grid {
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2;
+  }
+
+  .form__full {
+    @apply sm:col-span-2;
+  }
+
+  .filter-bar {
+    @apply mb-3 flex flex-wrap items-center gap-2;
+  }
+
+  .filter-bar__search {
+    @apply max-w-xs;
+  }
+
+  .filter-bar__search--wide {
+    @apply max-w-[200px];
+  }
+
+  .filter-bar__select {
+    @apply max-w-[180px];
+  }
+
+  .filter-bar__check {
+    @apply flex items-center gap-2 text-sm text-muted-foreground;
+  }
+
+  .row-actions {
+    @apply flex justify-end gap-2;
+  }
+
+  .cell-right {
+    @apply text-right;
+  }
+
+  .mono-num {
+    @apply font-mono tabular-nums;
+  }
+
+  .mono-xs {
+    @apply font-mono text-xs;
+  }
+
+  .link {
+    @apply font-medium text-accent hover:underline;
+  }
+
+  .sr-only {
+    @apply sr-only;
+  }
+}

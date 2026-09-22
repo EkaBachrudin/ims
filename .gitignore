@@ -60,3 +60,9 @@ Thumbs.db
 # Docker
 # --------------------------------------------
 docker-compose.override.yml
+
+# --------------------------------------------
+# Agent skills (lokal, jangan di-commit)
+# --------------------------------------------
+.agents/skills/
+skills-lock.json

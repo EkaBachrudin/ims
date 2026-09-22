@@ -4,11 +4,15 @@ type Variant = "primary" | "secondary" | "danger" | "ghost" | "success";
 type Size = "sm" | "md";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-300",
-  secondary: "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50",
-  danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300",
-  success: "bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300",
-  ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
+  primary:
+    "bg-accent text-accent-foreground hover:opacity-90 disabled:bg-accent/50 disabled:text-accent-foreground/70",
+  secondary:
+    "bg-surface text-foreground border border-border hover:bg-muted disabled:opacity-50",
+  danger:
+    "bg-danger text-white hover:opacity-90 disabled:bg-danger/50 disabled:text-white/80",
+  success:
+    "bg-success text-white hover:opacity-90 disabled:bg-success/50 disabled:text-white/80",
+  ghost: "bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
 };
 
 const sizes: Record<Size, string> = {
@@ -33,7 +37,7 @@ export function Button({
 }: Props) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-[background-color,color,opacity,transform] duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100 ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled || loading}
       {...rest}
     >

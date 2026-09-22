@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { dnApi, poApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -81,8 +82,11 @@ export function PurchaseOrderDetailPage() {
         title={po.poNumber}
         description={`Dibuat oleh ${po.createdBy.name} • ${formatDate(po.createdAt)}`}
         actions={
-          <Link to="/purchase-orders" className="text-sm text-indigo-600 hover:underline">
-            ← Kembali
+          <Link
+            to="/purchase-orders"
+            className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
+          >
+            <ArrowLeft size={15} /> Kembali
           </Link>
         }
       />
@@ -93,44 +97,44 @@ export function PurchaseOrderDetailPage() {
         <Card className="lg:col-span-2">
           <div className="mb-4 grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-xs uppercase text-slate-400">Status</p>
+              <p className="text-xs uppercase text-muted-foreground">Status</p>
               <Badge tone={poStatusTone[po.status]}>{po.status}</Badge>
             </div>
             <div>
-              <p className="text-xs uppercase text-slate-400">Sumber</p>
+              <p className="text-xs uppercase text-muted-foreground">Sumber</p>
               <p className="font-medium">{po.source === "AI_CHAT" ? "AI Chat" : "Web"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-slate-400">Partner</p>
+              <p className="text-xs uppercase text-muted-foreground">Partner</p>
               <p className="font-medium">{po.partner.name}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-slate-400">Gudang</p>
+              <p className="text-xs uppercase text-muted-foreground">Gudang</p>
               <p className="font-medium">{po.warehouse?.name ?? "-"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-slate-400">Tanggal Target</p>
+              <p className="text-xs uppercase text-muted-foreground">Tanggal Target</p>
               <p className="font-medium">{formatDate(po.targetDate)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-slate-400">Catatan</p>
+              <p className="text-xs uppercase text-muted-foreground">Catatan</p>
               <p className="font-medium">{po.notes ?? "-"}</p>
             </div>
           </div>
 
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-muted">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Produk</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Qty</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Harga</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Produk</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Qty</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-muted-foreground">Harga</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {po.items.map((item) => (
                 <tr key={item.id}>
                   <td className="px-3 py-2">
-                    {item.product.name} <span className="text-xs text-slate-400">({item.product.sku})</span>
+                    {item.product.name} <span className="text-xs text-muted-foreground">({item.product.sku})</span>
                   </td>
                   <td className="px-3 py-2">
                     {item.quantity} {item.product.unit}
@@ -143,7 +147,7 @@ export function PurchaseOrderDetailPage() {
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-slate-800">Aksi</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Aksi</h2>
           <div className="space-y-2">
             {po.status === "DRAFT" && (
               <>
@@ -192,9 +196,9 @@ export function PurchaseOrderDetailPage() {
               </Button>
             )}
             {(po.status === "COMPLETED" || po.status === "CANCELLED") && (
-              <p className="text-xs text-slate-400">Tidak ada aksi lanjutan untuk status ini.</p>
+              <p className="text-xs text-muted-foreground">Tidak ada aksi lanjutan untuk status ini.</p>
             )}
-            {!canManage && <p className="text-xs text-amber-600">Owner hanya dapat melihat PO.</p>}
+            {!canManage && <p className="text-xs text-warning">Owner hanya dapat melihat PO.</p>}
           </div>
         </Card>
       </div>

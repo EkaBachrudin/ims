@@ -110,7 +110,7 @@ export function CategoriesPage() {
       />
 
       <div className="mb-3 max-w-xs">
-        <Input placeholder="Cari kategori..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input aria-label="Cari kategori" placeholder="Cari kategori..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>

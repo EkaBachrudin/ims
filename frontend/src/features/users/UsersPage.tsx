@@ -159,7 +159,7 @@ export function UsersPage() {
       />
 
       <div className="mb-3 max-w-xs">
-        <Input placeholder="Cari nama / email..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input aria-label="Cari pengguna" placeholder="Cari nama / email..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
@@ -212,7 +212,7 @@ export function UsersPage() {
             <Input value={form.whatsappNumber} onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })} />
           </Field>
           {editing && (
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <input
                 type="checkbox"
                 checked={form.isActive}

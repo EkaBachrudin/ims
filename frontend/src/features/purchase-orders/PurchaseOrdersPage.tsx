@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, X } from "@phosphor-icons/react";
 import { partnerApi, poApi, productApi, warehouseApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -88,7 +89,7 @@ export function PurchaseOrdersPage() {
       key: "poNumber",
       header: "No. PO",
       render: (po) => (
-        <Link to={`/purchase-orders/${po.id}`} className="font-medium text-indigo-600 hover:underline">
+        <Link to={`/purchase-orders/${po.id}`} className="font-medium text-accent hover:underline">
           {po.poNumber}
         </Link>
       ),
@@ -187,15 +188,15 @@ export function PurchaseOrdersPage() {
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Item</span>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => setItems([...items, { productId: "", quantity: "1" }])}
-              >
-                + Item
-              </Button>
+              <span className="text-sm font-medium text-foreground">Item</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setItems([...items, { productId: "", quantity: "1" }])}
+                >
+                  <Plus size={14} weight="bold" /> Item
+                </Button>
             </div>
             <div className="space-y-2">
               {items.map((item, idx) => (
@@ -232,8 +233,9 @@ export function PurchaseOrdersPage() {
                     variant="ghost"
                     onClick={() => setItems(items.filter((_, i) => i !== idx))}
                     disabled={items.length === 1}
+                    aria-label="Hapus item"
                   >
-                    ✕
+                    <X size={16} />
                   </Button>
                 </div>
               ))}

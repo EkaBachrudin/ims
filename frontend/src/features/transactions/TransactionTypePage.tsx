@@ -112,7 +112,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
       key: "qty",
       header: "Qty",
       render: (r) => (
-        <span className={type === "IN" ? "font-medium text-emerald-600" : "font-medium text-red-600"}>
+        <span className={type === "IN" ? "font-medium text-success" : "font-medium text-danger"}>
           {type === "IN" ? "+" : "−"}
           {r.quantity} {r.product.unit}
         </span>
@@ -135,7 +135,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
             className: "text-right",
             render: (r: StockTransaction) =>
               r.type === "ADJUSTMENT" ? (
-                <span className="text-xs text-slate-400">koreksi</span>
+                <span className="text-xs text-muted-foreground">koreksi</span>
               ) : (
                 <Button
                   size="sm"
@@ -188,7 +188,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
               <option value="">Pilih produk</option>
               {products.data?.data.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} — stok {p.stock} {p.unit}
+                  {p.name} (stok {p.stock} {p.unit})
                 </option>
               ))}
             </Select>
@@ -259,7 +259,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
       >
         <div className="space-y-3">
           <ErrorText>{error}</ErrorText>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             Stok akan dikoreksi otomatis (soft reversal) dan tercatat pada audit log.
           </p>
           <Field label="Alasan" required>

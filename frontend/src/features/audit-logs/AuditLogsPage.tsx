@@ -44,8 +44,8 @@ export function AuditLogsPage() {
       header: "Detail",
       render: (r) => (
         <details className="max-w-xs">
-          <summary className="cursor-pointer text-xs text-indigo-600">lihat</summary>
-          <pre className="mt-1 max-h-40 overflow-auto rounded bg-slate-50 p-2 text-[10px] leading-tight">
+          <summary className="cursor-pointer text-xs text-accent">lihat</summary>
+          <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-muted p-2 font-mono text-[10px] leading-tight">
             {JSON.stringify(r.after ?? r.before ?? {}, null, 1)}
           </pre>
         </details>
@@ -59,6 +59,7 @@ export function AuditLogsPage() {
 
       <div className="mb-3 flex flex-wrap gap-2">
         <Input
+          aria-label="Filter entitas"
           placeholder="Filter entitas (mis. Product)"
           value={entity}
           onChange={(e) => {

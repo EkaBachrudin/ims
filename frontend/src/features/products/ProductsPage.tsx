@@ -121,7 +121,7 @@ export function ProductsPage() {
       key: "stock",
       header: "Stok",
       render: (p) => (
-        <span className={p.stock <= p.minStock ? "font-semibold text-red-600" : "text-slate-700"}>
+        <span className={p.stock <= p.minStock ? "font-semibold text-danger" : "text-foreground"}>
           {p.stock}
           {p.stock <= p.minStock && <Badge tone="red">low</Badge>}
         </span>
@@ -159,6 +159,7 @@ export function ProductsPage() {
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Input
+          aria-label="Cari produk"
           placeholder="Cari nama / SKU..."
           value={search}
           onChange={(e) => {
@@ -182,7 +183,7 @@ export function ProductsPage() {
             </option>
           ))}
         </Select>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <input
             type="checkbox"
             checked={lowStock}
@@ -258,7 +259,7 @@ export function ProductsPage() {
             </Field>
           </div>
           {editing && (
-            <p className="sm:col-span-2 text-xs text-slate-400">
+            <p className="sm:col-span-2 text-xs text-muted-foreground">
               Stok hanya berubah melalui transaksi masuk/keluar.
             </p>
           )}

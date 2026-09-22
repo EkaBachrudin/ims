@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "./Button";
+import { EmptyState } from "./EmptyState";
+import { TableSkeleton } from "./Skeleton";
 import type { Meta } from "@/types";
 
 export interface Column<T> {
@@ -23,47 +25,45 @@ export function DataTable<T>({
   rowKey: (row: T) => string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50">
-          <tr>
-            {columns.map((c) => (
-              <th
-                key={c.key}
-                className={`px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 ${c.className ?? ""}`}
-              >
-                {c.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {loading && (
-            <tr>
-              <td colSpan={columns.length} className="px-3 py-6 text-center text-slate-500">
-                Memuat...
-              </td>
-            </tr>
-          )}
-          {!loading && rows.length === 0 && (
-            <tr>
-              <td colSpan={columns.length} className="px-3 py-6 text-center text-slate-400">
-                {empty}
-              </td>
-            </tr>
-          )}
-          {!loading &&
-            rows.map((row) => (
-              <tr key={rowKey(row)} className="hover:bg-slate-50">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+      {loading ? (
+        <TableSkeleton columns={Math.min(columns.length, 5)} />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-border text-sm tabular-nums">
+            <thead className="bg-muted">
+              <tr>
                 {columns.map((c) => (
-                  <td key={c.key} className={`px-3 py-2.5 text-slate-700 ${c.className ?? ""}`}>
-                    {c.render(row)}
-                  </td>
+                  <th
+                    key={c.key}
+                    className={`px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground ${c.className ?? ""}`}
+                  >
+                    {c.header}
+                  </th>
                 ))}
               </tr>
-            ))}
-        </tbody>
-      </table>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={columns.length}>
+                    <EmptyState title={empty} description="Data akan muncul setelah ada aktivitas." />
+                  </td>
+                </tr>
+              )}
+              {rows.map((row) => (
+                <tr key={rowKey(row)} className="transition-colors hover:bg-muted/60">
+                  {columns.map((c) => (
+                    <td key={c.key} className={`px-3 py-2.5 text-foreground ${c.className ?? ""}`}>
+                      {c.render(row)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -77,9 +77,11 @@ export function Pagination({
 }) {
   if (!meta || meta.totalPages <= 1) return null;
   return (
-    <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
+    <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
       <span>
-        Halaman {meta.page} dari {meta.totalPages} ({meta.total} data)
+        Halaman <span className="font-mono tabular-nums">{meta.page}</span> dari{" "}
+        <span className="font-mono tabular-nums">{meta.totalPages}</span> (
+        <span className="font-mono tabular-nums">{meta.total}</span> data)
       </span>
       <div className="flex gap-2">
         <Button

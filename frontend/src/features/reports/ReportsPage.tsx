@@ -50,7 +50,7 @@ export function ReportsPage() {
       key: "stock",
       header: "Stok",
       render: (r) => (
-        <span className={r.lowStock ? "font-semibold text-red-600" : ""}>
+        <span className={r.lowStock ? "font-semibold text-danger" : ""}>
           {r.stock} {r.unit}
         </span>
       ),
@@ -76,7 +76,7 @@ export function ReportsPage() {
           <div className="mb-3 flex flex-wrap items-end gap-2">
             <div className="w-56">
               <Field label="Cari">
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nama / SKU" />
+                <Input aria-label="Cari laporan" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nama / SKU" />
               </Field>
             </div>
             <div className="w-48">
@@ -101,23 +101,23 @@ export function ReportsPage() {
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold text-slate-800">Rekap Pengiriman Harian</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Rekap Pengiriman Harian</h2>
           <Field label="Tanggal">
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
-          <p className="mt-2 text-xs text-slate-400">Data: {shipments.data?.date ?? "-"}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Data: {shipments.data?.date ?? "-"}</p>
           <ul className="mt-3 space-y-2 text-sm">
             {shipments.data?.shipments.length ? (
               shipments.data.shipments.map((s, i) => (
-                <li key={i} className="rounded-md border border-slate-100 p-2">
-                  <p className="font-medium text-slate-700">{s.partner}</p>
-                  <p className="text-slate-500">
+                <li key={i} className="rounded-lg border border-border p-2">
+                  <p className="font-medium text-foreground">{s.partner}</p>
+                  <p className="text-muted-foreground">
                     {s.qty} {s.unit} {s.product} • {s.warehouse}
                   </p>
                 </li>
               ))
             ) : (
-              <li className="text-slate-400">Tidak ada pengiriman pada {formatDate(date)}.</li>
+              <li className="text-muted-foreground">Tidak ada pengiriman pada {formatDate(date)}.</li>
             )}
           </ul>
         </Card>

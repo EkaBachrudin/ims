@@ -128,7 +128,7 @@ export function WarehousesPage() {
       />
 
       <div className="mb-3 max-w-xs">
-        <Input placeholder="Cari gudang..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input aria-label="Cari gudang" placeholder="Cari gudang..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
@@ -161,7 +161,7 @@ export function WarehousesPage() {
           <Field label="Alamat">
             <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </Field>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <input
               type="checkbox"
               checked={form.isActive}

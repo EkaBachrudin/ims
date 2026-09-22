@@ -145,6 +145,7 @@ export function PartnersPage() {
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Input
+          aria-label="Cari partner"
           placeholder="Cari nama / telepon..."
           value={search}
           onChange={(e) => {

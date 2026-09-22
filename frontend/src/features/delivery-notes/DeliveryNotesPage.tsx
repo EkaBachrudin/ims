@@ -168,7 +168,7 @@ export function DeliveryNotesPage() {
               <option value="">Pilih PO</option>
               {eligiblePos.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.poNumber} — {p.partner.name}
+                  {p.poNumber} - {p.partner.name}
                 </option>
               ))}
             </Select>
@@ -180,7 +180,7 @@ export function DeliveryNotesPage() {
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
           {eligiblePos.length === 0 && (
-            <p className="text-xs text-amber-600">
+            <p className="text-xs text-warning">
               Belum ada PO CONFIRMED/COMPLETED. Konfirmasi PO terlebih dahulu.
             </p>
           )}

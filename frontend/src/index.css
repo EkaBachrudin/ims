@@ -1,26 +1,170 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --------------------------------------------
+   Design tokens - Graphite + Cobalt
+   Shape lock: controls = radius-lg (8px),
+   containers = radius-xl (12px), badges = pill.
+   -------------------------------------------- */
 :root {
   color-scheme: light;
+
+  --background: #f6f7f9;
+  --foreground: #18181b;
+
+  --surface: #ffffff;
+  --surface-foreground: #18181b;
+
+  --muted: #f1f2f4;
+  --muted-foreground: #5b616e;
+
+  --border: #e4e6ea;
+  --input: #dcdfe4;
+  --ring: #1f4bd8;
+
+  --accent: #1f4bd8;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #eaefff;
+  --accent-subtle-foreground: #1c3fb0;
+
+  --success: #067a55;
+  --success-subtle: #e6f5ef;
+  --success-foreground: #075e45;
+
+  --warning: #b45309;
+  --warning-subtle: #fbf1df;
+  --warning-foreground: #8a4108;
+
+  --danger: #d92d20;
+  --danger-subtle: #fdeceb;
+  --danger-foreground: #a91f16;
+
+  --info: #0e7490;
+  --info-subtle: #e5f4f8;
+  --info-foreground: #0b5c73;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+.dark {
+  color-scheme: dark;
+
+  --background: #0d0e11;
+  --foreground: #ecedef;
+
+  --surface: #16181c;
+  --surface-foreground: #ecedef;
+
+  --muted: #1e2126;
+  --muted-foreground: #9aa1ad;
+
+  --border: #26292f;
+  --input: #2c3038;
+  --ring: #6f8cf7;
+
+  --accent: #6f8cf7;
+  --accent-foreground: #10131a;
+  --accent-subtle: #1b2340;
+  --accent-subtle-foreground: #a9bbfb;
+
+  --success: #34d399;
+  --success-subtle: #10231d;
+  --success-foreground: #6ee7b7;
+
+  --warning: #fbbf24;
+  --warning-subtle: #2a2110;
+  --warning-foreground: #fcd34d;
+
+  --danger: #f87171;
+  --danger-subtle: #2a1516;
+  --danger-foreground: #fca5a5;
+
+  --info: #38bdf8;
+  --info-subtle: #0f2530;
+  --info-foreground: #7dd3fc;
 }
 
-body {
-  margin: 0;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-subtle-foreground: var(--accent-subtle-foreground);
+
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-foreground: var(--danger-foreground);
+
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-foreground: var(--info-foreground);
+
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
+
+  --shadow-card: 0 1px 2px rgb(16 18 22 / 0.04), 0 10px 28px -18px rgb(16 18 22 / 0.18);
+  --shadow-pop: 0 12px 48px -16px rgb(16 18 22 / 0.28);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  progress {
+    accent-color: var(--accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

@@ -55,7 +55,7 @@ flowchart TB
     AI <-->|Long Polling local| TG
     AI <-->|HTTPS| LLM
     BE -->|Prisma read/write| DB
-    AI -.->|pgvector read-only (RAG)| DB
+    AI -.->|"pgvector read-only (RAG)"| DB
 ```
 
 > **Pemisahan akses DB:** Backend memegang akses **read/write** penuh (satu-satunya penulis data bisnis). AI Agent hanya diberi akses **read-only** ke tabel vector `document_chunks` untuk retrieval knowledge/SOP. Data bisnis (stok, PO, transaksi) tetap diakses AI Agent melalui Backend REST API.

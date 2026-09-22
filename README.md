@@ -83,7 +83,7 @@ flowchart TB
     FE <-->|REST API| BE[Backend<br/>Express + TypeScript :3000]
     AI <-->|Function Calling| BE
     BE <-->|Prisma ORM read/write| DB[(PostgreSQL + pgvector :5432)]
-    AI -.->|pgvector read-only (RAG)| DB
+    AI -.->|"pgvector read-only (RAG)"| DB
     AI <-->|LLM API| LLM[OpenAI / Gemini]
 ```
 

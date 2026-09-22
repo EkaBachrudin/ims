@@ -53,8 +53,8 @@ flowchart TB
     IM <-->|Webhook / API| AI[AI Agent Service<br/>LangChain + Telegraf]
     FE <-->|REST API| BE[Backend Service<br/>Express + TypeScript]
     AI <-->|REST API / Function Calling| BE
-    BE <-->|Prisma ORM (read/write)| DB[(PostgreSQL + pgvector)]
-    AI -.->|pgvector read-only (RAG)| DB
+    BE <-->|"Prisma ORM (read/write)"| DB[(PostgreSQL + pgvector)]
+    AI -.->|"pgvector read-only (RAG)"| DB
     AI <-->|LLM API| LLM[OpenAI / Gemini]
 ```
 

@@ -92,7 +92,7 @@ export function CategoriesPage() {
               <div className="row-actions">
                 <Button
                   size="icon"
-                  variant="secondary"
+                  variant="accent-ghost"
                   aria-label={`Ubah ${c.name}`}
                   title="Ubah"
                   onClick={() => openEdit(c)}

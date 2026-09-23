@@ -141,7 +141,7 @@ export function UsersPage() {
         <div className="row-actions">
           <Button
             size="icon"
-            variant="secondary"
+            variant="accent-ghost"
             aria-label={`Ubah ${u.name}`}
             title="Ubah"
             onClick={() => openEdit(u)}

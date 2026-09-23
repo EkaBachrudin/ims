@@ -17,7 +17,11 @@
 }
 
 .btn--danger-ghost {
-  @apply bg-transparent text-danger hover:bg-danger-subtle;
+  @apply bg-transparent text-danger hover:bg-danger-subtle dark:hover:bg-danger/15;
+}
+
+.btn--accent-ghost {
+  @apply bg-transparent text-accent hover:bg-accent-subtle dark:hover:bg-accent/15;
 }
 
 .btn--success {

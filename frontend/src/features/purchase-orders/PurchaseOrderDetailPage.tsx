@@ -91,45 +91,84 @@ export function PurchaseOrderDetailPage() {
               <p className="po-detail-page__meta-label">Tanggal Target</p>
               <p className="po-detail-page__meta-value">{formatDate(po.targetDate)}</p>
             </div>
-            <div>
+            <div className="po-detail-page__meta-item--full">
               <p className="po-detail-page__meta-label">Catatan</p>
               <p className="po-detail-page__meta-value">{po.notes ?? "-"}</p>
             </div>
           </div>
 
-          <table className="po-detail-page__table">
-            <thead className="po-detail-page__thead">
-              <tr>
-                <th className="po-detail-page__th">Produk</th>
-                <th className="po-detail-page__th">Dipesan</th>
-                <th className="po-detail-page__th">Diterima</th>
-                <th className="po-detail-page__th">Sisa</th>
-                <th className="po-detail-page__th">Harga</th>
-              </tr>
-            </thead>
-            <tbody className="po-detail-page__tbody">
-              {po.items.map((item) => (
-                <tr key={item.id}>
-                  <td className="po-detail-page__td">
-                    {item.product.name} <span className="po-detail-page__sku">({item.product.sku})</span>
-                  </td>
-                  <td className="po-detail-page__td">
-                    {item.quantity} {item.product.unit}
-                  </td>
-                  <td className="po-detail-page__td">
-                    {item.receivedQuantity ?? 0} {item.product.unit}
-                  </td>
-                  <td className="po-detail-page__td">
-                    {item.remainingQuantity ?? item.quantity} {item.product.unit}
-                  </td>
-                  <td className="po-detail-page__td">{formatCurrency(item.unitPrice)}</td>
+          <div className="po-detail-page__table-wrap">
+            <table className="po-detail-page__table">
+              <thead className="po-detail-page__thead">
+                <tr>
+                  <th className="po-detail-page__th">Produk</th>
+                  <th className="po-detail-page__th">Dipesan</th>
+                  <th className="po-detail-page__th">Diterima</th>
+                  <th className="po-detail-page__th">Sisa</th>
+                  <th className="po-detail-page__th">Harga</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="po-detail-page__tbody">
+                {po.items.map((item) => (
+                  <tr key={item.id}>
+                    <td className="po-detail-page__td">
+                      {item.product.name} <span className="po-detail-page__sku">({item.product.sku})</span>
+                    </td>
+                    <td className="po-detail-page__td">
+                      {item.quantity} {item.product.unit}
+                    </td>
+                    <td className="po-detail-page__td">
+                      {item.receivedQuantity ?? 0} {item.product.unit}
+                    </td>
+                    <td className="po-detail-page__td">
+                      {item.remainingQuantity ?? item.quantity} {item.product.unit}
+                    </td>
+                    <td className="po-detail-page__td">{formatCurrency(item.unitPrice)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <ul className="po-detail-page__items-mobile">
+            {po.items.map((item) => (
+              <li key={item.id} className="po-detail-page__item-card">
+                <div className="po-detail-page__item-card-head">
+                  <p className="po-detail-page__item-card-name" title={item.product.name}>
+                    {item.product.name}
+                  </p>
+                  <span className="po-detail-page__item-card-sku">{item.product.sku}</span>
+                </div>
+                <div className="po-detail-page__item-card-meta">
+                  <span>
+                    Dipesan{" "}
+                    <span className="po-detail-page__item-card-qty">
+                      {item.quantity} {item.product.unit}
+                    </span>
+                  </span>
+                  <span>
+                    Diterima{" "}
+                    <span className="po-detail-page__item-card-qty">
+                      {item.receivedQuantity ?? 0} {item.product.unit}
+                    </span>
+                  </span>
+                  <span>
+                    Sisa{" "}
+                    <span className="po-detail-page__item-card-qty">
+                      {item.remainingQuantity ?? item.quantity} {item.product.unit}
+                    </span>
+                  </span>
+                </div>
+                <div className="po-detail-page__item-card-footer">
+                  <span>Harga</span>
+                  <span className="po-detail-page__item-card-price">{formatCurrency(item.unitPrice)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </Card>
 
-        <Card>
+        <Card className="po-detail-page__actions-card">
           <h2 className="po-detail-page__actions-title">Aksi</h2>
           <div className="po-detail-page__actions">
             {po.status === "DRAFT" && (

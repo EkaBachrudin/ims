@@ -107,7 +107,7 @@ export function PartnersPage() {
       <div className="row-actions">
         <Button
           size="icon"
-          variant="secondary"
+          variant="accent-ghost"
           aria-label={`Ubah ${p.name}`}
           title="Ubah"
           onClick={() => openEdit(p)}

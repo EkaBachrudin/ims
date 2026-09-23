@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 import "./Button.css";
 
-type Variant = "primary" | "secondary" | "danger" | "danger-ghost" | "ghost" | "success";
+type Variant = "primary" | "secondary" | "danger" | "danger-ghost" | "accent-ghost" | "ghost" | "success";
 type Size = "sm" | "md" | "icon";
 
 const variants: Record<Variant, string> = {
@@ -9,6 +9,7 @@ const variants: Record<Variant, string> = {
   secondary: "btn--secondary",
   danger: "btn--danger",
   "danger-ghost": "btn--danger-ghost",
+  "accent-ghost": "btn--accent-ghost",
   success: "btn--success",
   ghost: "btn--ghost",
 };

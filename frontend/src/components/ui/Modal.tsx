@@ -19,7 +19,12 @@ export function Modal({
   wide?: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
   const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) {
@@ -33,7 +38,7 @@ export function Modal({
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab" || !panelRef.current) return;
@@ -60,7 +65,7 @@ export function Modal({
       document.body.style.overflow = overflow;
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

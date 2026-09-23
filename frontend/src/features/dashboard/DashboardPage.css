@@ -117,7 +117,7 @@
 }
 
 .dashboard-page__low-stock-bar-fill {
-  @apply h-full rounded-full bg-danger transition-[width] duration-300;
+  @apply block h-full rounded-full bg-danger transition-[width] duration-300;
 }
 
 .dashboard-page__low-stock-skeleton {

@@ -6,7 +6,8 @@ import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
-import { ErrorText, Field, Input, Select } from "@/components/ui/Input";
+import { ErrorText, Field, Input } from "@/components/ui/Input";
+import { Combobox } from "@/components/ui/Combobox";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Modal, ConfirmModal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
@@ -102,6 +103,10 @@ export function ProductsPage() {
   function submit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    if (!form.categoryId) {
+      setError("Pilih kategori terlebih dahulu.");
+      return;
+    }
     const body = {
       sku: form.sku,
       name: form.name,
@@ -186,21 +191,17 @@ export function ProductsPage() {
           }}
           className="filter-bar__search"
         />
-        <Select
+        <Combobox
+          className="filter-bar__select"
           value={categoryId}
-          onChange={(e) => {
-            setCategoryId(e.target.value);
+          onChange={(v) => {
+            setCategoryId(v);
             setPage(1);
           }}
-          className="filter-bar__select"
-        >
-          <option value="">Semua kategori</option>
-          {categories.data?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
+          placeholder="Semua kategori"
+          searchable
+          options={(categories.data ?? []).map((c) => ({ value: String(c.id), label: c.name }))}
+        />
         <label className="filter-bar__check">
           <input
             type="checkbox"
@@ -276,18 +277,14 @@ export function ProductsPage() {
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </Field>
           <Field label="Kategori" required>
-            <Select
+            <Combobox
               value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-              required
-            >
-              <option value="">Pilih kategori</option>
-              {categories.data?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
+              onChange={(v) => setForm({ ...form, categoryId: v })}
+              placeholder="Pilih kategori"
+              searchable
+              aria-label="Kategori"
+              options={(categories.data ?? []).map((c) => ({ value: String(c.id), label: c.name }))}
+            />
           </Field>
           <Field label="Satuan" required>
             <Input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} required />

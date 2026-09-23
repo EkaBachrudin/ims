@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { auditApi } from "@/api/endpoints";
 import { qk } from "@/hooks/queryKeys";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Combobox } from "@/components/ui/Combobox";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Badge, PageHeader } from "@/components/ui/Card";
 import { formatDateTime } from "@/lib/format";
@@ -69,21 +70,22 @@ export function AuditLogsPage() {
           }}
           className="audit-page__filter-entity"
         />
-        <Select
+        <Combobox
+          className="audit-page__filter-action"
           value={action}
-          onChange={(e) => {
-            setAction(e.target.value);
+          onChange={(v) => {
+            setAction(v);
             setPage(1);
           }}
-          className="audit-page__filter-action"
-        >
-          <option value="">Semua aksi</option>
-          <option value="CREATE">CREATE</option>
-          <option value="UPDATE">UPDATE</option>
-          <option value="DELETE">DELETE</option>
-          <option value="VOID">VOID</option>
-          <option value="LOGIN">LOGIN</option>
-        </Select>
+          placeholder="Semua aksi"
+          options={[
+            { value: "CREATE", label: "CREATE" },
+            { value: "UPDATE", label: "UPDATE" },
+            { value: "DELETE", label: "DELETE" },
+            { value: "VOID", label: "VOID" },
+            { value: "LOGIN", label: "LOGIN" },
+          ]}
+        />
       </div>
 
       <DataTable columns={columns} rows={data?.data ?? []} loading={isLoading} rowKey={(r) => r.id} />

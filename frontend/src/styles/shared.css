@@ -37,7 +37,19 @@
   }
 
   .filter-bar__check {
-    @apply flex items-center gap-2 text-sm text-muted-foreground;
+    @apply inline-flex cursor-pointer select-none items-center gap-2 rounded-full border border-border bg-surface px-3 py-2 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground;
+  }
+
+  .filter-bar__check input {
+    @apply sr-only;
+  }
+
+  .filter-bar__check:has(input:checked) {
+    @apply border-accent/40 bg-accent-subtle text-accent-subtle-foreground;
+  }
+
+  .filter-bar__check:has(input:focus-visible) {
+    @apply ring-2 ring-accent/25;
   }
 
   .row-actions {

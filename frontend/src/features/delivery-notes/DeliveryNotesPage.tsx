@@ -6,7 +6,8 @@ import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
-import { ErrorText, Field, Input, Select } from "@/components/ui/Input";
+import { ErrorText, Field, Input } from "@/components/ui/Input";
+import { Combobox } from "@/components/ui/Combobox";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Modal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
@@ -154,19 +155,20 @@ export function DeliveryNotesPage() {
       />
 
       <div className="delivery-page__filter">
-        <Select
+        <Combobox
           value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
+          onChange={(v) => {
+            setStatus(v);
             setPage(1);
           }}
-        >
-          <option value="">Semua status</option>
-          <option value="DRAFT">DRAFT</option>
-          <option value="SHIPPED">SHIPPED</option>
-          <option value="DELIVERED">DELIVERED</option>
-          <option value="CANCELLED">CANCELLED</option>
-        </Select>
+          placeholder="Semua status"
+          options={[
+            { value: "DRAFT", label: "DRAFT" },
+            { value: "SHIPPED", label: "SHIPPED" },
+            { value: "DELIVERED", label: "DELIVERED" },
+            { value: "CANCELLED", label: "CANCELLED" },
+          ]}
+        />
       </div>
 
       <ErrorText>{error && !open ? error : ""}</ErrorText>
@@ -220,24 +222,23 @@ export function DeliveryNotesPage() {
           <ErrorText>{error}</ErrorText>
           <div className="form--grid">
             <Field label="Customer" required>
-              <Select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required>
-                <option value="">Pilih customer</option>
-                {customers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </Select>
+              <Combobox
+                value={partnerId}
+                onChange={setPartnerId}
+                placeholder="Pilih customer"
+                searchable
+                aria-label="Customer"
+                options={customers.map((p) => ({ value: p.id, label: p.name }))}
+              />
             </Field>
             <Field label="Gudang" required>
-              <Select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} required>
-                <option value="">Pilih gudang</option>
-                {warehouses.data?.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </Select>
+              <Combobox
+                value={warehouseId}
+                onChange={setWarehouseId}
+                placeholder="Pilih gudang"
+                aria-label="Gudang"
+                options={(warehouses.data ?? []).map((w) => ({ value: w.id, label: w.name }))}
+              />
             </Field>
             <Field label="Tanggal Kirim" required>
               <Input type="date" value={shipDate} onChange={(e) => setShipDate(e.target.value)} required />
@@ -262,22 +263,22 @@ export function DeliveryNotesPage() {
             <div className="delivery-page__items">
               {items.map((item, idx) => (
                 <div key={idx} className="delivery-page__item">
-                  <Select
+                  <Combobox
                     value={item.productId}
-                    onChange={(e) => {
+                    onChange={(v) => {
                       const next = [...items];
-                      next[idx] = { ...item, productId: e.target.value };
+                      next[idx] = { ...item, productId: v };
                       setItems(next);
                     }}
+                    placeholder="Pilih produk"
+                    searchable
+                    aria-label="Produk"
                     className="delivery-page__item-product"
-                  >
-                    <option value="">Pilih produk</option>
-                    {products.data?.data.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.sku})
-                      </option>
-                    ))}
-                  </Select>
+                    options={(products.data?.data ?? []).map((p) => ({
+                      value: p.id,
+                      label: `${p.name} (${p.sku})`,
+                    }))}
+                  />
                   <Input
                     type="number"
                     min={1}

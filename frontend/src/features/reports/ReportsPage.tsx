@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { categoryApi, reportApi } from "@/api/endpoints";
 import { qk } from "@/hooks/queryKeys";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Select } from "@/components/ui/Input";
+import { Field, Input } from "@/components/ui/Input";
+import { Combobox } from "@/components/ui/Combobox";
 import { DataTable, type Column } from "@/components/ui/Table";
 import { Badge, Card, PageHeader } from "@/components/ui/Card";
 import { formatDate, todayInput } from "@/lib/format";
@@ -82,14 +83,14 @@ export function ReportsPage() {
             </div>
             <div className="reports-page__field-category">
               <Field label="Kategori">
-                <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                  <option value="">Semua</option>
-                  {categories.data?.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
+                <Combobox
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  placeholder="Semua"
+                  searchable
+                  aria-label="Kategori"
+                  options={(categories.data ?? []).map((c) => ({ value: String(c.id), label: c.name }))}
+                />
               </Field>
             </div>
           </div>

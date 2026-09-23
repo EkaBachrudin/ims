@@ -3,3 +3,7 @@
 .warehouses-page__check {
   @apply flex items-center gap-2 text-sm text-muted-foreground;
 }
+
+.warehouses-page__card-address {
+  @apply mt-1 text-sm text-muted-foreground;
+}

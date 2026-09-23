@@ -91,6 +91,31 @@ export function WarehousesPage() {
     else createMut.mutate(body);
   }
 
+  function renderActions(w: Warehouse) {
+    return (
+      <div className="row-actions">
+        <Button
+          size="icon"
+          variant="accent-ghost"
+          aria-label={`Ubah ${w.name}`}
+          title="Ubah"
+          onClick={() => openEdit(w)}
+        >
+          <PencilSimple size={16} />
+        </Button>
+        <Button
+          size="icon"
+          variant="danger-ghost"
+          aria-label={`Hapus ${w.name}`}
+          title="Hapus"
+          onClick={() => setDeleting(w)}
+        >
+          <Trash size={16} />
+        </Button>
+      </div>
+    );
+  }
+
   const columns: Column<Warehouse>[] = [
     { key: "code", header: "Kode", render: (w) => <span className="mono-xs">{w.code}</span> },
     { key: "name", header: "Nama", render: (w) => w.name },
@@ -106,28 +131,7 @@ export function WarehousesPage() {
             key: "actions",
             header: "",
             className: "cell-right",
-            render: (w: Warehouse) => (
-              <div className="row-actions">
-                <Button
-                  size="icon"
-                  variant="accent-ghost"
-                  aria-label={`Ubah ${w.name}`}
-                  title="Ubah"
-                  onClick={() => openEdit(w)}
-                >
-                  <PencilSimple size={16} />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="danger-ghost"
-                  aria-label={`Hapus ${w.name}`}
-                  title="Hapus"
-                  onClick={() => setDeleting(w)}
-                >
-                  <Trash size={16} />
-                </Button>
-              </div>
-            ),
+            render: (w: Warehouse) => renderActions(w),
           },
         ]
       : []),
@@ -153,7 +157,27 @@ export function WarehousesPage() {
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
 
-      <DataTable columns={columns} rows={data ?? []} loading={isLoading} rowKey={(w) => w.id} />
+      <DataTable
+        columns={columns}
+        rows={data ?? []}
+        loading={isLoading}
+        rowKey={(w) => w.id}
+        mobileCard={(w) => (
+          <div>
+            <div className="data-table__card-head">
+              <span className="data-table__card-title" title={w.name}>
+                {w.name}
+              </span>
+              {canManage && renderActions(w)}
+            </div>
+            <div className="data-table__card-sub">
+              <span className="mono-xs">{w.code}</span>
+              <Badge tone={w.isActive ? "green" : "slate"}>{w.isActive ? "Aktif" : "Nonaktif"}</Badge>
+            </div>
+            <p className="warehouses-page__card-address">{w.address ?? "-"}</p>
+          </div>
+        )}
+      />
 
       <Modal
         open={creating || Boolean(editing)}

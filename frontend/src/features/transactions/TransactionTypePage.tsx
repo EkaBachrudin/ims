@@ -6,7 +6,8 @@ import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
-import { ErrorText, Field, Input, Select, Textarea } from "@/components/ui/Input";
+import { ErrorText, Field, Input, Textarea } from "@/components/ui/Input";
+import { Combobox } from "@/components/ui/Combobox";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Modal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
@@ -142,6 +143,14 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
   function submit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    if (!form.productId) {
+      setError("Pilih produk terlebih dahulu.");
+      return;
+    }
+    if (!form.warehouseId) {
+      setError("Pilih gudang terlebih dahulu.");
+      return;
+    }
     recordMut.mutate({
       productId: form.productId,
       warehouseId: form.warehouseId,
@@ -280,43 +289,38 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
           <ErrorText>{error}</ErrorText>
           {type === "IN" && (
             <Field label="PO Sumber (opsional)" hint="Penerimaan barang dari supplier">
-              <Select
+              <Combobox
                 value={form.purchaseOrderId}
-                onChange={(e) =>
-                  setForm({ ...form, purchaseOrderId: e.target.value, productId: "", quantity: "1" })
-                }
-              >
-                <option value="">Tanpa PO</option>
-                {pos.data?.data.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.poNumber} - {p.partner.name}
-                  </option>
-                ))}
-              </Select>
+                onChange={(v) => setForm({ ...form, purchaseOrderId: v, productId: "", quantity: "1" })}
+                placeholder="Tanpa PO"
+                searchable
+                aria-label="PO Sumber"
+                options={(pos.data?.data ?? []).map((p) => ({
+                  value: p.id,
+                  label: `${p.poNumber} - ${p.partner.name}`,
+                }))}
+              />
             </Field>
           )}
           <Field label="Produk" required>
-            <Select
+            <Combobox
               value={form.productId}
-              onChange={(e) => {
-                const pid = e.target.value;
-                const line = poRemainingItems.find((i) => i.productId === pid);
+              onChange={(v) => {
+                const line = poRemainingItems.find((i) => i.productId === v);
                 setForm({
                   ...form,
-                  productId: pid,
+                  productId: v,
                   quantity: line ? String(line.remainingQuantity ?? line.quantity) : form.quantity,
                 });
               }}
-              required
-            >
-              <option value="">Pilih produk</option>
-              {selectedProductOptions.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {"stock" in p ? ` (stok ${p.stock} ${p.unit})` : ` (${p.sku})`}
-                </option>
-              ))}
-            </Select>
+              placeholder="Pilih produk"
+              searchable
+              aria-label="Produk"
+              options={selectedProductOptions.map((p) => ({
+                value: p.id,
+                label: `${p.name}${"stock" in p ? ` (stok ${p.stock} ${p.unit})` : ` (${p.sku})`}`,
+              }))}
+            />
           </Field>
           {type === "IN" && form.purchaseOrderId && (
             <p className="txn-page__po-hint">
@@ -330,18 +334,13 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
             </p>
           )}
           <Field label="Gudang" required>
-            <Select
+            <Combobox
               value={form.warehouseId}
-              onChange={(e) => setForm({ ...form, warehouseId: e.target.value })}
-              required
-            >
-              <option value="">Pilih gudang</option>
-              {warehouses.data?.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </Select>
+              onChange={(v) => setForm({ ...form, warehouseId: v })}
+              placeholder="Pilih gudang"
+              aria-label="Gudang"
+              options={(warehouses.data ?? []).map((w) => ({ value: w.id, label: w.name }))}
+            />
           </Field>
           <Field label="Jumlah" required>
             <Input
@@ -354,16 +353,16 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
             />
           </Field>
           <Field label={type === "IN" ? "Supplier (opsional)" : "Customer (opsional)"}>
-            <Select value={form.partnerId} onChange={(e) => setForm({ ...form, partnerId: e.target.value })}>
-              <option value="">-</option>
-              {partners.data?.data
+            <Combobox
+              value={form.partnerId}
+              onChange={(v) => setForm({ ...form, partnerId: v })}
+              placeholder="-"
+              searchable
+              aria-label={type === "IN" ? "Supplier" : "Customer"}
+              options={(partners.data?.data ?? [])
                 .filter((p) => (type === "IN" ? p.type === "SUPPLIER" : p.type === "CUSTOMER"))
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-            </Select>
+                .map((p) => ({ value: p.id, label: p.name }))}
+            />
           </Field>
           <Field label="No. Referensi">
             <Input value={form.referenceNo} onChange={(e) => setForm({ ...form, referenceNo: e.target.value })} />

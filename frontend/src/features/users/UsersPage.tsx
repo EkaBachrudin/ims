@@ -123,6 +123,33 @@ export function UsersPage() {
     }
   }
 
+  function renderActions(u: User) {
+    return (
+      <div className="row-actions">
+        <Button
+          size="icon"
+          variant="accent-ghost"
+          aria-label={`Ubah ${u.name}`}
+          title="Ubah"
+          onClick={() => openEdit(u)}
+        >
+          <PencilSimple size={16} />
+        </Button>
+        {u.isActive && (
+          <Button
+            size="icon"
+            variant="danger-ghost"
+            aria-label={`Nonaktifkan ${u.name}`}
+            title="Nonaktifkan"
+            onClick={() => setDeactivating(u)}
+          >
+            <Prohibit size={16} />
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   const columns: Column<User>[] = [
     { key: "name", header: "Nama", render: (u) => u.name },
     { key: "email", header: "Email", render: (u) => u.email },
@@ -137,30 +164,7 @@ export function UsersPage() {
       key: "actions",
       header: "",
       className: "cell-right",
-      render: (u) => (
-        <div className="row-actions">
-          <Button
-            size="icon"
-            variant="accent-ghost"
-            aria-label={`Ubah ${u.name}`}
-            title="Ubah"
-            onClick={() => openEdit(u)}
-          >
-            <PencilSimple size={16} />
-          </Button>
-          {u.isActive && (
-            <Button
-              size="icon"
-              variant="danger-ghost"
-              aria-label={`Nonaktifkan ${u.name}`}
-              title="Nonaktifkan"
-              onClick={() => setDeactivating(u)}
-            >
-              <Prohibit size={16} />
-            </Button>
-          )}
-        </div>
-      ),
+      render: (u) => renderActions(u),
     },
   ];
 
@@ -184,7 +188,30 @@ export function UsersPage() {
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
 
-      <DataTable columns={columns} rows={data?.data ?? []} loading={isLoading} rowKey={(u) => u.id} />
+      <DataTable
+        columns={columns}
+        rows={data?.data ?? []}
+        loading={isLoading}
+        rowKey={(u) => u.id}
+        mobileCard={(u) => (
+          <div>
+            <div className="data-table__card-head">
+              <span className="data-table__card-title" title={u.name}>
+                {u.name}
+              </span>
+              {renderActions(u)}
+            </div>
+            <div className="data-table__card-sub">
+              <Badge tone="indigo">{roleLabel[u.role]}</Badge>
+              <Badge tone={u.isActive ? "green" : "slate"}>{u.isActive ? "Aktif" : "Nonaktif"}</Badge>
+            </div>
+            <div className="data-table__card-meta">
+              <span>{u.email}</span>
+              <span>Telegram: {u.telegramId ?? "-"}</span>
+            </div>
+          </div>
+        )}
+      />
       <Pagination meta={data?.meta} onPage={setPage} />
 
       <Modal

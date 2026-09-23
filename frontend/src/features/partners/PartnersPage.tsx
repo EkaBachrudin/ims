@@ -6,7 +6,8 @@ import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
-import { ErrorText, Field, Input, Select } from "@/components/ui/Input";
+import { ErrorText, Field, Input } from "@/components/ui/Input";
+import { Combobox } from "@/components/ui/Combobox";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Modal, ConfirmModal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
@@ -172,18 +173,19 @@ export function PartnersPage() {
           }}
           className="filter-bar__search"
         />
-        <Select
+        <Combobox
+          className="filter-bar__select"
           value={type}
-          onChange={(e) => {
-            setType(e.target.value);
+          onChange={(v) => {
+            setType(v);
             setPage(1);
           }}
-          className="filter-bar__select"
-        >
-          <option value="">Semua tipe</option>
-          <option value="SUPPLIER">Supplier</option>
-          <option value="CUSTOMER">Customer</option>
-        </Select>
+          placeholder="Semua tipe"
+          options={[
+            { value: "SUPPLIER", label: "Supplier" },
+            { value: "CUSTOMER", label: "Customer" },
+          ]}
+        />
       </div>
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
@@ -237,10 +239,16 @@ export function PartnersPage() {
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </Field>
           <Field label="Tipe" required>
-            <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as PartnerType })}>
-              <option value="CUSTOMER">Customer</option>
-              <option value="SUPPLIER">Supplier</option>
-            </Select>
+            <Combobox
+              value={form.type}
+              onChange={(v) => setForm({ ...form, type: v as PartnerType })}
+              clearable={false}
+              aria-label="Tipe"
+              options={[
+                { value: "CUSTOMER", label: "Customer" },
+                { value: "SUPPLIER", label: "Supplier" },
+              ]}
+            />
           </Field>
           <Field label="Telepon">
             <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />

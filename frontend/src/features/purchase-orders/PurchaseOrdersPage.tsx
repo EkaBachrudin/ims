@@ -7,7 +7,8 @@ import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
-import { ErrorText, Field, Input, Select } from "@/components/ui/Input";
+import { ErrorText, Field, Input } from "@/components/ui/Input";
+import { Combobox } from "@/components/ui/Combobox";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Modal } from "@/components/ui/Modal";
 import { Badge, PageHeader } from "@/components/ui/Card";
@@ -68,6 +69,10 @@ export function PurchaseOrdersPage() {
   function submit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    if (!partnerId) {
+      setError("Pilih partner terlebih dahulu.");
+      return;
+    }
     const payload = {
       partnerId,
       warehouseId: warehouseId || null,
@@ -120,19 +125,20 @@ export function PurchaseOrdersPage() {
       />
 
       <div className="po-page__filter">
-        <Select
+        <Combobox
           value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
+          onChange={(v) => {
+            setStatus(v);
             setPage(1);
           }}
-        >
-          <option value="">Semua status</option>
-          <option value="DRAFT">DRAFT</option>
-          <option value="CONFIRMED">CONFIRMED</option>
-          <option value="COMPLETED">COMPLETED</option>
-          <option value="CANCELLED">CANCELLED</option>
-        </Select>
+          placeholder="Semua status"
+          options={[
+            { value: "DRAFT", label: "DRAFT" },
+            { value: "CONFIRMED", label: "CONFIRMED" },
+            { value: "COMPLETED", label: "COMPLETED" },
+            { value: "CANCELLED", label: "CANCELLED" },
+          ]}
+        />
       </div>
 
       <ErrorText>{error && !open ? error : ""}</ErrorText>
@@ -190,24 +196,26 @@ export function PurchaseOrdersPage() {
           <ErrorText>{error}</ErrorText>
           <div className="form--grid">
             <Field label="Partner" required>
-              <Select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required>
-                <option value="">Pilih partner</option>
-                {partners.data?.data.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.type})
-                  </option>
-                ))}
-              </Select>
+              <Combobox
+                value={partnerId}
+                onChange={setPartnerId}
+                placeholder="Pilih partner"
+                searchable
+                aria-label="Partner"
+                options={(partners.data?.data ?? []).map((p) => ({
+                  value: p.id,
+                  label: `${p.name} (${p.type})`,
+                }))}
+              />
             </Field>
             <Field label="Gudang">
-              <Select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
-                <option value="">-</option>
-                {warehouses.data?.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </Select>
+              <Combobox
+                value={warehouseId}
+                onChange={setWarehouseId}
+                placeholder="-"
+                aria-label="Gudang"
+                options={(warehouses.data ?? []).map((w) => ({ value: w.id, label: w.name }))}
+              />
             </Field>
             <Field label="Tanggal Target">
               <Input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
@@ -232,22 +240,22 @@ export function PurchaseOrdersPage() {
             <div className="po-page__items">
               {items.map((item, idx) => (
                 <div key={idx} className="po-page__item">
-                  <Select
+                  <Combobox
                     value={item.productId}
-                    onChange={(e) => {
+                    onChange={(v) => {
                       const next = [...items];
-                      next[idx] = { ...item, productId: e.target.value };
+                      next[idx] = { ...item, productId: v };
                       setItems(next);
                     }}
+                    placeholder="Pilih produk"
+                    searchable
+                    aria-label="Produk"
                     className="po-page__item-product"
-                  >
-                    <option value="">Pilih produk</option>
-                    {products.data?.data.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.sku})
-                      </option>
-                    ))}
-                  </Select>
+                    options={(products.data?.data ?? []).map((p) => ({
+                      value: p.id,
+                      label: `${p.name} (${p.sku})`,
+                    }))}
+                  />
                   <Input
                     type="number"
                     min={1}

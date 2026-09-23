@@ -73,6 +73,36 @@ export function DeliveryNotesPage() {
     createMut.mutate({ poId, shipDate, notes: notes || null });
   }
 
+  function renderActions(d: DeliveryNote) {
+    return (
+      <div className="row-actions">
+        {d.status === "DRAFT" && (
+          <Button size="sm" onClick={() => statusMut.mutate({ id: d.id, status: "SHIPPED" })}>
+            Kirim
+          </Button>
+        )}
+        {d.status === "SHIPPED" && (
+          <Button
+            size="sm"
+            variant="success"
+            onClick={() => statusMut.mutate({ id: d.id, status: "DELIVERED" })}
+          >
+            Terkirim
+          </Button>
+        )}
+        {(d.status === "DRAFT" || d.status === "SHIPPED") && (
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={() => statusMut.mutate({ id: d.id, status: "CANCELLED" })}
+          >
+            Batal
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   const columns: Column<DeliveryNote>[] = [
     { key: "dnNumber", header: "No. Surat Jalan", render: (d) => d.dnNumber },
     { key: "status", header: "Status", render: (d) => <Badge tone={dnStatusTone[d.status]}>{d.status}</Badge> },
@@ -86,33 +116,7 @@ export function DeliveryNotesPage() {
             key: "actions",
             header: "",
             className: "cell-right",
-            render: (d: DeliveryNote) => (
-              <div className="row-actions">
-                {d.status === "DRAFT" && (
-                  <Button size="sm" onClick={() => statusMut.mutate({ id: d.id, status: "SHIPPED" })}>
-                    Kirim
-                  </Button>
-                )}
-                {d.status === "SHIPPED" && (
-                  <Button
-                    size="sm"
-                    variant="success"
-                    onClick={() => statusMut.mutate({ id: d.id, status: "DELIVERED" })}
-                  >
-                    Terkirim
-                  </Button>
-                )}
-                {(d.status === "DRAFT" || d.status === "SHIPPED") && (
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => statusMut.mutate({ id: d.id, status: "CANCELLED" })}
-                  >
-                    Batal
-                  </Button>
-                )}
-              </div>
-            ),
+            render: (d: DeliveryNote) => renderActions(d),
           },
         ]
       : []),
@@ -144,7 +148,33 @@ export function DeliveryNotesPage() {
 
       <ErrorText>{error && !open ? error : ""}</ErrorText>
 
-      <DataTable columns={columns} rows={data?.data ?? []} loading={isLoading} rowKey={(d) => d.id} />
+      <DataTable
+        columns={columns}
+        rows={data?.data ?? []}
+        loading={isLoading}
+        rowKey={(d) => d.id}
+        mobileCard={(d) => (
+          <div>
+            <div className="data-table__card-head">
+              <span className="data-table__card-title" title={d.dnNumber}>
+                {d.dnNumber}
+              </span>
+              <Badge tone={dnStatusTone[d.status]}>{d.status}</Badge>
+            </div>
+            <div className="data-table__card-sub">
+              <span>PO {d.po?.poNumber ?? "-"}</span>
+              <span>{d.items.length} item</span>
+            </div>
+            <div className="data-table__card-meta">
+              <span>{d.partner.name}</span>
+            </div>
+            <div className="delivery-page__card-footer">
+              <span>Tgl Kirim {formatDate(d.shipDate)}</span>
+              {canManage && (d.status === "DRAFT" || d.status === "SHIPPED") && renderActions(d)}
+            </div>
+          </div>
+        )}
+      />
       <Pagination meta={data?.meta} onPage={setPage} />
 
       <Modal

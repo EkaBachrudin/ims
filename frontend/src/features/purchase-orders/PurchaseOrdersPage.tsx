@@ -137,7 +137,37 @@ export function PurchaseOrdersPage() {
 
       <ErrorText>{error && !open ? error : ""}</ErrorText>
 
-      <DataTable columns={columns} rows={data?.data ?? []} loading={isLoading} rowKey={(po) => po.id} />
+      <DataTable
+        columns={columns}
+        rows={data?.data ?? []}
+        loading={isLoading}
+        rowKey={(po) => po.id}
+        mobileCard={(po) => (
+          <div>
+            <div className="data-table__card-head">
+              <Link
+                to={`/purchase-orders/${po.id}`}
+                className="po-page__card-link"
+                title={po.poNumber}
+              >
+                {po.poNumber}
+              </Link>
+              <Badge tone={poStatusTone[po.status as PoStatus]}>{po.status}</Badge>
+            </div>
+            <div className="data-table__card-sub">
+              {po.source === "AI_CHAT" ? <Badge tone="indigo">AI Chat</Badge> : <span>Web</span>}
+              <span>{po.items.length} item</span>
+            </div>
+            <div className="data-table__card-meta">
+              <span>{po.partner.name}</span>
+            </div>
+            <div className="po-page__card-footer">
+              <span>Target {formatDate(po.targetDate)}</span>
+              <span>Dibuat {formatDate(po.createdAt)}</span>
+            </div>
+          </div>
+        )}
+      />
       <Pagination meta={data?.meta} onPage={setPage} />
 
       <Modal

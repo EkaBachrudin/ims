@@ -106,6 +106,25 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
     });
   }
 
+  function renderActions(r: StockTransaction) {
+    return r.type === "ADJUSTMENT" ? (
+      <span className="txn-page__void-note">koreksi</span>
+    ) : (
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() => {
+          setError("");
+          setVoiding(r);
+        }}
+      >
+        Void
+      </Button>
+    );
+  }
+
+  const isVoid = (r: StockTransaction) => (r.notes ?? "").startsWith("VOID:");
+
   const columns: Column<StockTransaction>[] = [
     { key: "time", header: "Waktu", render: (r) => formatDateTime(r.createdAt) },
     { key: "product", header: "Produk", render: (r) => `${r.product.name} (${r.product.sku})` },
@@ -125,8 +144,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
     {
       key: "notes",
       header: "Catatan",
-      render: (r) =>
-        (r.notes ?? "").startsWith("VOID:") ? <Badge tone="yellow">void</Badge> : (r.notes ?? "-"),
+      render: (r) => (isVoid(r) ? <Badge tone="yellow">void</Badge> : (r.notes ?? "-")),
     },
     ...(canManage
       ? [
@@ -134,21 +152,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
             key: "actions",
             header: "",
             className: "cell-right",
-            render: (r: StockTransaction) =>
-              r.type === "ADJUSTMENT" ? (
-                <span className="txn-page__void-note">koreksi</span>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    setError("");
-                    setVoiding(r);
-                  }}
-                >
-                  Void
-                </Button>
-              ),
+            render: (r: StockTransaction) => renderActions(r),
           },
         ]
       : []),
@@ -164,7 +168,45 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
 
       <ErrorText>{error && !open ? error : ""}</ErrorText>
 
-      <DataTable columns={columns} rows={data?.data ?? []} loading={isLoading} rowKey={(r) => r.id} />
+      <DataTable
+        columns={columns}
+        rows={data?.data ?? []}
+        loading={isLoading}
+        rowKey={(r) => r.id}
+        mobileCard={(r) => (
+          <div>
+            <div className="data-table__card-head">
+              <span className="data-table__card-title" title={r.product.name}>
+                {r.product.name}
+              </span>
+              <span
+                className={[
+                  "txn-page__card-qty",
+                  type === "IN" ? "txn-page__card-qty--in" : "txn-page__card-qty--out",
+                ].join(" ")}
+              >
+                {type === "IN" ? "+" : "−"}
+                {r.quantity} {r.product.unit}
+              </span>
+            </div>
+            <div className="data-table__card-sub">
+              <span className="mono-xs">{r.product.sku}</span>
+              {isVoid(r) && <Badge tone="yellow">void</Badge>}
+            </div>
+            <div className="data-table__card-meta">
+              <span>{r.warehouse.name}</span>
+              <span>{r.partner?.name ?? "-"}</span>
+            </div>
+            {!isVoid(r) && r.notes && <p className="txn-page__card-note">{r.notes}</p>}
+            <div className="txn-page__card-footer">
+              <span>
+                {formatDateTime(r.createdAt)} · {r.createdBy.name}
+              </span>
+              {canManage && renderActions(r)}
+            </div>
+          </div>
+        )}
+      />
       <Pagination meta={data?.meta} onPage={setPage} />
 
       <Modal

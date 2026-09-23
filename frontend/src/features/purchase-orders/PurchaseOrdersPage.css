@@ -4,6 +4,14 @@
   @apply mb-3 max-w-[200px];
 }
 
+.po-page__card-link {
+  @apply min-w-0 flex-1 truncate text-sm font-medium text-accent hover:underline;
+}
+
+.po-page__card-footer {
+  @apply mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted-foreground;
+}
+
 .po-page__items-header {
   @apply mb-2 flex items-center justify-between;
 }

@@ -98,6 +98,31 @@ export function ReportsPage() {
             rows={stock.data ?? []}
             loading={stock.isLoading}
             rowKey={(r) => r.id}
+            mobileCard={(r) => (
+              <div>
+                <div className="data-table__card-head">
+                  <span className="data-table__card-title" title={r.name}>
+                    {r.name}
+                  </span>
+                  <Badge tone={r.lowStock ? "red" : "green"}>
+                    {r.lowStock ? "Kritis" : "Aman"}
+                  </Badge>
+                </div>
+                <div className="data-table__card-sub">
+                  <span className="mono-xs">{r.sku}</span>
+                  <span>{r.category.name}</span>
+                </div>
+                <div className="data-table__card-meta">
+                  <span>
+                    Stok{" "}
+                    <span className={r.lowStock ? "reports-page__stock--low" : undefined}>
+                      {r.stock} {r.unit}
+                    </span>
+                  </span>
+                  <span>Min {r.minStock}</span>
+                </div>
+              </div>
+            )}
           />
         </Card>
 

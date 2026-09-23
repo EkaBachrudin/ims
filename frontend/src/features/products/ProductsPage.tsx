@@ -114,6 +114,31 @@ export function ProductsPage() {
     else createMut.mutate(body);
   }
 
+  function renderActions(p: Product) {
+    return (
+      <div className="row-actions">
+        <Button
+          size="icon"
+          variant="secondary"
+          aria-label={`Ubah ${p.name}`}
+          title="Ubah"
+          onClick={() => openEdit(p)}
+        >
+          <PencilSimple size={16} />
+        </Button>
+        <Button
+          size="icon"
+          variant="danger-ghost"
+          aria-label={`Hapus ${p.name}`}
+          title="Hapus"
+          onClick={() => setDeleting(p)}
+        >
+          <Trash size={16} />
+        </Button>
+      </div>
+    );
+  }
+
   const columns: Column<Product>[] = [
     { key: "sku", header: "SKU", render: (p) => <span className="mono-xs">{p.sku}</span> },
     { key: "name", header: "Nama", render: (p) => p.name },
@@ -136,28 +161,7 @@ export function ProductsPage() {
             key: "actions",
             header: "",
             className: "cell-right",
-            render: (p: Product) => (
-              <div className="row-actions">
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  aria-label={`Ubah ${p.name}`}
-                  title="Ubah"
-                  onClick={() => openEdit(p)}
-                >
-                  <PencilSimple size={16} />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="danger-ghost"
-                  aria-label={`Hapus ${p.name}`}
-                  title="Hapus"
-                  onClick={() => setDeleting(p)}
-                >
-                  <Trash size={16} />
-                </Button>
-              </div>
-            ),
+            render: (p: Product) => renderActions(p),
           },
         ]
       : []),
@@ -212,7 +216,39 @@ export function ProductsPage() {
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
 
-      <DataTable columns={columns} rows={data?.data ?? []} loading={isLoading} rowKey={(p) => p.id} />
+      <DataTable
+        columns={columns}
+        rows={data?.data ?? []}
+        loading={isLoading}
+        rowKey={(p) => p.id}
+        mobileCard={(p) => (
+          <div>
+            <div className="data-table__card-head">
+              <span className="data-table__card-title" title={p.name}>
+                {p.name}
+              </span>
+              {canManage && renderActions(p)}
+            </div>
+            <div className="data-table__card-sub">
+              <span className="mono-xs">{p.sku}</span>
+              <Badge tone="slate">{p.category.name}</Badge>
+            </div>
+            <div className="data-table__card-meta">
+              <span>
+                Stok{" "}
+                <span
+                  className={p.stock <= p.minStock ? "products-page__stock--low" : "products-page__stock"}
+                >
+                  {p.stock}
+                </span>{" "}
+                {p.unit}
+              </span>
+              <span>Min {p.minStock}</span>
+              {p.stock <= p.minStock && <Badge tone="red">low</Badge>}
+            </div>
+          </div>
+        )}
+      />
       <Pagination meta={data?.meta} onPage={setPage} />
 
       <Modal

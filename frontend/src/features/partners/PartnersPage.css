@@ -3,3 +3,7 @@
 /* Root block for the partners page. */
 .partners-page {
 }
+
+.partners-page__card-address {
+  @apply mt-1 text-sm text-muted-foreground;
+}

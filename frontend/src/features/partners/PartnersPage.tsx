@@ -102,6 +102,31 @@ export function PartnersPage() {
     else createMut.mutate(body);
   }
 
+  function renderActions(p: Partner) {
+    return (
+      <div className="row-actions">
+        <Button
+          size="icon"
+          variant="secondary"
+          aria-label={`Ubah ${p.name}`}
+          title="Ubah"
+          onClick={() => openEdit(p)}
+        >
+          <PencilSimple size={16} />
+        </Button>
+        <Button
+          size="icon"
+          variant="danger-ghost"
+          aria-label={`Hapus ${p.name}`}
+          title="Hapus"
+          onClick={() => setDeleting(p)}
+        >
+          <Trash size={16} />
+        </Button>
+      </div>
+    );
+  }
+
   const columns: Column<Partner>[] = [
     { key: "name", header: "Nama", render: (p) => p.name },
     {
@@ -122,28 +147,7 @@ export function PartnersPage() {
             key: "actions",
             header: "",
             className: "cell-right",
-            render: (p: Partner) => (
-              <div className="row-actions">
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  aria-label={`Ubah ${p.name}`}
-                  title="Ubah"
-                  onClick={() => openEdit(p)}
-                >
-                  <PencilSimple size={16} />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="danger-ghost"
-                  aria-label={`Hapus ${p.name}`}
-                  title="Hapus"
-                  onClick={() => setDeleting(p)}
-                >
-                  <Trash size={16} />
-                </Button>
-              </div>
-            ),
+            render: (p: Partner) => renderActions(p),
           },
         ]
       : []),
@@ -184,7 +188,32 @@ export function PartnersPage() {
 
       <ErrorText>{error && !creating && !editing ? error : ""}</ErrorText>
 
-      <DataTable columns={columns} rows={data?.data ?? []} loading={isLoading} rowKey={(p) => p.id} />
+      <DataTable
+        columns={columns}
+        rows={data?.data ?? []}
+        loading={isLoading}
+        rowKey={(p) => p.id}
+        mobileCard={(p) => (
+          <div>
+            <div className="data-table__card-head">
+              <span className="data-table__card-title" title={p.name}>
+                {p.name}
+              </span>
+              {canManage && renderActions(p)}
+            </div>
+            <div className="data-table__card-sub">
+              <Badge tone={p.type === "SUPPLIER" ? "blue" : "indigo"}>
+                {p.type === "SUPPLIER" ? "Supplier" : "Customer"}
+              </Badge>
+            </div>
+            <div className="data-table__card-meta">
+              <span>Telp: {p.phone ?? "-"}</span>
+              <span>Email: {p.email ?? "-"}</span>
+            </div>
+            <p className="partners-page__card-address">{p.address ?? "-"}</p>
+          </div>
+        )}
+      />
       <Pagination meta={data?.meta} onPage={setPage} />
 
       <Modal

@@ -86,6 +86,105 @@ describe("Stock transactions", () => {
   });
 });
 
+describe("PO receipt reconciliation (FR-04.3/FR-04.7)", () => {
+  it("IN bertaut PO menambah stok dan menutup PO saat penuh", async () => {
+    const created = await request(app)
+      .post("/api/po")
+      .set(auth())
+      .send({
+        partnerId: base.supplier.id,
+        warehouseId: base.warehouse.id,
+        items: [{ productId: base.product.id, quantity: 12 }],
+      });
+    const poId = created.body.data.id;
+    await request(app).post(`/api/po/${poId}/confirm`).set(auth());
+
+    const res = await request(app)
+      .post("/api/transactions/inbound")
+      .set(auth())
+      .send({
+        productId: base.product.id,
+        warehouseId: base.warehouse.id,
+        quantity: 12,
+        purchaseOrderId: poId,
+      });
+
+    expect(res.status).toBe(201);
+    const po = await prisma.purchaseOrder.findUniqueOrThrow({ where: { id: poId } });
+    expect(po.status).toBe("COMPLETED");
+  });
+
+  it("penerimaan sebagian tetap CONFIRMED dan menampilkan sisa", async () => {
+    const created = await request(app)
+      .post("/api/po")
+      .set(auth())
+      .send({
+        partnerId: base.supplier.id,
+        warehouseId: base.warehouse.id,
+        items: [{ productId: base.product.id, quantity: 10 }],
+      });
+    const poId = created.body.data.id;
+    await request(app).post(`/api/po/${poId}/confirm`).set(auth());
+
+    await request(app)
+      .post("/api/transactions/inbound")
+      .set(auth())
+      .send({ productId: base.product.id, warehouseId: base.warehouse.id, quantity: 4, purchaseOrderId: poId });
+
+    const detail = await request(app).get(`/api/po/${poId}`).set(auth());
+    expect(detail.body.data.status).toBe("CONFIRMED");
+    expect(detail.body.data.items[0].receivedQuantity).toBe(4);
+    expect(detail.body.data.items[0].remainingQuantity).toBe(6);
+  });
+
+  it("menolak penerimaan melebihi sisa pesanan (422)", async () => {
+    const created = await request(app)
+      .post("/api/po")
+      .set(auth())
+      .send({
+        partnerId: base.supplier.id,
+        warehouseId: base.warehouse.id,
+        items: [{ productId: base.product.id, quantity: 5 }],
+      });
+    const poId = created.body.data.id;
+    await request(app).post(`/api/po/${poId}/confirm`).set(auth());
+
+    const res = await request(app)
+      .post("/api/transactions/inbound")
+      .set(auth())
+      .send({ productId: base.product.id, warehouseId: base.warehouse.id, quantity: 6, purchaseOrderId: poId });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe("UNPROCESSABLE");
+  });
+
+  it("void IN membuka kembali PO COMPLETED", async () => {
+    const created = await request(app)
+      .post("/api/po")
+      .set(auth())
+      .send({
+        partnerId: base.supplier.id,
+        warehouseId: base.warehouse.id,
+        items: [{ productId: base.product.id, quantity: 8 }],
+      });
+    const poId = created.body.data.id;
+    await request(app).post(`/api/po/${poId}/confirm`).set(auth());
+
+    const inbound = await request(app)
+      .post("/api/transactions/inbound")
+      .set(auth())
+      .send({ productId: base.product.id, warehouseId: base.warehouse.id, quantity: 8, purchaseOrderId: poId });
+
+    await request(app)
+      .post(`/api/transactions/${inbound.body.data.id}/void`)
+      .set(auth())
+      .send({ reason: "salah input" });
+
+    const po = await prisma.purchaseOrder.findUniqueOrThrow({ where: { id: poId } });
+    expect(po.status).toBe("CONFIRMED");
+  });
+});
+
 describe("Reports (AC-06)", () => {
   it("lookup stok berdasarkan nama mengembalikan angka dari DB", async () => {
     const product = await prisma.product.findUniqueOrThrow({ where: { id: base.product.id } });

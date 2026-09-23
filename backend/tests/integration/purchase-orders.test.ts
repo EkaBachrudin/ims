@@ -32,7 +32,7 @@ describe("Purchase Order lifecycle (AC-07..AC-12)", () => {
       .post("/api/po")
       .set(admin())
       .send({
-        partnerId: base.partner.id,
+        partnerId: base.supplier.id,
         warehouseId: base.warehouse.id,
         items: [{ productId: base.product.id, quantity: 10 }],
       });
@@ -47,7 +47,7 @@ describe("Purchase Order lifecycle (AC-07..AC-12)", () => {
     const created = await request(app)
       .post("/api/po")
       .set(admin())
-      .send({ partnerId: base.partner.id, items: [{ productId: base.product.id, quantity: 5 }] });
+      .send({ partnerId: base.supplier.id, items: [{ productId: base.product.id, quantity: 5 }] });
 
     const id = created.body.data.id;
     const confirm = await request(app).post(`/api/po/${id}/confirm`).set(admin());
@@ -64,7 +64,7 @@ describe("Purchase Order lifecycle (AC-07..AC-12)", () => {
       .post("/api/po/draft")
       .set("x-internal-key", INTERNAL_KEY)
       .send({
-        partnerName: "PT Test Jaya",
+        partnerName: "CV Test Sumber",
         chatId: "900001",
         items: [{ productName: "Dimsum", qty: 50 }],
       });
@@ -82,7 +82,7 @@ describe("Purchase Order lifecycle (AC-07..AC-12)", () => {
     const res = await request(app)
       .post("/api/po/draft")
       .set("x-internal-key", INTERNAL_KEY)
-      .send({ partnerName: "PT Test Jaya", chatId: "000000", items: [{ productName: "Dimsum", qty: 1 }] });
+      .send({ partnerName: "CV Test Sumber", chatId: "000000", items: [{ productName: "Dimsum", qty: 1 }] });
     expect(res.status).toBe(403);
   });
 
@@ -90,7 +90,7 @@ describe("Purchase Order lifecycle (AC-07..AC-12)", () => {
     const created = await request(app)
       .post("/api/po")
       .set(admin())
-      .send({ partnerId: base.partner.id, items: [{ productId: base.product.id, quantity: 3 }] });
+      .send({ partnerId: base.supplier.id, items: [{ productId: base.product.id, quantity: 3 }] });
     const id = created.body.data.id;
 
     const del = await request(app).delete(`/api/po/${id}`).set(admin());
@@ -106,74 +106,74 @@ describe("Purchase Order lifecycle (AC-07..AC-12)", () => {
     const created = await request(app)
       .post("/api/po")
       .set(admin())
-      .send({ partnerId: base.partner.id, items: [{ productId: base.product.id, quantity: 2 }] });
+      .send({ partnerId: base.supplier.id, items: [{ productId: base.product.id, quantity: 2 }] });
     const id = created.body.data.id;
     await request(app).post(`/api/po/${id}/confirm`).set(admin());
 
     const del = await request(app).delete(`/api/po/${id}`).set(admin());
     expect(del.status).toBe(409);
   });
-});
 
-describe("Delivery Note (AC-14)", () => {
-  it("membuat DN dari PO CONFIRMED", async () => {
-    const created = await request(app)
+  it("menolak PO dengan partner non-supplier", async () => {
+    const res = await request(app)
       .post("/api/po")
       .set(admin())
       .send({
         partnerId: base.partner.id,
-        warehouseId: base.warehouse.id,
-        items: [{ productId: base.product.id, quantity: 4 }],
+        items: [{ productId: base.product.id, quantity: 1 }],
       });
-    const poId = created.body.data.id;
-    await request(app).post(`/api/po/${poId}/confirm`).set(admin());
 
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe("UNPROCESSABLE");
+  });
+});
+
+describe("Delivery Note (AC-14)", () => {
+  it("membuat DN standalone untuk customer", async () => {
     const dn = await request(app)
       .post("/api/delivery-notes")
       .set(admin())
-      .send({ poId, shipDate: new Date().toISOString() });
+      .send({
+        partnerId: base.partner.id,
+        warehouseId: base.warehouse.id,
+        shipDate: new Date().toISOString(),
+        items: [{ productId: base.product.id, quantity: 4 }],
+      });
 
     expect(dn.status).toBe(201);
     expect(dn.body.data.dnNumber).toMatch(/^SJ-\d{6}-\d{3}$/);
     expect(dn.body.data.status).toBe("DRAFT");
+    expect(dn.body.data.po).toBeNull();
     expect(dn.body.data.items).toHaveLength(1);
   });
 
-  it("menolak DN dari PO DRAFT", async () => {
-    const created = await request(app)
-      .post("/api/po")
-      .set(admin())
-      .send({
-        partnerId: base.partner.id,
-        warehouseId: base.warehouse.id,
-        items: [{ productId: base.product.id, quantity: 4 }],
-      });
-
-    const dn = await request(app)
+  it("menolak DN dengan partner non-customer", async () => {
+    const res = await request(app)
       .post("/api/delivery-notes")
       .set(admin())
-      .send({ poId: created.body.data.id, shipDate: new Date().toISOString() });
+      .send({
+        partnerId: base.supplier.id,
+        warehouseId: base.warehouse.id,
+        shipDate: new Date().toISOString(),
+        items: [{ productId: base.product.id, quantity: 1 }],
+      });
 
-    expect(dn.status).toBe(409);
-    expect(dn.body.error.code).toBe("INVALID_STATE");
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe("UNPROCESSABLE");
   });
 
   it("DRAFT -> SHIPPED membuat transaksi OUT otomatis (FR-07.4)", async () => {
     const before = await prisma.product.findUniqueOrThrow({ where: { id: base.product.id } });
 
-    const created = await request(app)
-      .post("/api/po")
+    const dn = await request(app)
+      .post("/api/delivery-notes")
       .set(admin())
       .send({
         partnerId: base.partner.id,
         warehouseId: base.warehouse.id,
+        shipDate: new Date().toISOString(),
         items: [{ productId: base.product.id, quantity: 7 }],
       });
-    await request(app).post(`/api/po/${created.body.data.id}/confirm`).set(admin());
-    const dn = await request(app)
-      .post("/api/delivery-notes")
-      .set(admin())
-      .send({ poId: created.body.data.id, shipDate: new Date().toISOString() });
 
     const ship = await request(app)
       .patch(`/api/delivery-notes/${dn.body.data.id}`)

@@ -54,8 +54,8 @@ Proyek ini menghadirkan **WMS berbasis web** untuk staf admin gudang, yang dihub
 
 - **Master Data**: Produk (SKU, unit, kategori), Kategori, Partner (Supplier/Customer), Gudang (multi-gudang).
 - **Transaksi Inventori**: Barang masuk (inbound) & barang keluar (outbound) dengan **stok dihitung otomatis**.
-- **Purchase Order (PO)**: Alur `DRAFT → CONFIRMED → COMPLETED / CANCELLED`, penomoran otomatis.
-- **Surat Jalan (Delivery Note)**: Dibuat dari PO, siap cetak/ekspor.
+- **Purchase Order (PO)**: Alur `DRAFT → CONFIRMED → COMPLETED / CANCELLED`, penomoran otomatis, dan realisasi penerimaan (IN) tertaut PO (auto-complete saat penuh).
+- **Surat Jalan (Delivery Note)**: Pengiriman mandiri ke partner `CUSTOMER`, siap cetak/ekspor.
 - **Dashboard & Laporan**: Ringkasan stok, transaksi harian, low-stock alert, rekap pengiriman.
 - **Autentikasi & RBAC**: Peran `SUPER_ADMIN`, `ADMIN`, `OWNER`.
 - **Audit Log**: Jejak perubahan data penting.
@@ -64,7 +64,7 @@ Proyek ini menghadirkan **WMS berbasis web** untuk staf admin gudang, yang dihub
 
 - **Cek stok** — _"Berapa sisa stok Dimsum Ayam Ukuran Sedang?"_
 - **Rekap pengiriman** — _"Kemarin tanggal 20 kita kirim ke mana saja?"_
-- **Buat draft PO** — _"Besok siapkan PO untuk PT Maju Jaya isinya 50 pack Dimsum."_
+- **Buat draft PO** — _"Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum."_
 - **Tanya SOP/knowledge** (RAG) — _"Apa SOP penerimaan barang retur?"_
 - **Anti-halusinasi** — jawaban hanya dari data perusahaan/konteks RAG, bukan pengetahuan umum.
 - **Intent-to-action** — perintah chat dapat memicu pembuatan draft PO di sistem.
@@ -229,8 +229,8 @@ Bot   : Pengiriman 20 Sep:
         - PT Maju Jaya: 50x Dimsum Ayam Ukuran Sedang
         - Toko Berkah: 30x Nugget Ayam
 
-Owner : Besok siapkan PO untuk PT Maju Jaya isinya 50 pack Dimsum.
-Bot   : Draft PO PO-202609-001 untuk PT Maju Jaya (50 pack Dimsum) sudah
+Owner : Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum.
+Bot   : Draft PO PO-202609-001 untuk CV Sumber Frozen (50 pack Dimsum) sudah
         dibuat dengan status DRAFT. Silakan konfirmasi di aplikasi web.
 
 Owner : Apa SOP penerimaan barang retur?

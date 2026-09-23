@@ -42,6 +42,5 @@ purchaseOrdersRouter.patch(
 // Aksi lifecycle hanya untuk Admin/Super Admin (Owner hanya draft via chat/web).
 const adminOnly = requireRole("SUPER_ADMIN", "ADMIN");
 purchaseOrdersRouter.post("/:id/confirm", adminOnly, validate(idParamSchema), asyncHandler(controller.confirm));
-purchaseOrdersRouter.post("/:id/complete", adminOnly, validate(idParamSchema), asyncHandler(controller.complete));
 purchaseOrdersRouter.post("/:id/cancel", adminOnly, validate(idParamSchema), asyncHandler(controller.cancel));
 purchaseOrdersRouter.delete("/:id", adminOnly, validate(idParamSchema), asyncHandler(controller.remove));

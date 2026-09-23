@@ -72,6 +72,12 @@ export async function createDn(
   if (!warehouseId) throw Errors.unprocessable("warehouseId wajib diisi (atau isi PO dengan gudang)");
   if (!items?.length) throw Errors.unprocessable("Item Surat Jalan kosong");
 
+  const partner = await prisma.partner.findUnique({ where: { id: partnerId } });
+  if (!partner) throw Errors.notFound("Partner");
+  if (partner.type !== "CUSTOMER") {
+    throw Errors.unprocessable("Surat Jalan hanya untuk partner bertipe CUSTOMER");
+  }
+
   const dn = await prisma.$transaction(async (tx) => {
     const dnNumber = await generateDnNumber(tx, new Date());
     return tx.deliveryNote.create({

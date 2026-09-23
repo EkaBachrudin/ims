@@ -32,10 +32,6 @@ export async function confirm(req: Request, res: Response) {
   res.json({ success: true, data: await service.confirmPo(req.params.id, req.user?.id, clientIp(req)) });
 }
 
-export async function complete(req: Request, res: Response) {
-  res.json({ success: true, data: await service.completePo(req.params.id, req.user?.id, clientIp(req)) });
-}
-
 export async function cancel(req: Request, res: Response) {
   res.json({ success: true, data: await service.cancelPo(req.params.id, req.user?.id, clientIp(req)) });
 }

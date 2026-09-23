@@ -8,6 +8,30 @@
   @apply mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted-foreground;
 }
 
+.delivery-page__items-header {
+  @apply mb-2 flex items-center justify-between;
+}
+
+.delivery-page__items-title {
+  @apply text-sm font-medium text-foreground;
+}
+
+.delivery-page__items {
+  @apply space-y-2;
+}
+
+.delivery-page__item {
+  @apply flex gap-2;
+}
+
+.delivery-page__item-product {
+  @apply flex-1;
+}
+
+.delivery-page__item-qty {
+  @apply w-24;
+}
+
 .delivery-page__warning {
   @apply text-xs text-warning;
 }

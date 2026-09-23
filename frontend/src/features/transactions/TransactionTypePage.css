@@ -28,6 +28,10 @@
   @apply mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted-foreground;
 }
 
+.txn-page__po-hint {
+  @apply -mt-1 text-sm text-muted-foreground;
+}
+
 .txn-page__void-note {
   @apply text-xs text-muted-foreground;
 }

@@ -24,7 +24,7 @@ const shipmentSchema = z.object({
 type ShipmentInput = z.infer<typeof shipmentSchema>;
 
 const poSchema = z.object({
-  partnerName: z.string().describe("Nama PT/Customer, mis. 'PT Maju Jaya'"),
+  partnerName: z.string().describe("Nama supplier, mis. 'CV Sumber Frozen'"),
   items: z
     .array(z.object({ productName: z.string(), qty: z.number().int().positive() }))
     .min(1)

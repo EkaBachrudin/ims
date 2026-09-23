@@ -80,7 +80,6 @@ export const poApi = {
   create: (body: unknown) => unwrap<PurchaseOrder>(api.post("/po", body)),
   update: (id: string, body: unknown) => unwrap<PurchaseOrder>(api.patch(`/po/${id}`, body)),
   confirm: (id: string) => unwrap<PurchaseOrder>(api.post(`/po/${id}/confirm`)),
-  complete: (id: string) => unwrap<PurchaseOrder>(api.post(`/po/${id}/complete`)),
   cancel: (id: string) => unwrap<PurchaseOrder>(api.post(`/po/${id}/cancel`)),
   remove: (id: string) => api.delete(`/po/${id}`),
 };

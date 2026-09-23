@@ -63,8 +63,9 @@ export async function seedBaseline() {
     data: { productId: product.id, warehouseId: warehouse.id, quantity: 100 },
   });
   const partner = await prisma.partner.create({ data: { name: "PT Test Jaya", type: "CUSTOMER" } });
+  const supplier = await prisma.partner.create({ data: { name: "CV Test Sumber", type: "SUPPLIER" } });
 
-  return { admin, owner, superAdmin, warehouse, category, product, partner, passwordHash };
+  return { admin, owner, superAdmin, warehouse, category, product, partner, supplier, passwordHash };
 }
 
 export async function loginAs(email: string, password = "password123") {

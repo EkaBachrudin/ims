@@ -17,7 +17,7 @@ export function createBot(): Telegraf {
       "Halo Bos! 👋 Saya Asisten Gudang.\n\nCoba tanyakan:\n" +
         "• \"Berapa sisa stok dimsum ukuran sedang?\"\n" +
         "• \"Kemarin kita kirim ke mana saja?\"\n" +
-        "• \"Besok siapkan PO untuk PT Maju Jaya isinya 50 pack Dimsum\"\n" +
+        "• \"Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum\"\n" +
         "• \"Apa SOP penerimaan barang retur?\"",
     );
   });

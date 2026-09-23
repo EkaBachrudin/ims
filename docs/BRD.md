@@ -31,7 +31,7 @@
 | Term        | Definition                                                                                   |
 | :---------- | :------------------------------------------------------------------------------------------- |
 | **WMS**     | Warehouse Management System — sistem tata kelola gudang (barang masuk, keluar, stok).        |
-| **PO**      | Purchase Order — dokumen pesanan pembelian/pengiriman.                                        |
+| **PO**      | Purchase Order — dokumen pesanan pembelian ke supplier (barang masuk).                        |
 | **Surat Jalan** | Delivery Note — dokumen yang menyertai pengiriman barang ke customer.                     |
 | **RAG**     | Retrieval-Augmented Generation — arsitektur AI yang membatasi jawaban pada data perusahaan.   |
 | **FMCG**    | Fast-Moving Consumer Goods — barang dengan perputaran cepat (contoh: frozen food).            |
@@ -193,7 +193,7 @@ flowchart LR
 | BR-RULE-002 | Transaksi OUT tidak boleh melebihi stok tersedia kecuali disetujui (backorder/negatif stok dinonaktifkan pada MVP).   |
 | BR-RULE-003 | Setiap PO memiliki nomor unik yang digenerate otomatis (contoh: `PO-202609-001`).                                       |
 | BR-RULE-004 | PO yang dibuat via chat AI selalu berstatus `DRAFT` dan wajib dikonfirmasi admin sebelum menjadi `CONFIRMED`.           |
-| BR-RULE-005 | Surat Jalan hanya dapat dibuat dari PO berstatus `CONFIRMED` atau `COMPLETED`.                                          |
+| BR-RULE-005 | Purchase Order hanya untuk partner `SUPPLIER`; Surat Jalan hanya untuk partner `CUSTOMER` dan dibuat mandiri.           |
 | BR-RULE-006 | Penghapusan PO hanya diizinkan saat berstatus `DRAFT`; item terkait terhapus otomatis (cascade).                        |
 | BR-RULE-007 | AI dilarang mengeksekusi query SQL langsung; semua akses data melalui tools/API yang tervalidasi.                      |
 | BR-RULE-008 | Transaksi dan dokumen dapat dicatat untuk lebih dari satu gudang (warehouse).                                            |

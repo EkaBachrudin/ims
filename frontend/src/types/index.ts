@@ -87,6 +87,8 @@ export interface StockTransaction {
   product: { id: string; sku: string; name: string; unit: string };
   warehouse: { id: string; code: string; name: string };
   partner: { id: string; name: string } | null;
+  purchaseOrder?: { id: string; poNumber: string } | null;
+  deliveryNote?: { id: string; dnNumber: string } | null;
   createdBy: { id: string; name: string };
 }
 
@@ -99,6 +101,8 @@ export interface PurchaseOrderItem {
   unitPrice: string | number | null;
   productId: string;
   product: { id: string; sku: string; name: string; unit: string };
+  receivedQuantity?: number;
+  remainingQuantity?: number;
 }
 
 export interface PurchaseOrder {

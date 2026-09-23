@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "@phosphor-icons/react";
-import { dnApi, poApi } from "@/api/endpoints";
+import { poApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useCanManage } from "@/lib/roles";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorText } from "@/components/ui/Input";
 import { Badge, Card, PageHeader, Spinner } from "@/components/ui/Card";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { formatCurrency, formatDate, poStatusTone, todayInput } from "@/lib/format";
+import { formatCurrency, formatDate, poStatusTone } from "@/lib/format";
 import "./PurchaseOrderDetailPage.css";
 
 export function PurchaseOrderDetailPage() {
@@ -18,9 +18,8 @@ export function PurchaseOrderDetailPage() {
   const canManage = useCanManage();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [confirmAction, setConfirmAction] = useState<null | "confirm" | "complete" | "cancel" | "delete">(null);
+  const [confirmAction, setConfirmAction] = useState<null | "confirm" | "cancel" | "delete">(null);
   const [error, setError] = useState("");
-  const [dnLoading, setDnLoading] = useState(false);
 
   const { data: po, isLoading } = useQuery({
     queryKey: qk.purchaseOrders.detail(id),
@@ -34,9 +33,8 @@ export function PurchaseOrderDetailPage() {
   };
 
   const actionMut = useMutation({
-    mutationFn: async (action: "confirm" | "complete" | "cancel" | "delete") => {
+    mutationFn: async (action: "confirm" | "cancel" | "delete") => {
       if (action === "confirm") return poApi.confirm(id);
-      if (action === "complete") return poApi.complete(id);
       if (action === "cancel") return poApi.cancel(id);
       return poApi.remove(id);
     },
@@ -48,31 +46,10 @@ export function PurchaseOrderDetailPage() {
     onError: (e) => setError(errorMessage(e)),
   });
 
-  async function createDeliveryNote() {
-    if (!po) return;
-    setError("");
-    setDnLoading(true);
-    try {
-      const dn = await dnApi.create({
-        poId: po.id,
-        shipDate: todayInput(),
-        notes: `Dari PO ${po.poNumber}`,
-      });
-      qc.invalidateQueries({ queryKey: qk.deliveryNotes.all });
-      navigate(`/delivery-notes`);
-      void dn;
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setDnLoading(false);
-    }
-  }
-
   if (isLoading || !po) return <Spinner />;
 
   const messages: Record<string, string> = {
     confirm: `Konfirmasi PO ${po.poNumber}? Status menjadi CONFIRMED.`,
-    complete: `Tandai PO ${po.poNumber} sebagai COMPLETED?`,
     cancel: `Batalkan PO ${po.poNumber}? Tindakan ini final.`,
     delete: `Hapus draft PO ${po.poNumber}? Item ikut terhapus.`,
   };
@@ -124,7 +101,9 @@ export function PurchaseOrderDetailPage() {
             <thead className="po-detail-page__thead">
               <tr>
                 <th className="po-detail-page__th">Produk</th>
-                <th className="po-detail-page__th">Qty</th>
+                <th className="po-detail-page__th">Dipesan</th>
+                <th className="po-detail-page__th">Diterima</th>
+                <th className="po-detail-page__th">Sisa</th>
                 <th className="po-detail-page__th">Harga</th>
               </tr>
             </thead>
@@ -136,6 +115,12 @@ export function PurchaseOrderDetailPage() {
                   </td>
                   <td className="po-detail-page__td">
                     {item.quantity} {item.product.unit}
+                  </td>
+                  <td className="po-detail-page__td">
+                    {item.receivedQuantity ?? 0} {item.product.unit}
+                  </td>
+                  <td className="po-detail-page__td">
+                    {item.remainingQuantity ?? item.quantity} {item.product.unit}
                   </td>
                   <td className="po-detail-page__td">{formatCurrency(item.unitPrice)}</td>
                 </tr>
@@ -172,11 +157,13 @@ export function PurchaseOrderDetailPage() {
             )}
             {po.status === "CONFIRMED" && (
               <>
-                <Button className="po-detail-page__action" variant="success" onClick={() => setConfirmAction("complete")} disabled={!canManage}>
-                  Tandai Selesai
-                </Button>
-                <Button className="po-detail-page__action" variant="secondary" loading={dnLoading} onClick={createDeliveryNote} disabled={!canManage}>
-                  Buat Surat Jalan
+                <Button
+                  className="po-detail-page__action"
+                  variant="success"
+                  onClick={() => navigate(`/inbound?po=${po.id}`)}
+                  disabled={!canManage}
+                >
+                  Terima Barang
                 </Button>
                 <Button
                   className="po-detail-page__action"
@@ -187,11 +174,6 @@ export function PurchaseOrderDetailPage() {
                   Batalkan
                 </Button>
               </>
-            )}
-            {po.status === "COMPLETED" && (
-              <Button className="po-detail-page__action" variant="secondary" loading={dnLoading} onClick={createDeliveryNote} disabled={!canManage}>
-                Buat Surat Jalan
-              </Button>
             )}
             {(po.status === "COMPLETED" || po.status === "CANCELLED") && (
               <p className="po-detail-page__note">Tidak ada aksi lanjutan untuk status ini.</p>

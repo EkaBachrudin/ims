@@ -80,7 +80,7 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant FE as Web Dashboard
 
-    Owner->>TG: "Besok siapkan PO untuk PT Maju Jaya isinya 50 pack Dimsum"
+    Owner->>TG: "Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum"
     TG->>AI: Webhook message
     AI->>AI: Intent routing (buat_draft_po)
     AI->>BE: POST /api/po/draft {partnerName, productName, qty}
@@ -170,10 +170,12 @@ sequenceDiagram
 | :------- | :-------------------------------------------------------------------------------------------- | :------- |
 | FR-04.1  | Admin dapat mencatat transaksi barang masuk (produk, qty, warehouse, catatan, tanggal).        | Must     |
 | FR-04.2  | Setiap transaksi masuk menambah `Product.stock` secara otomatis.                               | Must     |
-| FR-04.3  | Transaksi masuk dapat dikaitkan ke sebuah PO supplier (opsional).                              | Should   |
+| FR-04.3  | Transaksi masuk dapat dikaitkan ke sebuah PO supplier berstatus `CONFIRMED` (opsional).        | Should   |
 | FR-04.4  | Sistem menolak qty ≤ 0.                                                                        | Must     |
 | FR-04.5  | Sistem mencatat `createdById` & timestamp.                                                     | Must     |
 | FR-04.6  | Admin dapat membatalkan (void) transaksi dengan alasan, dan stok dikoreksi (soft reversal).    | Should   |
+| FR-04.7  | Sistem menolak penerimaan yang melebihi sisa pesanan PO (over-receipt).                        | Must     |
+| FR-04.8  | PO otomatis menjadi `COMPLETED` saat seluruh item terpenuhi; kembali `CONFIRMED` bila void.     | Should   |
 
 ### FR-05 — Outbound (Barang Keluar)
 
@@ -194,7 +196,7 @@ sequenceDiagram
 | FR-06.3  | PO baru berstatus `DRAFT`.                                                                      | Must     |
 | FR-06.4  | Admin dapat mengubah PO saat `DRAFT` (termasuk item).                                           | Must     |
 | FR-06.5  | Admin dapat mengonfirmasi PO → `CONFIRMED`.                                                     | Must     |
-| FR-06.6  | Admin dapat menandai PO `COMPLETED` setelah barang diproses.                                    | Must     |
+| FR-06.6  | PO otomatis menjadi `COMPLETED` saat seluruh item diterima via Barang Masuk (tanpa aksi selesai manual). | Must     |
 | FR-06.7  | Admin dapat membatalkan PO → `CANCELLED`.                                                       | Must     |
 | FR-06.8  | Sistem hanya mengizinkan penghapusan PO saat `DRAFT` (cascade item).                            | Must     |
 | FR-06.9  | AI dapat membuat PO `DRAFT` dari instruksi bahasa natural (lihat FR-08).                        | Must     |
@@ -205,7 +207,7 @@ sequenceDiagram
 
 | ID       | Requirement                                                                                   | Priority |
 | :------- | :-------------------------------------------------------------------------------------------- | :------- |
-| FR-07.1  | Admin dapat membuat Surat Jalan dari PO berstatus `CONFIRMED`/`COMPLETED`.                      | Should   |
+| FR-07.1  | Admin dapat membuat Surat Jalan untuk partner bertipe `CUSTOMER` secara mandiri (tanpa PO).      | Must     |
 | FR-07.2  | Sistem men-generate nomor Surat Jalan unik.                                                     | Should   |
 | FR-07.3  | Surat Jalan berisi partner, daftar item, qty, dan tanggal kirim.                                | Should   |
 | FR-07.4  | Konfirmasi Surat Jalan membuat transaksi OUT otomatis (opsional, sesuai konfigurasi).            | Could    |
@@ -236,7 +238,7 @@ sequenceDiagram
 | :------------------- | :----------------------------------------------------------------- | :---------------- | :------------------------------ |
 | Check stock          | "Ada berapa sisa stok dimsum ukuran sedang?"                        | `cek_stok_barang` | GET produk + stock              |
 | Daily shipment recap | "Kemarin tgl 20 kita kirim kemana aja?"                            | `rekap_pengiriman`| GET transaksi OUT by date       |
-| Create PO draft      | "Besok siapkan PO untuk PT Maju Jaya isinya 50 pack Dimsum"        | `buat_draft_po`   | POST draft PO                   |
+| Create PO draft      | "Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum"    | `buat_draft_po`   | POST draft PO (partner supplier)|
 | SOP / knowledge       | "Apa SOP penerimaan barang retur?"                                 | `cari_sop`        | Retrieval top-K `document_chunks` (read-only) |
 
 ### FR-09 — Dashboard & Reporting
@@ -278,7 +280,7 @@ sequenceDiagram
 | :------------- | :------------------------------------------------------------------ |
 | **Actor**      | Owner                                                               |
 | **Precondition** | Partner & Product sudah ada di master data.                       |
-| **Trigger**    | "Besok siapkan PO untuk PT Maju Jaya isinya 50 pack Dimsum"         |
+    | **Trigger**    | "Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum"     |
 | **Main Flow**  | 1. AI parse intent & parameter → 2. Panggil `buat_draft_po` → 3. Backend validasi & insert PO `DRAFT` → 4. AI konfirmasi ke chat. |
 | **Alternate**  | Partner/Product tidak ditemukan → AI informasikan kegagalan.        |
 | **Postcondition** | Draft PO muncul di dashboard admin.                               |
@@ -290,7 +292,7 @@ sequenceDiagram
 | **Actor**      | Warehouse Admin                                                     |
 | **Precondition** | Login & produk tersedia.                                         |
 | **Trigger**    | Admin membuka form transaksi.                                       |
-| **Main Flow**  | 1. Pilih produk & gudang → 2. Input qty & catatan → 3. Submit → 4. Sistem update stok → 5. TanStack Query invalidate → tabel stok refresh. |
+| **Main Flow**  | 1. (Inbound) pilih PO supplier opsional → produk & gudang → 2. Input qty & catatan → 3. Submit → 4. Sistem update stok (dan sinkron status PO) → 5. TanStack Query invalidate → tabel stok refresh. |
 | **Alternate**  | Qty melebihi stok (OUT) → sistem menolak dengan pesan error.        |
 | **Postcondition** | Stok ter-update, transaksi tercatat.                              |
 
@@ -302,7 +304,7 @@ sequenceDiagram
 | **Precondition** | Terdapat PO `DRAFT` (mungkin dari AI).                            |
 | **Trigger**    | Admin membuka halaman PO.                                           |
 | **Main Flow**  | 1. Lihat draft PO → 2. Verifikasi item → 3. Klik Confirm → 4. Status `CONFIRMED`. |
-| **Postcondition** | PO siap dibuatkan Surat Jalan.                                    |
+| **Postcondition** | PO siap direalisasikan penerimaannya (barang masuk) oleh gudang.  |
 
 ---
 
@@ -320,8 +322,8 @@ sequenceDiagram
 | S-08  | Inbound Transactions   | `/inbound`                | Tabel transaksi masuk + form input.                      |
 | S-09  | Outbound Transactions  | `/outbound`               | Tabel transaksi keluar + form input.                     |
 | S-10  | Purchase Order List    | `/purchase-orders`        | Tabel + filter status; highlight draft dari AI.           |
-| S-11  | Purchase Order Detail  | `/purchase-orders/:id`    | Header + item; aksi confirm/complete/cancel/print.        |
-| S-12  | Delivery Note List     | `/delivery-notes`         | Tabel + CRUD.                                            |
+| S-11  | Purchase Order Detail  | `/purchase-orders/:id`    | Header + item (dipesan/diterima/sisa); aksi confirm/cancel/terima barang. |
+| S-12  | Delivery Note List     | `/delivery-notes`         | Tabel + CRUD Surat Jalan customer (tanpa PO).            |
 | S-13  | Reports                | `/reports`                | Filter periode, tabel, export.                           |
 | S-14  | User Management        | `/users`                  | Tabel user + role + mapping chat ID (Super Admin).        |
 | S-15  | Audit Log              | `/audit-logs`             | Tabel + filter (Super Admin).                             |
@@ -383,7 +385,6 @@ sequenceDiagram
 | GET    | `/po/:id`                 | PO detail with items             | Bearer      |
 | PATCH  | `/po/:id`                 | Update PO (only DRAFT)           | Admin       |
 | POST   | `/po/:id/confirm`         | Confirm PO                       | Admin       |
-| POST   | `/po/:id/complete`        | Complete PO                      | Admin       |
 | POST   | `/po/:id/cancel`          | Cancel PO                        | Admin       |
 | DELETE | `/po/:id`                 | Delete PO (only DRAFT)           | Admin       |
 | GET    | `/po/:id/pdf`             | Export PO to PDF                 | Bearer      |
@@ -393,7 +394,7 @@ sequenceDiagram
 ```json
 // Request
 {
-  "partnerName": "PT Maju Jaya",
+  "partnerName": "CV Sumber Frozen",
   "items": [{ "productName": "Dimsum Ayam Sedang", "qty": 50 }],
   "targetDate": "2026-09-23",
   "source": "AI_CHAT"
@@ -406,7 +407,7 @@ sequenceDiagram
     "id": "9b1d...",
     "poNumber": "PO-202609-001",
     "status": "DRAFT",
-    "partner": { "id": "a1...", "name": "PT Maju Jaya" },
+    "partner": { "id": "a1...", "name": "CV Sumber Frozen" },
     "items": [{ "productName": "Dimsum Ayam Sedang", "qty": 50 }]
   }
 }
@@ -417,7 +418,7 @@ sequenceDiagram
 | Method | Endpoint              | Description             | Auth  |
 | :----- | :-------------------- | :---------------------- | :---- |
 | GET    | `/delivery-notes`     | List delivery notes     | Bearer |
-| POST   | `/delivery-notes`     | Create from PO          | Admin |
+| POST   | `/delivery-notes`     | Create for customer     | Admin |
 | GET    | `/delivery-notes/:id` | Detail                  | Bearer |
 | PATCH  | `/delivery-notes/:id` | Update status           | Admin |
 | GET    | `/delivery-notes/:id/pdf` | Export PDF          | Bearer |
@@ -470,7 +471,7 @@ flowchart LR
 | :----------------- | :--------------------------------------- | :--------------------------------------------------- | :------------------------------ |
 | `cek_stok_barang`  | Cek sisa stok berdasarkan nama barang    | `productName: string`                                | `GET /reports/stock/:productName` |
 | `rekap_pengiriman` | Rekap pengiriman pada tanggal tertentu   | `date: string` (ISO or natural)                      | `GET /reports/shipments?date=`  |
-| `buat_draft_po`    | Membuat draft Purchase Order             | `partnerName: string`, `items: {productName, qty}[]` | `POST /po/draft`                |
+| `buat_draft_po`    | Membuat draft Purchase Order (partner supplier) | `partnerName: string`, `items: {productName, qty}[]` | `POST /po/draft`                |
 | `cari_sop`         | Cari SOP/kebijakan internal (RAG)        | `query: string`                                      | `document_chunks` (read-only, top-K) |
 
 ### 10.3 System Prompt Guidelines
@@ -483,6 +484,7 @@ You are a smart Warehouse Assistant (Virtual WMS) for an Indonesian SME.
 - For SOP/policy questions, use the cari_sop tool and answer ONLY from returned context; cite the source when available.
 - If a tool returns not-found, ask the user for clarification; do not invent values.
 - When creating a PO, always keep status DRAFT and remind the user to confirm on the web.
+- Purchase Orders are only for SUPPLIER partners; if the requested partner is not a supplier, explain and ask for clarification instead of creating the PO.
 - Do not reveal internal IDs, SQL, or API keys.
 ```
 
@@ -506,6 +508,7 @@ You are a smart Warehouse Assistant (Virtual WMS) for an Indonesian SME.
 | :------------------------------ | :------------------------------------------------------- |
 | Product not found               | "Saya tidak menemukan barang bernama X. Bisa sebutkan nama lain?" |
 | Partner not found               | Inform failure; do not create PO.                        |
+| Partner bukan supplier          | Jelaskan PO hanya untuk supplier; minta partner yang benar.|
 | Insufficient stock for PO       | Warn user; still create draft (PO does not move stock).  |
 | SOP not found in knowledge base | State that no relevant SOP was found; do not invent policy. |
 | LLM/API error                   | "Maaf, sistem sedang mengalami gangguan. Coba lagi nanti."|
@@ -523,7 +526,8 @@ You are a smart Warehouse Assistant (Virtual WMS) for an Indonesian SME.
 | VL-04 | PO hanya editable saat `DRAFT`; state transition mengikuti diagram pada §11.1.                 |
 | VL-05 | Hapus master data yang direferensikan transaksi → ditolak (RESTRICT) kecuali tanpa referensi.  |
 | VL-06 | `Product.stock` tidak boleh diubah via endpoint update produk secara langsung.                 |
-| VL-07 | Delivery Note hanya dari PO `CONFIRMED`/`COMPLETED`.                                           |
+| VL-07 | Purchase Order hanya untuk partner `SUPPLIER`; Delivery Note hanya untuk partner `CUSTOMER`.    |
+| VL-08 | Penerimaan (IN) bertaut PO tidak boleh melebihi sisa pesanan; status PO diamankan otomatis.     |
 
 ### 11.1 PO State Machine
 
@@ -532,7 +536,7 @@ stateDiagram-v2
     [*] --> DRAFT
     DRAFT --> CONFIRMED: confirm
     DRAFT --> CANCELLED: cancel/delete
-    CONFIRMED --> COMPLETED: complete
+    CONFIRMED --> COMPLETED: auto (penerimaan penuh)
     CONFIRMED --> CANCELLED: cancel
     COMPLETED --> [*]
     CANCELLED --> [*]
@@ -650,10 +654,14 @@ volumes:
 | AC-11 | Product not found via chat                 | Chat barang tidak ada                                                 | AI minta klarifikasi, tidak mengarang.                  |
 | AC-12 | Cascade delete PO draft                    | Hapus PO `DRAFT`                                                      | Item ikut terhapus; DB bersih.                          |
 | AC-13 | TanStack Query refresh                     | Submit transaksi → lihat tabel stok                                   | Tabel ter-update tanpa reload manual.                   |
-| AC-14 | Delivery note dari PO                       | Buat DN dari PO `CONFIRMED`                                           | DN terbentuk; dari PO `DRAFT` ditolak.                  |
+| AC-14 | Delivery note customer                      | Buat DN mandiri untuk partner `CUSTOMER`                              | DN terbentuk tanpa PO; partner non-customer ditolak.    |
 | AC-15 | AI jawab SOP via RAG                        | Ingest SOP → chat "Apa SOP retur?"                                    | Jawaban sesuai konteks SOP + menyebut sumber.           |
 | AC-16 | RAG anti-halusinasi                         | Ingest SOP tanpa memuat topik X → tanya X                             | AI menyatakan SOP tidak ditemukan (tidak mengarang).    |
-| AC-17 | AI Agent read-only DB                       | Coba tulis `document_chunks` dari runtime AI                          | Ditolak (permission denied).                             |
+| AC-17 | AI Agent read-only DB                       | Coba tulis `document_chunks` dari runtime AI                          | Ditolak (permission denied).                            |
+| AC-18 | Penerimaan PO menutup PO                    | Catat IN qty penuh bertaut PO `CONFIRMED`                             | Stok bertambah; PO otomatis `COMPLETED`.                |
+| AC-19 | Over-receipt ditolak                        | Catat IN qty > sisa PO                                                | 422 `UNPROCESSABLE`; stok tidak berubah.               |
+| AC-20 | PO hanya untuk supplier                     | Buat PO dengan partner `CUSTOMER`                                     | 422 `UNPROCESSABLE`.                                    |
+| AC-21 | Terima barang dari PO                       | Klik "Terima Barang" pada PO `CONFIRMED`                              | Buka Barang Masuk dengan PO terpilih; submit menutup PO.|
 
 ---
 

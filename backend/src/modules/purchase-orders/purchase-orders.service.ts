@@ -23,6 +23,80 @@ const poInclude = {
 type WebItem = z.infer<typeof createPoSchema>["body"]["items"][number];
 type Tx = PrismaTx | PrismaClient;
 
+export type PoReceiptLine = {
+  productId: string;
+  ordered: number;
+  received: number;
+  remaining: number;
+};
+
+/**
+ * Rekap realisasi penerimaan PO: agregasi transaksi IN bertaut `purchaseOrderId`
+ * per produk, dibandingkan dengan qty yang dipesan.
+ */
+export async function getReceiptStatus(tx: Tx, poId: string): Promise<PoReceiptLine[]> {
+  const [items, inbound, adjustments] = await Promise.all([
+    tx.purchaseOrderItem.findMany({
+      where: { poId },
+      select: { productId: true, quantity: true },
+    }),
+    tx.stockTransaction.groupBy({
+      by: ["productId"],
+      where: { purchaseOrderId: poId, type: "IN" },
+      _sum: { quantity: true },
+    }),
+    tx.stockTransaction.groupBy({
+      by: ["productId"],
+      where: { purchaseOrderId: poId, type: "ADJUSTMENT" },
+      _sum: { quantity: true },
+    }),
+  ]);
+
+  const ordered = new Map<string, number>();
+  for (const item of items) {
+    ordered.set(item.productId, (ordered.get(item.productId) ?? 0) + item.quantity);
+  }
+  const receivedByProduct = new Map(inbound.map((r) => [r.productId, r._sum.quantity ?? 0]));
+  for (const adj of adjustments) {
+    receivedByProduct.set(
+      adj.productId,
+      (receivedByProduct.get(adj.productId) ?? 0) - (adj._sum.quantity ?? 0),
+    );
+  }
+
+  return [...ordered.entries()].map(([productId, orderedQty]) => {
+    const receivedQty = Math.max(receivedByProduct.get(productId) ?? 0, 0);
+    return {
+      productId,
+      ordered: orderedQty,
+      received: receivedQty,
+      remaining: Math.max(orderedQty - receivedQty, 0),
+    };
+  });
+}
+
+/**
+ * Sinkronisasi status PO berdasarkan realisasi penerimaan:
+ * - Semua item terpenuhi: CONFIRMED -> COMPLETED
+ * - Realisasi berkurang (mis. void): COMPLETED -> CONFIRMED
+ */
+export async function syncPoReceiptStatus(tx: Tx, poId: string): Promise<void> {
+  const po = await tx.purchaseOrder.findUnique({
+    where: { id: poId },
+    select: { status: true },
+  });
+  if (!po || (po.status !== "CONFIRMED" && po.status !== "COMPLETED")) return;
+
+  const lines = await getReceiptStatus(tx, poId);
+  const fullyReceived = lines.length > 0 && lines.every((line) => line.received >= line.ordered);
+
+  if (fullyReceived && po.status === "CONFIRMED") {
+    await tx.purchaseOrder.update({ where: { id: poId }, data: { status: "COMPLETED" } });
+  } else if (!fullyReceived && po.status === "COMPLETED") {
+    await tx.purchaseOrder.update({ where: { id: poId }, data: { status: "CONFIRMED" } });
+  }
+}
+
 async function resolveWebItems(tx: Tx, items: WebItem[]) {
   const resolved: { productId: string; quantity: number; unitPrice: number | null }[] = [];
   for (const item of items) {
@@ -70,7 +144,21 @@ export async function listPos(query: z.infer<typeof listPoSchema>["query"]) {
 export async function getPo(id: string) {
   const po = await prisma.purchaseOrder.findUnique({ where: { id }, include: poInclude });
   if (!po) throw Errors.notFound("Purchase Order");
-  return po;
+
+  const lines = await getReceiptStatus(prisma, id);
+  const byProduct = new Map(lines.map((line) => [line.productId, line]));
+
+  return {
+    ...po,
+    items: po.items.map((item) => {
+      const line = byProduct.get(item.productId);
+      return {
+        ...item,
+        receivedQuantity: line?.received ?? 0,
+        remainingQuantity: line?.remaining ?? item.quantity,
+      };
+    }),
+  };
 }
 
 export async function createPo(
@@ -80,6 +168,9 @@ export async function createPo(
 ) {
   const partner = await prisma.partner.findUnique({ where: { id: input.partnerId } });
   if (!partner) throw Errors.notFound("Partner");
+  if (partner.type !== "SUPPLIER") {
+    throw Errors.unprocessable("Purchase Order hanya untuk partner bertipe SUPPLIER");
+  }
 
   const po = await prisma.$transaction(async (tx) => {
     const items = await resolveWebItems(tx, input.items);
@@ -157,7 +248,7 @@ export async function updatePo(
 
 async function transition(
   id: string,
-  to: "CONFIRMED" | "COMPLETED" | "CANCELLED",
+  to: "CONFIRMED" | "CANCELLED",
   actorId?: string | null,
   ip?: string | null,
 ) {
@@ -180,9 +271,6 @@ async function transition(
 
 export const confirmPo = (id: string, actorId?: string | null, ip?: string | null) =>
   transition(id, "CONFIRMED", actorId, ip);
-
-export const completePo = (id: string, actorId?: string | null, ip?: string | null) =>
-  transition(id, "COMPLETED", actorId, ip);
 
 export const cancelPo = (id: string, actorId?: string | null, ip?: string | null) =>
   transition(id, "CANCELLED", actorId, ip);
@@ -209,6 +297,9 @@ export async function createDraftFromChat(
     where: { name: { contains: input.partnerName, mode: "insensitive" } },
   });
   if (!partner) throw Errors.unprocessable(`Partner "${input.partnerName}" tidak ditemukan`);
+  if (partner.type !== "SUPPLIER") {
+    throw Errors.unprocessable(`Partner "${partner.name}" bukan supplier`);
+  }
 
   const resolved: { productId: string; quantity: number }[] = [];
   for (const item of input.items) {

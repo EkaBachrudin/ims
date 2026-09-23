@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { partnerApi, productApi, transactionApi, warehouseApi } from "@/api/endpoints";
+import { partnerApi, poApi, productApi, transactionApi, warehouseApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useCanManage } from "@/lib/roles";
@@ -23,6 +24,7 @@ interface FormState {
   warehouseId: string;
   quantity: string;
   partnerId: string;
+  purchaseOrderId: string;
   referenceNo: string;
   notes: string;
 }
@@ -31,6 +33,7 @@ const emptyForm: FormState = {
   warehouseId: "",
   quantity: "1",
   partnerId: "",
+  purchaseOrderId: "",
   referenceNo: "",
   notes: "",
 };
@@ -38,6 +41,9 @@ const emptyForm: FormState = {
 export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
   const canManage = useCanManage();
   const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const poParam = searchParams.get("po");
+  const prefilledRef = useRef(false);
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [voiding, setVoiding] = useState<StockTransaction | null>(null);
@@ -53,6 +59,46 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
   const products = useQuery({ queryKey: qk.products.list({ all: true }), queryFn: () => productApi.list({ limit: 100 }) });
   const warehouses = useQuery({ queryKey: qk.warehouses.list(), queryFn: () => warehouseApi.list() });
   const partners = useQuery({ queryKey: qk.partners.list({ all: true }), queryFn: () => partnerApi.list({ limit: 100 }) });
+  const pos = useQuery({
+    queryKey: qk.purchaseOrders.list({ receipt: true }),
+    queryFn: () => poApi.list({ status: "CONFIRMED", limit: 100 }),
+    enabled: type === "IN",
+  });
+  const poDetail = useQuery({
+    queryKey: qk.purchaseOrders.detail(form.purchaseOrderId),
+    queryFn: () => poApi.get(form.purchaseOrderId),
+    enabled: type === "IN" && Boolean(form.purchaseOrderId),
+  });
+
+  const poRemainingItems =
+    type === "IN" && poDetail.data
+      ? poDetail.data.items.filter((i) => (i.remainingQuantity ?? i.quantity) > 0)
+      : [];
+  const selectedProductOptions =
+    type === "IN" && form.purchaseOrderId ? poRemainingItems.map((i) => i.product) : products.data?.data ?? [];
+  const selectedRemaining = poRemainingItems.find((i) => i.productId === form.productId);
+
+  useEffect(() => {
+    if (type !== "IN" || !poDetail.data) return;
+    const remaining = poDetail.data.items.filter((i) => (i.remainingQuantity ?? i.quantity) > 0);
+    const poWarehouseId = poDetail.data.warehouse?.id ?? "";
+    setForm((f) => {
+      const next = { ...f };
+      if (!next.warehouseId && poWarehouseId) next.warehouseId = poWarehouseId;
+      if (remaining.length > 0 && !remaining.some((i) => i.productId === next.productId)) {
+        next.productId = remaining[0].productId;
+        next.quantity = String(remaining[0].remainingQuantity ?? remaining[0].quantity);
+      }
+      return next;
+    });
+  }, [poDetail.data, type]);
+
+  useEffect(() => {
+    if (type !== "IN" || !poParam || prefilledRef.current) return;
+    prefilledRef.current = true;
+    setForm((f) => ({ ...f, purchaseOrderId: poParam }));
+    setOpen(true);
+  }, [type, poParam]);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: qk.transactions.all });
@@ -101,6 +147,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
       warehouseId: form.warehouseId,
       quantity: Number(form.quantity),
       partnerId: form.partnerId || null,
+      purchaseOrderId: type === "IN" ? form.purchaseOrderId || null : null,
       referenceNo: form.referenceNo || null,
       notes: form.notes || null,
     });
@@ -140,6 +187,11 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
     },
     { key: "warehouse", header: "Gudang", render: (r) => r.warehouse.name },
     { key: "partner", header: "Partner", render: (r) => r.partner?.name ?? "-" },
+    {
+      key: "ref",
+      header: "Referensi",
+      render: (r) => r.purchaseOrder?.poNumber ?? r.deliveryNote?.dnNumber ?? r.referenceNo ?? "-",
+    },
     { key: "by", header: "Dicatat oleh", render: (r) => r.createdBy.name },
     {
       key: "notes",
@@ -226,16 +278,57 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
       >
         <form id="txn-form" onSubmit={submit} className="form">
           <ErrorText>{error}</ErrorText>
+          {type === "IN" && (
+            <Field label="PO Sumber (opsional)" hint="Penerimaan barang dari supplier">
+              <Select
+                value={form.purchaseOrderId}
+                onChange={(e) =>
+                  setForm({ ...form, purchaseOrderId: e.target.value, productId: "", quantity: "1" })
+                }
+              >
+                <option value="">Tanpa PO</option>
+                {pos.data?.data.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.poNumber} - {p.partner.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
           <Field label="Produk" required>
-            <Select value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} required>
+            <Select
+              value={form.productId}
+              onChange={(e) => {
+                const pid = e.target.value;
+                const line = poRemainingItems.find((i) => i.productId === pid);
+                setForm({
+                  ...form,
+                  productId: pid,
+                  quantity: line ? String(line.remainingQuantity ?? line.quantity) : form.quantity,
+                });
+              }}
+              required
+            >
               <option value="">Pilih produk</option>
-              {products.data?.data.map((p) => (
+              {selectedProductOptions.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} (stok {p.stock} {p.unit})
+                  {p.name}
+                  {"stock" in p ? ` (stok ${p.stock} ${p.unit})` : ` (${p.sku})`}
                 </option>
               ))}
             </Select>
           </Field>
+          {type === "IN" && form.purchaseOrderId && (
+            <p className="txn-page__po-hint">
+              {poDetail.isLoading
+                ? "Memuat sisa pesanan…"
+                : poRemainingItems.length === 0
+                  ? "Semua item PO sudah diterima."
+                  : selectedRemaining
+                    ? `Sisa pesanan: ${selectedRemaining.remainingQuantity} ${selectedRemaining.product.unit}`
+                    : "Pilih produk sesuai item PO."}
+            </p>
+          )}
           <Field label="Gudang" required>
             <Select
               value={form.warehouseId}
@@ -254,6 +347,7 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
             <Input
               type="number"
               min={1}
+              max={selectedRemaining ? selectedRemaining.remainingQuantity : undefined}
               value={form.quantity}
               onChange={(e) => setForm({ ...form, quantity: e.target.value })}
               required

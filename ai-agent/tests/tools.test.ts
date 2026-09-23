@@ -51,10 +51,10 @@ describe("cek_stok_barang", () => {
 describe("buat_draft_po", () => {
   it("mengirim chatId dan source AI_CHAT ke backend", async () => {
     mockedPost.mockResolvedValue({
-      data: { data: { poNumber: "PO-202609-001", partner: { name: "PT Maju Jaya" } } },
+      data: { data: { poNumber: "PO-202609-001", partner: { name: "CV Sumber Frozen" } } },
     } as never);
     const result = await findTool("buat_draft_po").invoke({
-      partnerName: "PT Maju Jaya",
+      partnerName: "CV Sumber Frozen",
       items: [{ productName: "Dimsum", qty: 50 }],
     });
     expect(String(result)).toContain("PO-202609-001");

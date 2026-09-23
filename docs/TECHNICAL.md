@@ -853,7 +853,7 @@ export function useCreateInbound() {
 | :------------------ | :---------- | :----------------------------------- |
 | Master data         | 60s         | create/update/delete entitas terkait |
 | Transaksi/stok      | 15s         | inbound/outbound/void                |
-| PO list/detail      | 15s         | create/confirm/complete/cancel       |
+| PO list/detail      | 15s         | create/confirm/cancel + penerimaan    |
 | Reports             | 30s         | transaksi/PO/DN berubah              |
 
 ### 8.5 Protected Routes
@@ -947,9 +947,9 @@ export const createPoDraftTool = tool(
   },
   {
     name: "buat_draft_po",
-    description: "Membuat draft Purchase Order (PO) baru. Status selalu DRAFT.",
+    description: "Membuat draft Purchase Order (PO) baru untuk supplier. Status selalu DRAFT.",
     schema: z.object({
-      partnerName: z.string().describe("Nama PT/Customer, mis. 'PT Maju Jaya'"),
+      partnerName: z.string().describe("Nama supplier, mis. 'CV Sumber Frozen'"),
       items: z
         .array(z.object({ productName: z.string(), qty: z.number().int().positive() }))
         .min(1)
@@ -1017,7 +1017,7 @@ import { backend } from "../services/backendClient";
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
-bot.start((ctx) => ctx.reply("Halo Bos! Ketik mis. 'Cek stok dimsum' atau 'Buat PO untuk PT Maju Jaya'"));
+bot.start((ctx) => ctx.reply("Halo Bos! Ketik mis. 'Cek stok dimsum' atau 'Buat PO untuk CV Sumber Frozen'"));
 
 bot.on("text", async (ctx) => {
   const chatId = String(ctx.chat.id);
@@ -1227,7 +1227,7 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant FE as Web Dashboard
 
-    Owner->>TG: "Besok siapkan PO untuk PT Maju Jaya, 50 pack Dimsum"
+    Owner->>TG: "Besok siapkan PO untuk CV Sumber Frozen, 50 pack Dimsum"
     TG->>AI: update
     AI->>AI: intent → buat_draft_po
     AI->>BE: POST /po/draft (x-internal-key)

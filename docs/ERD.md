@@ -374,7 +374,7 @@ Menyimpan akun pengguna dashboard & pemetaan kanal chat.
 | `status`      | Enum `DnStatus` | default `DRAFT`         | `DRAFT`/`SHIPPED`/`DELIVERED`/`CANCELLED`. |
 | `shipDate`    | DateTime        | not null                | Tanggal kirim.                             |
 | `notes`       | String?         | nullable                | Catatan.                                   |
-| `poId`        | String?         | FK → PurchaseOrder.id   | PO sumber (opsional).                      |
+| `poId`        | String?         | FK → PurchaseOrder.id   | Legacy, tidak dipakai UI baru (DN mandiri).|
 | `partnerId`   | String          | FK → Partner.id         | Customer tujuan.                           |
 | `warehouseId` | String          | FK → Warehouse.id       | Gudang asal.                               |
 | `createdById` | String          | FK → User.id            | Pembuat.                                   |
@@ -457,7 +457,7 @@ Menyimpan potongan dokumen SOP/FAQ beserta embedding untuk **RAG retrieval** ole
 | Warehouse       | PurchaseOrder        | 1 : N       | `warehouseId`       | SetNull      |
 | PurchaseOrder   | PurchaseOrderItem    | 1 : N       | `poId`              | Cascade      |
 | Product         | PurchaseOrderItem    | 1 : N       | `productId`         | Restrict     |
-| PurchaseOrder   | DeliveryNote         | 1 : N       | `poId`              | SetNull      |
+| PurchaseOrder   | DeliveryNote         | 1 : N       | `poId` (legacy)     | SetNull      |
 | Partner         | DeliveryNote         | 1 : N       | `partnerId`         | Restrict     |
 | Warehouse       | DeliveryNote         | 1 : N       | `warehouseId`       | Restrict     |
 | DeliveryNote    | DeliveryNoteItem     | 1 : N       | `dnId`              | Cascade      |

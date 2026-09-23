@@ -3,6 +3,7 @@ import { prisma, type PrismaTx } from "../../lib/prisma";
 import { Errors } from "../../lib/errors";
 import { audit } from "../../utils/audit";
 import { buildMeta, parsePagination } from "../../utils/pagination";
+import { getReceiptStatus, syncPoReceiptStatus } from "../purchase-orders/purchase-orders.service";
 import type { z } from "zod";
 import type {
   listTransactionSchema,
@@ -17,7 +18,8 @@ type RecordInput = z.infer<typeof recordTransactionSchema>["body"] & { createdBy
  * - Update denormalized Product.stock
  * - Update Inventory per gudang
  */
-export async function applyStock(tx: PrismaTx, type: TransactionType, input: RecordInput) {  const product = await tx.product.findUnique({
+export async function applyStock(tx: PrismaTx, type: TransactionType, input: RecordInput) {
+  const product = await tx.product.findUnique({
     where: { id: input.productId },
     select: { id: true, stock: true },
   });
@@ -39,6 +41,29 @@ export async function applyStock(tx: PrismaTx, type: TransactionType, input: Rec
       },
     });
     if (!inventory || inventory.quantity < input.quantity) throw Errors.insufficientStock();
+  }
+
+  if (type === "IN" && input.purchaseOrderId) {
+    const po = await tx.purchaseOrder.findUnique({
+      where: { id: input.purchaseOrderId },
+      include: { partner: { select: { type: true } } },
+    });
+    if (!po) throw Errors.notFound("Purchase Order");
+    if (po.status !== "CONFIRMED") {
+      throw Errors.invalidState("Penerimaan hanya untuk PO berstatus CONFIRMED");
+    }
+    if (po.partner.type !== "SUPPLIER") {
+      throw Errors.unprocessable("PO sumber penerimaan harus dari partner SUPPLIER");
+    }
+
+    const lines = await getReceiptStatus(tx, po.id);
+    const line = lines.find((l) => l.productId === input.productId);
+    if (!line) throw Errors.unprocessable("Produk tidak ada pada PO sumber");
+    if (input.quantity > line.remaining) {
+      throw Errors.unprocessable(
+        `Qty melebihi sisa pesanan PO (sisa ${line.remaining})`,
+      );
+    }
   }
 
   const txn = await tx.stockTransaction.create({
@@ -75,6 +100,10 @@ export async function applyStock(tx: PrismaTx, type: TransactionType, input: Rec
     },
     update: { quantity: { increment: delta } },
   });
+
+  if (type === "IN" && input.purchaseOrderId) {
+    await syncPoReceiptStatus(tx, input.purchaseOrderId);
+  }
 
   return txn;
 }
@@ -125,6 +154,10 @@ export async function voidTransaction(
         notes: `VOID: ${reason} (ref ${original.id})`,
         productId: original.productId,
         warehouseId: original.warehouseId,
+        partnerId: original.partnerId,
+        purchaseOrderId: original.purchaseOrderId,
+        deliveryNoteId: original.deliveryNoteId,
+        referenceNo: original.referenceNo,
         createdById: actorId ?? original.createdById,
       },
     });
@@ -143,6 +176,10 @@ export async function voidTransaction(
       },
       data: { quantity: { increment: reversalDelta } },
     });
+
+    if (original.type === "IN" && original.purchaseOrderId) {
+      await syncPoReceiptStatus(tx, original.purchaseOrderId);
+    }
 
     await audit(
       {
@@ -184,6 +221,8 @@ export async function listTransactions(query: z.infer<typeof listTransactionSche
         product: { select: { id: true, sku: true, name: true, unit: true } },
         warehouse: { select: { id: true, code: true, name: true } },
         partner: { select: { id: true, name: true } },
+        purchaseOrder: { select: { id: true, poNumber: true } },
+        deliveryNote: { select: { id: true, dnNumber: true } },
         createdBy: { select: { id: true, name: true } },
       },
     }),

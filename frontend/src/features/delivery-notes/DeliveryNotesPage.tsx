@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { dnApi, poApi } from "@/api/endpoints";
+import { Plus, X } from "@phosphor-icons/react";
+import { dnApi, partnerApi, productApi, warehouseApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useCanManage } from "@/lib/roles";
@@ -13,6 +14,11 @@ import { dnStatusTone, formatDate, todayInput } from "@/lib/format";
 import type { DeliveryNote, DnStatus } from "@/types";
 import "./DeliveryNotesPage.css";
 
+interface ItemRow {
+  productId: string;
+  quantity: string;
+}
+
 export function DeliveryNotesPage() {
   const canManage = useCanManage();
   const qc = useQueryClient();
@@ -20,15 +26,19 @@ export function DeliveryNotesPage() {
   const [status, setStatus] = useState("");
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
-  const [poId, setPoId] = useState("");
+  const [partnerId, setPartnerId] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
   const [shipDate, setShipDate] = useState(todayInput());
   const [notes, setNotes] = useState("");
+  const [items, setItems] = useState<ItemRow[]>([{ productId: "", quantity: "1" }]);
 
   const filters = { page, limit: 20, status: status || undefined };
   const { data, isLoading } = useQuery({ queryKey: qk.deliveryNotes.list(filters), queryFn: () => dnApi.list(filters) });
-  const pos = useQuery({ queryKey: qk.purchaseOrders.list({ dn: true }), queryFn: () => poApi.list({ limit: 100 }) });
+  const partners = useQuery({ queryKey: qk.partners.list({ all: true }), queryFn: () => partnerApi.list({ limit: 100 }) });
+  const products = useQuery({ queryKey: qk.products.list({ all: true }), queryFn: () => productApi.list({ limit: 100 }) });
+  const warehouses = useQuery({ queryKey: qk.warehouses.list(), queryFn: () => warehouseApi.list() });
 
-  const eligiblePos = (pos.data?.data ?? []).filter((p) => p.status === "CONFIRMED" || p.status === "COMPLETED");
+  const customers = (partners.data?.data ?? []).filter((p) => p.type === "CUSTOMER");
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: qk.deliveryNotes.all });
@@ -53,9 +63,11 @@ export function DeliveryNotesPage() {
   });
 
   function openForm() {
-    setPoId(eligiblePos[0]?.id ?? "");
+    setPartnerId(customers[0]?.id ?? "");
+    setWarehouseId(warehouses.data?.[0]?.id ?? "");
     setShipDate(todayInput());
     setNotes("");
+    setItems([{ productId: products.data?.data[0]?.id ?? "", quantity: "1" }]);
     setError("");
     setOpen(true);
   }
@@ -66,11 +78,22 @@ export function DeliveryNotesPage() {
   function submit(e: FormEvent) {
     e.preventDefault();
     setError("");
-    if (!poId) {
-      setError("Pilih PO sumber terlebih dahulu.");
+    if (!partnerId) {
+      setError("Pilih customer terlebih dahulu.");
       return;
     }
-    createMut.mutate({ poId, shipDate, notes: notes || null });
+    if (!warehouseId) {
+      setError("Pilih gudang terlebih dahulu.");
+      return;
+    }
+    const payloadItems = items
+      .filter((i) => i.productId && Number(i.quantity) > 0)
+      .map((i) => ({ productId: i.productId, quantity: Number(i.quantity) }));
+    if (payloadItems.length === 0) {
+      setError("Tambahkan minimal satu item.");
+      return;
+    }
+    createMut.mutate({ partnerId, warehouseId, shipDate, notes: notes || null, items: payloadItems });
   }
 
   function renderActions(d: DeliveryNote) {
@@ -106,8 +129,8 @@ export function DeliveryNotesPage() {
   const columns: Column<DeliveryNote>[] = [
     { key: "dnNumber", header: "No. Surat Jalan", render: (d) => d.dnNumber },
     { key: "status", header: "Status", render: (d) => <Badge tone={dnStatusTone[d.status]}>{d.status}</Badge> },
-    { key: "po", header: "PO", render: (d) => d.po?.poNumber ?? "-" },
     { key: "partner", header: "Customer", render: (d) => d.partner.name },
+    { key: "warehouse", header: "Gudang", render: (d) => d.warehouse.name },
     { key: "shipDate", header: "Tgl Kirim", render: (d) => formatDate(d.shipDate) },
     { key: "items", header: "Item", render: (d) => d.items.length },
     ...(canManage
@@ -126,7 +149,7 @@ export function DeliveryNotesPage() {
     <div className="delivery-page">
       <PageHeader
         title="Surat Jalan"
-        description="Delivery note dari PO"
+        description="Pengiriman barang ke customer"
         actions={canManage && <Button onClick={openForm}>+ Buat Surat Jalan</Button>}
       />
 
@@ -162,11 +185,11 @@ export function DeliveryNotesPage() {
               <Badge tone={dnStatusTone[d.status]}>{d.status}</Badge>
             </div>
             <div className="data-table__card-sub">
-              <span>PO {d.po?.poNumber ?? "-"}</span>
+              <span>{d.partner.name}</span>
               <span>{d.items.length} item</span>
             </div>
             <div className="data-table__card-meta">
-              <span>{d.partner.name}</span>
+              <span>{d.warehouse.name}</span>
             </div>
             <div className="delivery-page__card-footer">
               <span>Tgl Kirim {formatDate(d.shipDate)}</span>
@@ -181,6 +204,7 @@ export function DeliveryNotesPage() {
         open={open}
         title="Buat Surat Jalan"
         onClose={closeForm}
+        wide
         footer={
           <>
             <Button variant="secondary" onClick={closeForm}>
@@ -192,27 +216,96 @@ export function DeliveryNotesPage() {
           </>
         }
       >
-        <form id="dn-form" onSubmit={submit} className="form">
+        <form id="dn-form" onSubmit={submit} className="form form--spaced">
           <ErrorText>{error}</ErrorText>
-          <Field label="PO Sumber" required hint="Hanya PO berstatus CONFIRMED/COMPLETED">
-            <Select value={poId} onChange={(e) => setPoId(e.target.value)} required>
-              <option value="">Pilih PO</option>
-              {eligiblePos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.poNumber} - {p.partner.name}
-                </option>
+          <div className="form--grid">
+            <Field label="Customer" required>
+              <Select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} required>
+                <option value="">Pilih customer</option>
+                {customers.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Gudang" required>
+              <Select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} required>
+                <option value="">Pilih gudang</option>
+                {warehouses.data?.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Tanggal Kirim" required>
+              <Input type="date" value={shipDate} onChange={(e) => setShipDate(e.target.value)} required />
+            </Field>
+            <Field label="Catatan">
+              <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </Field>
+          </div>
+
+          <div>
+            <div className="delivery-page__items-header">
+              <span className="delivery-page__items-title">Item</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setItems([...items, { productId: "", quantity: "1" }])}
+              >
+                <Plus size={14} weight="bold" /> Item
+              </Button>
+            </div>
+            <div className="delivery-page__items">
+              {items.map((item, idx) => (
+                <div key={idx} className="delivery-page__item">
+                  <Select
+                    value={item.productId}
+                    onChange={(e) => {
+                      const next = [...items];
+                      next[idx] = { ...item, productId: e.target.value };
+                      setItems(next);
+                    }}
+                    className="delivery-page__item-product"
+                  >
+                    <option value="">Pilih produk</option>
+                    {products.data?.data.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.sku})
+                      </option>
+                    ))}
+                  </Select>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const next = [...items];
+                      next[idx] = { ...item, quantity: e.target.value };
+                      setItems(next);
+                    }}
+                    className="delivery-page__item-qty"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                    disabled={items.length === 1}
+                    aria-label="Hapus item"
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
               ))}
-            </Select>
-          </Field>
-          <Field label="Tanggal Kirim" required>
-            <Input type="date" value={shipDate} onChange={(e) => setShipDate(e.target.value)} required />
-          </Field>
-          <Field label="Catatan">
-            <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </Field>
-          {eligiblePos.length === 0 && (
+            </div>
+          </div>
+
+          {customers.length === 0 && (
             <p className="delivery-page__warning">
-              Belum ada PO CONFIRMED/COMPLETED. Konfirmasi PO terlebih dahulu.
+              Belum ada partner CUSTOMER. Tambahkan customer terlebih dahulu.
             </p>
           )}
         </form>

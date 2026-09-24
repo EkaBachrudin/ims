@@ -993,6 +993,20 @@ export const agentPrompt = ChatPromptTemplate.fromMessages([
 ]);
 ```
 
+### 9.3.1 Format Balasan Telegram
+
+Agar balasan rapi saat dibaca, output LLM (yang umumnya Markdown) dikonversi ke subset HTML Telegram sebelum dikirim:
+
+```ts
+// src/bot/format.ts
+// - escape &, <, > lebih dulu, lalu konversi **tebal** -> <b>, *miring* -> <i>, `kode` -> <code>
+// - normalisasi bullet "- " -> "• ", buang heading "#", ubah baris tabel "|" menjadi daftar
+// - sendFormatted() mengirim dengan parse_mode "HTML"; bila Telegram menolak parse,
+//   pesan dikirim ulang sebagai teks polos agar tidak hilang.
+```
+
+System prompt (`src/agent/prompt.ts`) juga memuat aturan **"Gaya & format jawaban"**: satu item per baris dengan awalan `• `, satu baris kosong antar seksi, tanpa heading/tabel Markdown, serta template baku untuk balasan Draft PO, Draft Surat Jalan, dan daftar.
+
 ### 9.4 Agent Assembly
 
 ```ts
@@ -1023,6 +1037,7 @@ export const agentExecutor = new AgentExecutor({
 import { Telegraf } from "telegraf";
 import { agentExecutor } from "../agent/agent";
 import { backend } from "../services/backendClient";
+import { sendFormatted } from "./format";
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
@@ -1036,7 +1051,7 @@ bot.on("text", async (ctx) => {
   try {
     const response = await agentExecutor.invoke({ input: ctx.message.text });
     const latencyMs = Date.now() - started;
-    await ctx.reply(response.output);
+    await sendFormatted(ctx, response.output);
     await backend.post("/internal/ai-log", {
       platform: "TELEGRAM",
       chatId,

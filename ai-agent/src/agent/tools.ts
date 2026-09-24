@@ -152,6 +152,20 @@ function paramsOf(input: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined && v !== ""));
 }
 
+function shortDate(value?: string | null): string | null {
+  if (!value) return null;
+  return value.slice(0, 10);
+}
+
+interface DraftItem {
+  quantity: number;
+  product: { name: string; unit: string };
+}
+
+function draftItemLines(items?: DraftItem[]): string[] {
+  return (items ?? []).map((i) => `• ${i.quantity} ${i.product.unit} ${i.product.name}`);
+}
+
 function unmatchedNote(unmatched?: string[]): string {
   return unmatched?.length ? `\nCatatan: tidak ditemukan ${unmatched.join(", ")}.` : "";
 }
@@ -210,7 +224,7 @@ export function buildTools(chatId: string) {
       }[];
       if (shipments.length === 0) return `Tidak ada pengiriman tercatat pada ${input.date}.`;
       return shipments
-        .map((r) => `- ${r.partner}: ${r.qty} ${r.unit} ${r.product} (${r.warehouse})`)
+        .map((r) => `• ${r.partner}: ${r.qty} ${r.unit} ${r.product} (${r.warehouse})`)
         .join("\n");
     },
   });
@@ -229,8 +243,21 @@ export function buildTools(chatId: string) {
           source: "AI_CHAT",
           chatId,
         });
-        const po = data.data;
-        return `Draft PO ${po.poNumber} untuk ${po.partner.name} berhasil dibuat (status DRAFT). Silakan konfirmasi di aplikasi web.`;
+        const po = data.data as {
+          poNumber: string;
+          partner: { name: string };
+          targetDate?: string | null;
+          items?: DraftItem[];
+        };
+        const target = shortDate(po.targetDate);
+        const lines = [
+          `Draft PO ${po.poNumber} untuk ${po.partner.name} berhasil dibuat (status DRAFT).`,
+          `• Supplier: ${po.partner.name}`,
+          `• Target: ${target ?? "-"}`,
+          ...draftItemLines(po.items),
+          "Silakan konfirmasi di aplikasi web.",
+        ];
+        return lines.join("\n");
       } catch (e: unknown) {
         const err = e as { response?: { data?: { error?: { message?: string } } } };
         return `Gagal membuat PO: ${err.response?.data?.error?.message ?? "kesalahan sistem"}.`;
@@ -252,8 +279,21 @@ export function buildTools(chatId: string) {
           warehouseCode: input.warehouseCode ?? undefined,
           chatId,
         });
-        const dn = data.data;
-        return `Draft Surat Jalan ${dn.dnNumber} untuk ${dn.partner.name} berhasil dibuat (status DRAFT). Stok belum berkurang; silakan konfirmasi/kirim di aplikasi web.`;
+        const dn = data.data as {
+          dnNumber: string;
+          partner: { name: string };
+          shipDate?: string | null;
+          items?: DraftItem[];
+        };
+        const shipDate = shortDate(dn.shipDate);
+        const lines = [
+          `Draft Surat Jalan ${dn.dnNumber} untuk ${dn.partner.name} berhasil dibuat (status DRAFT).`,
+          `• Customer: ${dn.partner.name}`,
+          `• Tanggal kirim: ${shipDate ?? "-"}`,
+          ...draftItemLines(dn.items),
+          "Stok belum berkurang; silakan konfirmasi/kirim di aplikasi web.",
+        ];
+        return lines.join("\n");
       } catch (e: unknown) {
         const err = e as { response?: { data?: { error?: { message?: string } } } };
         return `Gagal membuat Surat Jalan: ${err.response?.data?.error?.message ?? "kesalahan sistem"}.`;
@@ -290,7 +330,7 @@ export function buildTools(chatId: string) {
       if (data.length === 0) return "Tidak ada produk yang cocok.";
       const lines = data.map(
         (p) =>
-          `- ${p.name} (SKU ${p.sku}, ${p.category ?? "tanpa kategori"}) stok ${p.stock} ${p.unit}${
+          `• ${p.name} (SKU ${p.sku}, ${p.category ?? "tanpa kategori"}) stok ${p.stock} ${p.unit}${
             p.lowStock ? " [STOK TIPIS]" : ""
           }`,
       );
@@ -306,7 +346,7 @@ export function buildTools(chatId: string) {
       const { data } = await backend.get("/reports/categories");
       const rows = (data.data ?? []) as { name: string; productCount: number }[];
       if (rows.length === 0) return "Belum ada kategori.";
-      return rows.map((c) => `- ${c.name} (${c.productCount} produk)`).join("\n");
+      return rows.map((c) => `• ${c.name} (${c.productCount} produk)`).join("\n");
     },
   });
 
@@ -324,7 +364,7 @@ export function buildTools(chatId: string) {
       if (data.length === 0) return "Tidak ada partner yang cocok.";
       const lines = data.map(
         (p) =>
-          `- ${p.name} [${p.type}]${p.phone ? ` telp ${p.phone}` : ""}${p.email ? ` email ${p.email}` : ""}`,
+          `• ${p.name} [${p.type}]${p.phone ? ` telp ${p.phone}` : ""}${p.email ? ` email ${p.email}` : ""}`,
       );
       return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} partner.`;
     },
@@ -339,7 +379,7 @@ export function buildTools(chatId: string) {
       const rows = (data.data ?? []) as { code: string; name: string; isActive: boolean }[];
       if (rows.length === 0) return "Belum ada gudang.";
       return rows
-        .map((w) => `- ${w.name} (${w.code})${w.isActive ? "" : " [NONAKTIF]"}`)
+        .map((w) => `• ${w.name} (${w.code})${w.isActive ? "" : " [NONAKTIF]"}`)
         .join("\n");
     },
   });
@@ -360,7 +400,7 @@ export function buildTools(chatId: string) {
         warehouseCode: input.warehouseCode,
       });
       if (data.length === 0) return "Tidak ada data stok per gudang yang cocok.";
-      const lines = data.map((r) => `- ${r.product} di ${r.warehouse}: ${r.quantity} ${r.unit}`);
+      const lines = data.map((r) => `• ${r.product} di ${r.warehouse}: ${r.quantity} ${r.unit}`);
       return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} baris.`;
     },
   });
@@ -393,9 +433,9 @@ export function buildTools(chatId: string) {
         return `Tidak ada transaksi yang cocok dengan filter tersebut.${unmatchedNote(unmatched)}`;
       const lines = data.map(
         (r) =>
-          `- [${r.date}] ${TYPE_LABEL[r.type] ?? r.type} ${r.quantity} ${r.unit} ${r.product} | gudang ${r.warehouse}${
-            r.partner ? ` | partner ${r.partner}` : ""
-          }${r.poNumber ? ` | PO ${r.poNumber}` : ""}`,
+          `• [${r.date}] ${TYPE_LABEL[r.type] ?? r.type} ${r.quantity} ${r.unit} ${r.product} — gudang ${r.warehouse}${
+            r.partner ? ` — partner ${r.partner}` : ""
+          }${r.poNumber ? ` — PO ${r.poNumber}` : ""}`,
       );
       return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} transaksi.${matchedNote(matched)}${unmatchedNote(unmatched)}`;
     },
@@ -422,11 +462,14 @@ export function buildTools(chatId: string) {
       });
       if (data.length === 0)
         return `Tidak ada PO yang cocok dengan filter tersebut.${unmatchedNote(unmatched)}`;
-      const lines = data.map((po) => {
-        const items = po.items.map((i) => `${i.quantity} ${i.unit} ${i.product}`).join(", ");
-        return `- ${po.poNumber} [${po.status}] ${po.partner} | ${items} | dibuat ${po.createdAt}${
-          po.targetDate ? ` | target ${po.targetDate}` : ""
-        }`;
+      const lines = data.flatMap((po) => {
+        const created = shortDate(po.createdAt) ?? po.createdAt;
+        const target = shortDate(po.targetDate);
+        return [
+          `• ${po.poNumber} [${po.status}] — ${po.partner}`,
+          ...po.items.map((i) => `  – ${i.quantity} ${i.unit} ${i.product}`),
+          `  Dibuat ${created}${target ? ` — target ${target}` : ""}`,
+        ];
       });
       return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} PO.${matchedNote(matched)}${unmatchedNote(unmatched)}`;
     },
@@ -459,12 +502,12 @@ export function buildTools(chatId: string) {
       const items = po.items
         .map(
           (i) =>
-            `  • ${i.product}: pesan ${i.ordered} ${i.unit}, diterima ${i.received}, sisa ${i.remaining}`,
+            `• ${i.product}: pesan ${i.ordered} ${i.unit}, diterima ${i.received}, sisa ${i.remaining}`,
         )
         .join("\n");
-      return `PO ${po.poNumber} [${po.status}] supplier ${po.partner}${
+      return `PO ${po.poNumber} [${po.status}] — supplier ${po.partner}${
         po.warehouse ? `, gudang ${po.warehouse}` : ""
-      }${po.targetDate ? `, target ${po.targetDate}` : ""}\n${items}`;
+      }${po.targetDate ? `, target ${shortDate(po.targetDate)}` : ""}\n${items}`;
     },
   });
 
@@ -489,11 +532,12 @@ export function buildTools(chatId: string) {
         to: input.to,
       });
       if (data.length === 0) return `Tidak ada surat jalan yang cocok.${unmatchedNote(unmatched)}`;
-      const lines = data.map((dn) => {
-        const items = dn.items.map((i) => `${i.quantity} ${i.unit} ${i.product}`).join(", ");
-        return `- ${dn.dnNumber} [${dn.status}] ${dn.partner} | kirim ${dn.shipDate} | ${items}${
-          dn.poNumber ? ` | PO ${dn.poNumber}` : ""
-        }`;
+      const lines = data.flatMap((dn) => {
+        return [
+          `• ${dn.dnNumber} [${dn.status}] — ${dn.partner}`,
+          ...dn.items.map((i) => `  – ${i.quantity} ${i.unit} ${i.product}`),
+          `  Kirim ${shortDate(dn.shipDate) ?? dn.shipDate}${dn.poNumber ? ` — PO ${dn.poNumber}` : ""}`,
+        ];
       });
       return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} surat jalan.${matchedNote(matched)}${unmatchedNote(unmatched)}`;
     },
@@ -515,7 +559,7 @@ export function buildTools(chatId: string) {
       }[];
       if (rows.length === 0) return "Tidak ada produk dengan stok tipis.";
       return rows
-        .map((p) => `- ${p.name} (SKU ${p.sku}): stok ${p.stock} ${p.unit} (min ${p.minStock})`)
+        .map((p) => `• ${p.name} (SKU ${p.sku}): stok ${p.stock} ${p.unit} (min ${p.minStock})`)
         .join("\n");
     },
   });
@@ -545,10 +589,10 @@ export function buildTools(chatId: string) {
         .slice(0, 5)
         .map(
           (t) =>
-            `  • ${TYPE_LABEL[t.type] ?? t.type} ${t.quantity} ${t.product.unit} ${t.product.name} (${t.warehouse.name})`,
+            `• ${TYPE_LABEL[t.type] ?? t.type} ${t.quantity} ${t.product.unit} ${t.product.name} (${t.warehouse.name})`,
         )
         .join("\n");
-      return `Ringkasan hari ini:\n- Total produk: ${d.totalProducts}\n- PO aktif: ${d.activePOs}\n- Barang masuk hari ini: ${d.todayInbound}\n- Barang keluar hari ini: ${d.todayOutbound}\n- Produk stok tipis: ${d.lowStockCount}\nTransaksi terbaru:\n${recent}`;
+      return `Ringkasan hari ini:\n• Total produk: ${d.totalProducts}\n• PO aktif: ${d.activePOs}\n• Barang masuk hari ini: ${d.todayInbound}\n• Barang keluar hari ini: ${d.todayOutbound}\n• Produk stok tipis: ${d.lowStockCount}\nTransaksi terbaru:\n${recent}`;
     },
   });
 

@@ -5,6 +5,7 @@ import { runAgent } from "../agent/agent";
 import { logConversation, resolveChatUser } from "../services/backendClient";
 import { appendHistory, clearHistory, getHistory } from "./memory";
 import { isRateLimited } from "./rateLimit";
+import { sendFormatted } from "./format";
 
 const PLATFORM = "TELEGRAM" as const;
 
@@ -51,7 +52,7 @@ export function createBot(): Telegraf {
         message: text,
         history: getHistory(chatId),
       });
-      await ctx.reply(result.output);
+      await sendFormatted(ctx, result.output);
       appendHistory(chatId, text, result.output);
 
       await logConversation({

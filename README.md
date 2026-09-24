@@ -222,25 +222,34 @@ Bot   : Stok Dimsum Ayam Ukuran Sedang (SKU: DMS-SDG-01) saat ini 120 pack.
 
 Owner : Kemarin tanggal 20 kita kirim ke mana saja?
 Bot   : Pengiriman 20 Sep:
-        - PT Maju Jaya: 50x Dimsum Ayam Ukuran Sedang
-        - Toko Berkah: 30x Nugget Ayam
+        • PT Maju Jaya: 50 pack Dimsum Ayam Ukuran Sedang
+        • Toko Berkah: 30 pack Nugget Ayam
 
 Owner : Barang masuk dari tanggal 10 sampai hari ini?
 Bot   : Barang masuk 10–23 Sep:
-        - [10 Sep] MASUK 20 bal Keripik Singkong (Gudang Utama) | partner UD Sejahtera
-        - [23 Sep] MASUK 42 pack Dimsum Ayam (Gudang Utama) | partner UD Sejahtera
+        • [10 Sep] MASUK 20 bal Keripik Singkong — gudang Gudang Utama — partner UD Sejahtera
+        • [23 Sep] MASUK 42 pack Dimsum Ayam — gudang Gudang Utama — partner UD Sejahtera
 
 Owner : Tampilkan PO yang sudah confirmed.
-Bot   : PO-202609-001 [CONFIRMED] CV Sumber Frozen | 50 pack Dimsum Ayam
+Bot   : Daftar PO CONFIRMED:
+        • PO-202609-001 [CONFIRMED] — CV Sumber Frozen
+          – 50 pack Dimsum Ayam
+          Dibuat 2026-09-01
+        Total: 1 PO.
 
 Owner : Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum.
-Bot   : Draft PO PO-202609-002 untuk CV Sumber Frozen (50 pack Dimsum) sudah
-        dibuat dengan status DRAFT. Silakan konfirmasi di aplikasi web.
+Bot   : Draft PO PO-202609-002 untuk CV Sumber Frozen berhasil dibuat (status DRAFT).
+        • Supplier: CV Sumber Frozen
+        • Target: 2026-09-24
+        • Item: 50 pack Dimsum Ayam
+        Silakan konfirmasi di aplikasi web.
 
 Owner : Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum.
-Bot   : Draft Surat Jalan DN-202609-001 untuk Agen Bahari (10 pack Dimsum) sudah
-        dibuat dengan status DRAFT. Stok belum berkurang; silakan konfirmasi/kirim
-        di aplikasi web.
+Bot   : Draft Surat Jalan DN-202609-001 untuk Agen Bahari berhasil dibuat (status DRAFT).
+        • Customer: Agen Bahari
+        • Tanggal kirim: 2026-09-23
+        • Item: 10 pack Dimsum Ayam
+        Stok belum berkurang; silakan konfirmasi/kirim di aplikasi web.
 
 Owner : Apa SOP penerimaan barang retur?
 Bot   : (dari knowledge base) Barang retur diverifikasi maksimal 1x24 jam...

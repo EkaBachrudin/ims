@@ -219,7 +219,7 @@ sequenceDiagram
 | ID       | Requirement                                                                                   | Priority |
 | :------- | :-------------------------------------------------------------------------------------------- | :------- |
 | FR-08.1  | Sistem menerima pesan masuk dari Telegram (MVP) / WhatsApp (lanjutan).                          | Must     |
-| FR-08.2  | AI mengenali intent: **check stock**, **daily shipment recap**, **create PO draft**, **SOP/knowledge (RAG)**. | Must     |
+| FR-08.2  | AI mengenali intent baca: **check stock**, **product catalog**, **daily shipment recap**, **inbound/outbound transactions**, **PO list/detail**, **delivery notes**, **partners**, **warehouses**, **low stock**, **dashboard**, dan intent tulis: **create PO draft**, serta **SOP/knowledge (RAG)**. | Must |
 | FR-08.3  | AI memanggil tools (function calling) untuk membaca/menulis data bisnis — dilarang raw SQL.     | Must     |
 | FR-08.4  | Jawaban AI hanya berdasarkan data dari backend (anti-halusinasi, temperature 0).                | Must     |
 | FR-08.5  | AI membalas dengan bahasa Indonesia natural & profesional.                                      | Must     |
@@ -231,15 +231,30 @@ sequenceDiagram
 | FR-08.11 | AI menjawab pertanyaan SOP/kebijakan dari knowledge base via retrieval vector (RAG), read-only ke `document_chunks`. | Should |
 | FR-08.12 | Jawaban SOP hanya bersumber dari konteks retrieval (grounded), menyebutkan sumber bila tersedia. | Must   |
 | FR-08.13 | Knowledge base dapat di-*ingest* dari dokumen SOP (chunking + embeddings) via proses terpisah.   | Should   |
+| FR-08.14 | AI dapat membaca seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) via tool read-only ke Backend API. | Should |
+| FR-08.15 | AI membedakan barang masuk (IN) dan barang keluar (OUT), serta menyampaikan hasil kosong apa adanya (tidak mengarang, tidak menyerah selama masih ada tool relevan). | Must |
+| FR-08.16 | AI dapat membuat draft Surat Jalan (Delivery Note) dari instruksi bahasa natural untuk partner CUSTOMER; status selalu DRAFT (stok belum berubah). | Should |
 
 **Intent → Tool Mapping**
 
-| Intent               | Trigger Example                                                    | Tool (`name`)     | Action                          |
-| :------------------- | :----------------------------------------------------------------- | :---------------- | :------------------------------ |
-| Check stock          | "Ada berapa sisa stok dimsum ukuran sedang?"                        | `cek_stok_barang` | GET produk + stock              |
-| Daily shipment recap | "Kemarin tgl 20 kita kirim kemana aja?"                            | `rekap_pengiriman`| GET transaksi OUT by date       |
-| Create PO draft      | "Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum"    | `buat_draft_po`   | POST draft PO (partner supplier)|
-| SOP / knowledge       | "Apa SOP penerimaan barang retur?"                                 | `cari_sop`        | Retrieval top-K `document_chunks` (read-only) |
+| Intent               | Trigger Example                                                    | Tool (`name`)       | Action                          |
+| :------------------- | :----------------------------------------------------------------- | :------------------ | :------------------------------ |
+| Check stock          | "Ada berapa sisa stok dimsum ukuran sedang?"                        | `cek_stok_barang`   | GET stok by nama produk         |
+| Product catalog      | "Produk air mineral ada ukuran apa saja?"                           | `cari_produk`       | GET katalog produk by kata kunci |
+| List categories      | "Ada kategori apa saja?"                                            | `list_kategori`     | GET daftar kategori             |
+| List partners        | "Siapa saja supplier kita?"                                         | `list_partner`      | GET daftar partner (filter tipe) |
+| List warehouses      | "Gudang apa saja yang aktif?"                                       | `list_gudang`       | GET daftar gudang               |
+| Stock per warehouse  | "Stok dimsum di gudang mana saja?"                                  | `stok_per_gudang`   | GET inventory per produk/gudang |
+| Inbound/outbound     | "Barang masuk tanggal 10 sampai sekarang?"                          | `list_transaksi`    | GET transaksi by type/rentang/filter |
+| Daily shipment recap | "Kemarin tgl 20 kita kirim kemana aja?"                            | `rekap_pengiriman`  | GET transaksi OUT by date       |
+| PO list              | "Tampilkan PO yang confirmed"                                       | `list_po`           | GET daftar PO by status/partner/tanggal |
+| PO detail            | "Detail PO-202609-001"                                              | `detail_po`         | GET detail PO + realisasi      |
+| Delivery notes       | "Surat jalan yang belum terkirim?"                                  | `list_surat_jalan`  | GET daftar surat jalan          |
+| Low stock            | "Produk apa yang stoknya menipis?"                                  | `stok_tipis`        | GET produk stok <= minStock     |
+| Dashboard summary    | "Ringkasan operasional hari ini"                                    | `ringkasan_dashboard` | GET ringkasan dashboard       |
+| Create PO draft      | "Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum"    | `buat_draft_po`     | POST draft PO (partner supplier)|
+| Create DN draft      | "Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum"            | `buat_draft_surat_jalan` | POST draft DN (partner customer) |
+| SOP / knowledge       | "Apa SOP penerimaan barang retur?"                                 | `cari_sop`          | Retrieval top-K `document_chunks` (read-only) |
 
 ### FR-09 — Dashboard & Reporting
 
@@ -419,18 +434,33 @@ sequenceDiagram
 | :----- | :-------------------- | :---------------------- | :---- |
 | GET    | `/delivery-notes`     | List delivery notes     | Bearer |
 | POST   | `/delivery-notes`     | Create for customer     | Admin |
+| POST   | `/delivery-notes/draft` | Create draft DN via AI (resolve by nama, status DRAFT) | Internal |
 | GET    | `/delivery-notes/:id` | Detail                  | Bearer |
 | PATCH  | `/delivery-notes/:id` | Update status           | Admin |
 | GET    | `/delivery-notes/:id/pdf` | Export PDF          | Bearer |
 
 ### 9.7 Reports (internal for AI + web)
 
-| Method | Endpoint                        | Description                         | Auth       |
-| :----- | :------------------------------ | :---------------------------------- | :--------- |
-| GET    | `/reports/stock`                | Current stock report                | Bearer     |
-| GET    | `/reports/stock/:productName`   | Stock lookup by name (AI tool)      | Service/AI |
-| GET    | `/reports/shipments?date=`      | Daily shipment recap (AI tool)      | Service/AI |
-| GET    | `/reports/low-stock`            | Low stock alerts                    | Bearer     |
+Seluruh endpoint di bawah menerima **Bearer (web)** atau **`x-internal-key` (AI Agent)** via `authenticateOrInternal`.
+
+| Method | Endpoint                             | Description                          | Auth        |
+| :----- | :----------------------------------- | :----------------------------------- | :---------- |
+| GET    | `/reports/stock`                     | Current stock report                 | Bearer/AI   |
+| GET    | `/reports/stock/:productName`        | Stock lookup by name (AI tool)       | Bearer/AI   |
+| GET    | `/reports/shipments?date=`           | Daily shipment recap (AI tool)       | Bearer/AI   |
+| GET    | `/reports/low-stock`                 | Low stock alerts                     | Bearer/AI   |
+| GET    | `/reports/dashboard`                 | Operational dashboard summary        | Bearer/AI   |
+| GET    | `/reports/products?q=&categoryId=`   | Product catalog (AI tool)            | Bearer/AI   |
+| GET    | `/reports/categories?q=`             | Category list (AI tool)              | Bearer/AI   |
+| GET    | `/reports/partners?q=&type=`         | Partner list (AI tool)               | Bearer/AI   |
+| GET    | `/reports/warehouses?q=`             | Warehouse list (AI tool)             | Bearer/AI   |
+| GET    | `/reports/inventory?productName=&warehouseCode=` | Stock per warehouse (AI tool) | Bearer/AI |
+| GET    | `/reports/transactions?type=&from=&to=&productName=&warehouseCode=&partnerName=` | Stock transactions (AI tool) | Bearer/AI |
+| GET    | `/reports/purchase-orders?status=&partnerName=&from=&to=` | PO list (AI tool) | Bearer/AI |
+| GET    | `/reports/purchase-orders/:poNumber` | PO detail + receipt status (AI tool) | Bearer/AI |
+| GET    | `/reports/delivery-notes?status=&partnerName=&from=&to=` | Delivery notes list (AI tool) | Bearer/AI |
+
+> Filter berbasis nama (produk/partner/gudang) mencocokkan **semua** substring (mis. `productName=tepung` mengembalikan seluruh produk tepung), bukan hanya yang pertama. Respons menyertakan `matched` (nama entitas yang cocok); bila tidak ada yang cocok, `unmatched` diisi dan `data` kosong (tidak mengembalikan seluruh baris).
 
 ### 9.8 Error Codes
 
@@ -467,24 +497,43 @@ flowchart LR
 
 ### 10.2 Tools
 
-| Tool Name          | Description                              | Parameters (Zod)                                     | Backend/Source                  |
-| :----------------- | :--------------------------------------- | :--------------------------------------------------- | :------------------------------ |
-| `cek_stok_barang`  | Cek sisa stok berdasarkan nama barang    | `productName: string`                                | `GET /reports/stock/:productName` |
-| `rekap_pengiriman` | Rekap pengiriman pada tanggal tertentu   | `date: string` (ISO or natural)                      | `GET /reports/shipments?date=`  |
-| `buat_draft_po`    | Membuat draft Purchase Order (partner supplier) | `partnerName: string`, `items: {productName, qty}[]` | `POST /po/draft`                |
-| `cari_sop`         | Cari SOP/kebijakan internal (RAG)        | `query: string`                                      | `document_chunks` (read-only, top-K) |
+| Tool Name             | Description                              | Parameters (Zod)                                     | Backend/Source                  |
+| :-------------------- | :--------------------------------------- | :--------------------------------------------------- | :------------------------------ |
+| `cek_stok_barang`     | Cek sisa stok berdasarkan nama barang    | `productName: string`                                | `GET /reports/stock/:productName` |
+| `cari_produk`         | Katalog produk (SKU, kategori, stok)     | `q?: string`                                         | `GET /reports/products`         |
+| `list_kategori`       | Daftar kategori + jumlah produk          | —                                                    | `GET /reports/categories`       |
+| `list_partner`        | Daftar partner (supplier/customer)       | `q?: string`, `type?: "SUPPLIER"\|"CUSTOMER"`         | `GET /reports/partners`         |
+| `list_gudang`         | Daftar gudang                            | —                                                    | `GET /reports/warehouses`       |
+| `stok_per_gudang`     | Rincian stok per gudang                  | `productName?: string`, `warehouseCode?: string`      | `GET /reports/inventory`        |
+| `list_transaksi`      | Transaksi masuk/keluar/penyesuaian       | `direction?: "masuk"\|"keluar"\|"penyesuaian"`, `from?`, `to?`, `productName?`, `warehouseCode?`, `partnerName?` | `GET /reports/transactions` |
+| `rekap_pengiriman`    | Rekap barang KELUAR pada satu tanggal    | `date: string` (YYYY-MM-DD)                          | `GET /reports/shipments?date=`  |
+| `list_po`             | Daftar PO (filter status/partner/tanggal)| `status?`, `partnerName?`, `from?`, `to?`             | `GET /reports/purchase-orders`  |
+| `detail_po`           | Detail PO + realisasi penerimaan         | `poNumber: string`                                   | `GET /reports/purchase-orders/:poNumber` |
+| `list_surat_jalan`    | Daftar Surat Jalan / Delivery Note       | `status?`, `partnerName?`, `from?`, `to?`             | `GET /reports/delivery-notes`   |
+| `stok_tipis`          | Produk dengan stok <= minStock           | —                                                    | `GET /reports/low-stock`        |
+| `ringkasan_dashboard` | Ringkasan operasional                    | —                                                    | `GET /reports/dashboard`        |
+| `buat_draft_po`       | Membuat draft Purchase Order (partner supplier) | `partnerName: string`, `items: {productName, qty}[]` | `POST /po/draft`                |
+| `buat_draft_surat_jalan` | Membuat draft Surat Jalan (partner customer) | `partnerName: string`, `items: {productName, qty}[]`, `shipDate?`, `warehouseCode?` | `POST /delivery-notes/draft` |
+| `cari_sop`            | Cari SOP/kebijakan/istilah internal (RAG)| `query: string`                                      | `document_chunks` (read-only, top-K) |
+
+> Semua endpoint `/reports/*` menerima **Bearer token (web)** atau **`x-internal-key` (AI Agent)** via middleware `authenticateOrInternal`.
 
 ### 10.3 System Prompt Guidelines
 
 ```
 You are a smart Warehouse Assistant (Virtual WMS) for an Indonesian SME.
 - Respond in professional, friendly Bahasa Indonesia.
-- NEVER fabricate stock, shipment, or partner data.
+- NEVER fabricate stock, transaction, shipment, partner, PO, or delivery-note data.
 - ALWAYS use provided tools to read or write business data.
-- For SOP/policy questions, use the cari_sop tool and answer ONLY from returned context; cite the source when available.
-- If a tool returns not-found, ask the user for clarification; do not invent values.
+- Read capabilities: stock, product catalog, categories, partners, warehouses, stock per warehouse, inbound/outbound transactions, PO list/detail, delivery notes, low stock, dashboard.
+- IMPORTANT: rekap_pengiriman is ONLY for OUTBOUND (shipments) on a single date. For inbound, or date ranges, or product/warehouse/partner filters, ALWAYS use list_transaksi. Never label outbound data as inbound.
+- If a tool returns not-found or empty, state it plainly; do not invent values and do not give up while a relevant tool remains.
+- Cite the date/source when relevant.
+- For SOP/policy/term questions, use the cari_sop tool and answer ONLY from returned context; cite the source when available.
 - When creating a PO, always keep status DRAFT and remind the user to confirm on the web.
 - Purchase Orders are only for SUPPLIER partners; if the requested partner is not a supplier, explain and ask for clarification instead of creating the PO.
+- Write capabilities are only: buat_draft_po (SUPPLIER) and buat_draft_surat_jalan (CUSTOMER). Both always create DRAFT.
+- Delivery Notes are only for CUSTOMER partners; stock decreases only when the DN is SHIPPED. Ask for items/quantities if not provided.
 - Do not reveal internal IDs, SQL, or API keys.
 ```
 
@@ -500,7 +549,7 @@ You are a smart Warehouse Assistant (Virtual WMS) for an Indonesian SME.
 | Rate limiting         | Limit messages per user per minute.                                 |
 | Input sanitation      | Zod schemas + validation before any write.                          |
 | Audit                 | Log every message + tool call + result to `AiConversationLog`.      |
-| Scope limitation      | Intents MVP: stock, shipment, PO, SOP; expand post-MVP.             |
+| Scope limitation      | Read: semua data operasional (stok, transaksi, PO, surat jalan, partner, gudang, laporan). Write: hanya draft PO & draft Surat Jalan. |
 
 ### 10.5 Error/Edge Handling
 
@@ -509,7 +558,11 @@ You are a smart Warehouse Assistant (Virtual WMS) for an Indonesian SME.
 | Product not found               | "Saya tidak menemukan barang bernama X. Bisa sebutkan nama lain?" |
 | Partner not found               | Inform failure; do not create PO.                        |
 | Partner bukan supplier          | Jelaskan PO hanya untuk supplier; minta partner yang benar.|
+| Partner bukan customer (DN)     | Jelaskan Surat Jalan hanya untuk customer; minta partner yang benar. |
+| DN items belum disebut          | Minta daftar barang & jumlah sebelum membuat draft DN.   |
 | Insufficient stock for PO       | Warn user; still create draft (PO does not move stock).  |
+| Empty result for data query     | State that no matching data was found; do not invent rows. |
+| Ambiguous inbound vs outbound   | Use `list_transaksi` with explicit direction; never relabel outbound as inbound. |
 | SOP not found in knowledge base | State that no relevant SOP was found; do not invent policy. |
 | LLM/API error                   | "Maaf, sistem sedang mengalami gangguan. Coba lagi nanti."|
 | Out-of-scope question           | Politely state limitation and suggest capabilities.      |

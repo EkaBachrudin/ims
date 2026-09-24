@@ -98,7 +98,9 @@ Kesenjangan antara **kompleksitas sistem** dan **kebiasaan komunikasi alami** pe
    - Dashboard stok dan laporan operasional.
    - Autentikasi & manajemen pengguna berbasis peran.
 2. **AI Chat Assistant** via Telegram (MVP) / WhatsApp (tahap lanjut):
-   - Intent: cek stok, rekap pengiriman harian, buat draft PO, tanya SOP/knowledge.
+   - Intent baca: cek stok & katalog produk, rekap pengiriman, transaksi barang masuk/keluar, daftar/detail PO, surat jalan, partner, gudang, stok tipis, dan ringkasan dashboard.
+   - Intent tulis: buat draft PO, buat draft Surat Jalan.
+   - Tanya SOP/knowledge.
    - Data bisnis diakses via *function/tool calling* ke backend API (bukan Text-to-SQL langsung).
    - Knowledge/SOP dijawab via **RAG retrieval** *read-only* dari vector store (`document_chunks`).
    - Guardrail anti-halusinasi & audit percakapan.
@@ -182,6 +184,7 @@ flowchart LR
 | BR-011 | Setiap perubahan data penting harus tercatat pada audit log.                    | Should   | FR-10          |
 | BR-012 | Sistem harus berjalan pada arsitektur container yang dapat di-deploy ulang.    | Should   | NFR-10         |
 | BR-013 | Owner dapat menanyakan SOP/kebijakan internal melalui chat, dijawab dari knowledge base (RAG). | Should | FR-08 |
+| BR-014 | Owner dapat menanyakan seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) melalui chat. | Should | FR-08 |
 
 ---
 

@@ -172,7 +172,7 @@ ai-agent/
 │   │   ├── retriever.ts      # query top-K ke document_chunks
 │   │   └── ingest.ts         # (offline) chunk + embed + upsert dokumen SOP
 │   ├── agent/
-│   │   ├── tools.ts          # LangChain tools (business + knowledge)
+│   │   ├── tools.ts          # LangChain tools (baca data + tulis draft PO + knowledge)
 │   │   ├── prompt.ts         # system prompt
 │   │   └── agent.ts          # createToolCallingAgent + executor
 │   ├── bot/
@@ -961,6 +961,8 @@ export const createPoDraftTool = tool(
 
 > Perhatikan: parameter `items` berbentuk array — berbeda dari rancangan awal (single item) — agar mendukung multi-item PO sekaligus konsisten dengan `PurchaseOrderItem` di ERD.
 
+**Set lengkap tool baca data (pasca-MVP):** selain `cek_stok_barang`, `rekap_pengiriman`, `buat_draft_po`, `buat_draft_surat_jalan`, dan `cari_sop`, tersedia `cari_produk`, `list_kategori`, `list_partner`, `list_gudang`, `stok_per_gudang`, `list_transaksi`, `list_po`, `detail_po`, `list_surat_jalan`, `stok_tipis`, dan `ringkasan_dashboard`. Tool tulis hanya `buat_draft_po` (`POST /po/draft`, SUPPLIER) dan `buat_draft_surat_jalan` (`POST /delivery-notes/draft`, CUSTOMER), keduanya membuat DRAFT. Semua memanggil endpoint backend dengan `x-internal-key` (lihat FSD §9.6/§9.7 & §10.2). Data transaksional **tidak** di-embed; hanya SOP + glossary skema (`docs/knowledge/`) yang di-RAG.
+
 ### 9.3 System Prompt
 
 ```ts
@@ -1186,7 +1188,7 @@ npm run rag:ingest   # membaca ai-agent/docs/knowledge/*.md
 | Rate limiting      | Batasi pesan/user/menit (mis. `telegraf-ratelimit` atau counter).   |
 | Audit              | Log tiap pesan + tool call ke `AiConversationLog`.                  |
 | Error handling     | Tangkap error LLM/HTTP → balas pesan ramah.                         |
-| Scope              | Intent MVP: stok, pengiriman, PO, SOP; out-of-scope ditolak sopan.  |
+| Scope              | Baca: seluruh data operasional (stok, transaksi, PO, surat jalan, partner, gudang, laporan). Tulis: hanya draft PO & draft Surat Jalan; out-of-scope ditolak sopan. |
 
 ---
 

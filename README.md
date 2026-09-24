@@ -63,11 +63,19 @@ Proyek ini menghadirkan **WMS berbasis web** untuk staf admin gudang, yang dihub
 ### 2. Asisten AI (Chat) — untuk Owner/Manager
 
 - **Cek stok** — _"Berapa sisa stok Dimsum Ayam Ukuran Sedang?"_
+- **Katalog & varian produk** — _"Produk air mineral ada ukuran apa saja?"_
+- **Barang masuk / keluar** — _"Barang masuk dari tanggal 10 sampai hari ini?"_
 - **Rekap pengiriman** — _"Kemarin tanggal 20 kita kirim ke mana saja?"_
+- **Purchase Order** — _"Tampilkan PO yang sudah confirmed"_, _"Detail PO-202609-001"_
+- **Surat Jalan** — _"Surat jalan yang belum terkirim?"_
+- **Stok tipis & ringkasan** — _"Produk apa yang stoknya menipis?"_
 - **Buat draft PO** — _"Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum."_
+- **Buat draft Surat Jalan** — _"Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum."_
 - **Tanya SOP/knowledge** (RAG) — _"Apa SOP penerimaan barang retur?"_
 - **Anti-halusinasi** — jawaban hanya dari data perusahaan/konteks RAG, bukan pengetahuan umum.
 - **Intent-to-action** — perintah chat dapat memicu pembuatan draft PO di sistem.
+
+> **Catatan:** seluruh pembacaan data bisnis (produk, kategori, partner, gudang, transaksi, PO, surat jalan, laporan) dilakukan lewat Backend API (`/reports/*`) dengan **internal key**. Data transaksional **tidak** di-embed ke vector store; hanya SOP/kebijakan yang di-RAG.
 
 ---
 
@@ -229,9 +237,22 @@ Bot   : Pengiriman 20 Sep:
         - PT Maju Jaya: 50x Dimsum Ayam Ukuran Sedang
         - Toko Berkah: 30x Nugget Ayam
 
+Owner : Barang masuk dari tanggal 10 sampai hari ini?
+Bot   : Barang masuk 10–23 Sep:
+        - [10 Sep] MASUK 20 bal Keripik Singkong (Gudang Utama) | partner UD Sejahtera
+        - [23 Sep] MASUK 42 pack Dimsum Ayam (Gudang Utama) | partner UD Sejahtera
+
+Owner : Tampilkan PO yang sudah confirmed.
+Bot   : PO-202609-001 [CONFIRMED] CV Sumber Frozen | 50 pack Dimsum Ayam
+
 Owner : Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum.
-Bot   : Draft PO PO-202609-001 untuk CV Sumber Frozen (50 pack Dimsum) sudah
+Bot   : Draft PO PO-202609-002 untuk CV Sumber Frozen (50 pack Dimsum) sudah
         dibuat dengan status DRAFT. Silakan konfirmasi di aplikasi web.
+
+Owner : Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum.
+Bot   : Draft Surat Jalan DN-202609-001 untuk Agen Bahari (10 pack Dimsum) sudah
+        dibuat dengan status DRAFT. Stok belum berkurang; silakan konfirmasi/kirim
+        di aplikasi web.
 
 Owner : Apa SOP penerimaan barang retur?
 Bot   : (dari knowledge base) Barang retur diverifikasi maksimal 1x24 jam...
@@ -248,6 +269,8 @@ Bot   : (dari knowledge base) Barang retur diverifikasi maksimal 1x24 jam...
 | **3**  | Frontend Lanjutan + AI Dasar      | UI transaksi & PO + dashboard; setup ai-agent, Telegraf, tools cek stok & rekap pengiriman |
 | **4**  | AI Lanjutan + RAG                 | Tool buat draft PO, RAG ingestion + retriever, tool cari SOP, sinkronisasi chat → web      |
 | **5**  | Testing & Finalisasi              | E2E chat → PO → web, bug fixing, optimasi prompt, dokumentasi & demo                       |
+
+> **Perluasan pasca-MVP:** Asisten AI dapat membaca seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) melalui endpoint baca `/reports/*` dengan internal key.
 
 ---
 

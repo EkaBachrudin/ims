@@ -1,12 +1,27 @@
 import { Router } from "express";
 import { asyncHandler } from "../../lib/asyncHandler";
 import { validate } from "../../middlewares/validate";
-import { authenticate } from "../../middlewares/auth";
+import { authenticate, requireInternalKey } from "../../middlewares/auth";
 import { requireRole } from "../../middlewares/rbac";
-import { createDnSchema, idParamSchema, listDnSchema, updateDnStatusSchema } from "./delivery-notes.schema";
+import {
+  createDnSchema,
+  draftDnSchema,
+  idParamSchema,
+  listDnSchema,
+  updateDnStatusSchema,
+} from "./delivery-notes.schema";
 import * as controller from "./delivery-notes.controller";
 
 export const deliveryNotesRouter = Router();
+
+// Internal endpoint untuk AI Agent (didaftarkan lebih dulu agar tidak tertutup auth Bearer).
+deliveryNotesRouter.post(
+  "/draft",
+  requireInternalKey,
+  validate(draftDnSchema),
+  asyncHandler(controller.createDraft),
+);
+
 deliveryNotesRouter.use(authenticate);
 
 deliveryNotesRouter.get("/", validate(listDnSchema), asyncHandler(controller.list));

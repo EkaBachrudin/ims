@@ -15,10 +15,14 @@ export function createBot(): Telegraf {
     clearHistory(String(ctx.chat.id));
     return ctx.reply(
       "Halo Bos! 👋 Saya Asisten Gudang.\n\nCoba tanyakan:\n" +
-        "• \"Berapa sisa stok dimsum ukuran sedang?\"\n" +
-        "• \"Kemarin kita kirim ke mana saja?\"\n" +
-        "• \"Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum\"\n" +
-        "• \"Apa SOP penerimaan barang retur?\"",
+        '• "Berapa sisa stok dimsum ukuran sedang?"\n' +
+        '• "Produk air mineral ada ukuran apa saja?"\n' +
+        '• "Barang masuk dari tanggal 10 sampai hari ini?"\n' +
+        '• "Tampilkan PO yang sudah confirmed"\n' +
+        '• "Kemarin kita kirim ke mana saja?"\n' +
+        '• "Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum"\n' +
+        '• "Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum"\n' +
+        '• "Apa SOP penerimaan barang retur?"',
     );
   });
 

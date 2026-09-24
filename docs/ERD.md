@@ -882,8 +882,20 @@ model DocumentChunk {
 | Scenario                | Tool               | Data Access (dijalankan oleh Backend)                                       |
 | :---------------------- | :----------------- | :-------------------------------------------------------------------------- |
 | Check stock             | `cek_stok_barang`  | `product.findFirst({ where: { name: { contains, mode: insensitive } } })` → return `stock` + `unit`. |
+| Product catalog         | `cari_produk`      | `product.findMany({ where: { name/sku contains }, include: { category } })`.  |
+| List categories         | `list_kategori`    | `category.findMany({ include: { _count: { products } } })`.                  |
+| List partners           | `list_partner`     | `partner.findMany({ where: { type, name/phone contains } })`.                |
+| List warehouses         | `list_gudang`      | `warehouse.findMany({ where: { name/code contains } })`.                     |
+| Stock per warehouse     | `stok_per_gudang`  | `inventory.findMany({ where: { product.name, warehouse.code/name }, include: { product, warehouse } })`. |
+| Inbound/outbound list   | `list_transaksi`   | `stockTransaction.findMany({ where: { type, createdAt range, productId, warehouseId, partnerId }, include: { product, warehouse, partner, purchaseOrder, deliveryNote } })`. |
 | Daily shipment recap    | `rekap_pengiriman` | `stockTransaction.findMany({ where: { type: OUT, createdAt: dateRange }, include: { partner, product } })`. |
+| PO list                 | `list_po`          | `purchaseOrder.findMany({ where: { status, partnerId, createdAt range }, include: { partner, warehouse, items.product } })`. |
+| PO detail               | `detail_po`        | `purchaseOrder.findFirst({ where: { poNumber }, include: {...} })` + agregasi realisasi `stockTransaction` IN. |
+| Delivery notes list     | `list_surat_jalan` | `deliveryNote.findMany({ where: { status, partnerId, shipDate range }, include: { po, partner, warehouse, items.product } })`. |
+| Low stock               | `stok_tipis`       | `product.findMany()` lalu filter `stock <= minStock`.                        |
+| Dashboard summary       | `ringkasan_dashboard` | Agregasi `product.count`, `purchaseOrder.count`, `stockTransaction.count` + transaksi terbaru. |
 | Create PO draft         | `buat_draft_po`    | Find `partner` + `product` by name, then `purchaseOrder.create({ status: DRAFT, source: AI_CHAT, items: { create: [...] } })`. |
+| Create DN draft         | `buat_draft_surat_jalan` | Find `partner` (wajib CUSTOMER) + `product` + `warehouse` by name, then `deliveryNote.create({ status: DRAFT, items: { create: [...] } })` (stok belum berubah). |
 
 | Scenario (RAG)          | Tool               | Data Access (langsung, read-only)                                            |
 | :---------------------- | :----------------- | :--------------------------------------------------------------------------- |

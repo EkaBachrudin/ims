@@ -7,7 +7,12 @@ import { generateDnNumber } from "../../utils/numbering";
 import { assertDnTransition } from "../../utils/po-state";
 import { applyStock } from "../transactions/transactions.service";
 import type { z } from "zod";
-import type { createDnSchema, listDnSchema, updateDnStatusSchema } from "./delivery-notes.schema";
+import type {
+  createDnSchema,
+  draftDnSchema,
+  listDnSchema,
+  updateDnStatusSchema,
+} from "./delivery-notes.schema";
 
 const dnInclude = {
   po: { select: { id: true, poNumber: true, status: true } },
@@ -30,7 +35,13 @@ export async function listDns(query: z.infer<typeof listDnSchema>["query"]) {
   };
 
   const [rows, total] = await Promise.all([
-    prisma.deliveryNote.findMany({ where, orderBy: { createdAt: "desc" }, skip, take, include: dnInclude }),
+    prisma.deliveryNote.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+      include: dnInclude,
+    }),
     prisma.deliveryNote.count({ where }),
   ]);
 
@@ -63,13 +74,12 @@ export async function createDn(
     }
     partnerId = partnerId ?? po.partnerId;
     warehouseId = warehouseId ?? po.warehouseId ?? undefined;
-    items =
-      items ??
-      po.items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
+    items = items ?? po.items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
   }
 
   if (!partnerId) throw Errors.unprocessable("partnerId wajib diisi");
-  if (!warehouseId) throw Errors.unprocessable("warehouseId wajib diisi (atau isi PO dengan gudang)");
+  if (!warehouseId)
+    throw Errors.unprocessable("warehouseId wajib diisi (atau isi PO dengan gudang)");
   if (!items?.length) throw Errors.unprocessable("Item Surat Jalan kosong");
 
   const partner = await prisma.partner.findUnique({ where: { id: partnerId } });
@@ -97,7 +107,14 @@ export async function createDn(
   });
 
   await audit(
-    { actorId, action: "CREATE", entity: "DeliveryNote", entityId: dn.id, after: dn, ipAddress: ip },
+    {
+      actorId,
+      action: "CREATE",
+      entity: "DeliveryNote",
+      entityId: dn.id,
+      after: dn,
+      ipAddress: ip,
+    },
     prisma,
   );
   return dn;
@@ -140,8 +157,77 @@ export async function updateDnStatus(
   });
 
   await audit(
-    { actorId, action: "UPDATE", entity: "DeliveryNote", entityId: id, before, after: dn, ipAddress: ip },
+    {
+      actorId,
+      action: "UPDATE",
+      entity: "DeliveryNote",
+      entityId: id,
+      before,
+      after: dn,
+      ipAddress: ip,
+    },
     prisma,
   );
   return dn;
+}
+
+/** Dibuat dari chat AI: resolve partner/produk by nama, status selalu DRAFT (stok belum berubah). */
+export async function createDraftFromChat(
+  input: z.infer<typeof draftDnSchema>["body"],
+  actorId: string,
+  ip?: string | null,
+) {
+  const partner = await prisma.partner.findFirst({
+    where: { name: { contains: input.partnerName, mode: "insensitive" } },
+    orderBy: { name: "asc" },
+  });
+  if (!partner) throw Errors.unprocessable(`Partner "${input.partnerName}" tidak ditemukan`);
+  if (partner.type !== "CUSTOMER") {
+    throw Errors.unprocessable(
+      `Partner "${partner.name}" bukan customer; Surat Jalan hanya untuk customer`,
+    );
+  }
+
+  const items: { productId: string; quantity: number }[] = [];
+  for (const item of input.items) {
+    const product = await prisma.product.findFirst({
+      where: { name: { contains: item.productName, mode: "insensitive" } },
+      orderBy: { name: "asc" },
+    });
+    if (!product) throw Errors.unprocessable(`Produk "${item.productName}" tidak ditemukan`);
+    items.push({ productId: product.id, quantity: item.qty });
+  }
+
+  let warehouseId: string | undefined;
+  if (input.warehouseCode) {
+    const warehouse = await prisma.warehouse.findFirst({
+      where: {
+        OR: [
+          { code: { equals: input.warehouseCode, mode: "insensitive" } },
+          { name: { contains: input.warehouseCode, mode: "insensitive" } },
+        ],
+      },
+    });
+    if (!warehouse) throw Errors.unprocessable(`Gudang "${input.warehouseCode}" tidak ditemukan`);
+    warehouseId = warehouse.id;
+  } else {
+    const warehouse = await prisma.warehouse.findFirst({
+      where: { isActive: true },
+      orderBy: { code: "asc" },
+    });
+    warehouseId = warehouse?.id;
+  }
+  if (!warehouseId) throw Errors.unprocessable("Tidak ada gudang aktif untuk Surat Jalan");
+
+  return createDn(
+    {
+      partnerId: partner.id,
+      warehouseId,
+      shipDate: input.shipDate ?? new Date().toISOString().slice(0, 10),
+      notes: input.notes ?? "Dibuat via asisten AI",
+      items,
+    },
+    actorId,
+    ip,
+  );
 }

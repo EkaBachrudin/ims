@@ -163,6 +163,43 @@ describe("Reports read endpoints (AI Agent)", () => {
     expect(res.body.data.some((po: { poNumber: string }) => po.poNumber === poNumber)).toBe(true);
   });
 
+  it("memfilter PO berdasarkan beberapa status sekaligus", async () => {
+    const draft = await prisma.purchaseOrder.create({
+      data: {
+        poNumber: "PO-TEST-DRAFT",
+        status: "DRAFT",
+        partnerId: base.supplier.id,
+        warehouseId: base.warehouse.id,
+        createdById: base.admin.id,
+        items: { create: [{ productId: base.product.id, quantity: 5 }] },
+      },
+    });
+    await prisma.purchaseOrder.create({
+      data: {
+        poNumber: "PO-TEST-CANCEL",
+        status: "CANCELLED",
+        partnerId: base.supplier.id,
+        warehouseId: base.warehouse.id,
+        createdById: base.admin.id,
+        items: { create: [{ productId: base.product.id, quantity: 3 }] },
+      },
+    });
+
+    const res = await request(app)
+      .get("/api/reports/purchase-orders?statuses=DRAFT,CONFIRMED")
+      .set(internal);
+    expect(res.status).toBe(200);
+    const numbers = res.body.data.map((po: { poNumber: string }) => po.poNumber);
+    expect(numbers).toContain(draft.poNumber);
+    expect(numbers).toContain(poNumber);
+    expect(numbers).not.toContain("PO-TEST-CANCEL");
+    expect(
+      res.body.data.every((po: { status: string }) =>
+        ["DRAFT", "CONFIRMED"].includes(po.status),
+      ),
+    ).toBe(true);
+  });
+
   it("menampilkan detail PO berdasarkan nomor", async () => {
     const res = await request(app).get(`/api/reports/purchase-orders/${poNumber}`).set(internal);
     expect(res.status).toBe(200);

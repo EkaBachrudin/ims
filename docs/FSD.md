@@ -249,7 +249,8 @@ sequenceDiagram
 | Stock per warehouse  | "Stok dimsum di gudang mana saja?"                                  | `stok_per_gudang`   | GET inventory per produk/gudang |
 | Inbound/outbound     | "Barang masuk tanggal 10 sampai sekarang?"                          | `list_transaksi`    | GET transaksi by type/rentang/filter |
 | Daily shipment recap | "Kemarin tgl 20 kita kirim kemana aja?"                            | `rekap_pengiriman`  | GET transaksi OUT by date       |
-| PO list              | "Tampilkan PO yang confirmed"                                       | `list_po`           | GET daftar PO by status/partner/tanggal |
+| PO list aktif        | "Tampilkan PO untuk UD Amanah"                                      | `list_po`           | GET daftar PO aktif (DRAFT & CONFIRMED) by partner/tanggal |
+| PO list by status    | "Tampilkan PO yang confirmed"                                       | `list_po_status`    | GET daftar PO by status/partner/tanggal |
 | PO detail            | "Detail PO-202609-001"                                              | `detail_po`         | GET detail PO + realisasi      |
 | Delivery notes       | "Surat jalan yang belum terkirim?"                                  | `list_surat_jalan`  | GET daftar surat jalan          |
 | Low stock            | "Produk apa yang stoknya menipis?"                                  | `stok_tipis`        | GET produk stok <= minStock     |
@@ -510,7 +511,8 @@ flowchart LR
 | `stok_per_gudang`     | Rincian stok per gudang                  | `productName?: string`, `warehouseCode?: string`      | `GET /reports/inventory`        |
 | `list_transaksi`      | Transaksi masuk/keluar/penyesuaian       | `direction?: "masuk"\|"keluar"\|"penyesuaian"`, `from?`, `to?`, `productName?`, `warehouseCode?`, `partnerName?` | `GET /reports/transactions` |
 | `rekap_pengiriman`    | Rekap barang KELUAR pada satu tanggal    | `date: string` (YYYY-MM-DD)                          | `GET /reports/shipments?date=`  |
-| `list_po`             | Daftar PO (filter status/partner/tanggal)| `status?`, `partnerName?`, `from?`, `to?`             | `GET /reports/purchase-orders`  |
+| `list_po`             | Daftar PO aktif (DRAFT & CONFIRMED)      | `partnerName?`, `from?`, `to?`                       | `GET /reports/purchase-orders`  |
+| `list_po_status`      | Daftar PO dengan status eksplisit        | `statuses: ("DRAFT"\|"CONFIRMED"\|"COMPLETED"\|"CANCELLED")[]`, `partnerName?`, `from?`, `to?` | `GET /reports/purchase-orders`  |
 | `detail_po`           | Detail PO + realisasi penerimaan         | `poNumber: string`                                   | `GET /reports/purchase-orders/:poNumber` |
 | `list_surat_jalan`    | Daftar Surat Jalan / Delivery Note       | `status?`, `partnerName?`, `from?`, `to?`             | `GET /reports/delivery-notes`   |
 | `stok_tipis`          | Produk dengan stok <= minStock           | —                                                    | `GET /reports/low-stock`        |

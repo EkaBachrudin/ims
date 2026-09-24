@@ -968,7 +968,7 @@ export const createPoDraftTool = tool(
 
 > Perhatikan: parameter `items` berbentuk array — berbeda dari rancangan awal (single item) — agar mendukung multi-item PO sekaligus konsisten dengan `PurchaseOrderItem` di ERD.
 
-**Set lengkap tool baca data (pasca-MVP):** selain `cek_stok_barang`, `rekap_pengiriman`, `buat_draft_po`, `buat_draft_surat_jalan`, dan `cari_sop`, tersedia `cari_produk`, `list_kategori`, `list_partner`, `list_gudang`, `stok_per_gudang`, `list_transaksi`, `list_po`, `detail_po`, `list_surat_jalan`, `stok_tipis`, dan `ringkasan_dashboard`. Tool tulis hanya `buat_draft_po` (`POST /po/draft`, SUPPLIER) dan `buat_draft_surat_jalan` (`POST /delivery-notes/draft`, CUSTOMER), keduanya membuat DRAFT. Semua memanggil endpoint backend dengan `x-internal-key` (lihat FSD §9.6/§9.7 & §10.2). Data transaksional **tidak** di-embed; hanya SOP + glossary skema (`docs/knowledge/`) yang di-RAG.
+**Set lengkap tool baca data (pasca-MVP):** selain `cek_stok_barang`, `rekap_pengiriman`, `buat_draft_po`, `buat_draft_surat_jalan`, dan `cari_sop`, tersedia `cari_produk`, `list_kategori`, `list_partner`, `list_gudang`, `stok_per_gudang`, `list_transaksi`, `list_po`, `list_po_status`, `detail_po`, `list_surat_jalan`, `stok_tipis`, dan `ringkasan_dashboard`. Tool tulis hanya `buat_draft_po` (`POST /po/draft`, SUPPLIER) dan `buat_draft_surat_jalan` (`POST /delivery-notes/draft`, CUSTOMER), keduanya membuat DRAFT. Semua memanggil endpoint backend dengan `x-internal-key` (lihat FSD §9.6/§9.7 & §10.2). Data transaksional **tidak** di-embed; hanya SOP + glossary skema (`docs/knowledge/`) yang di-RAG.
 
 ### 9.3 System Prompt
 

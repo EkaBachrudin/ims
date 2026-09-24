@@ -889,7 +889,8 @@ model DocumentChunk {
 | Stock per warehouse     | `stok_per_gudang`  | `inventory.findMany({ where: { product.name, warehouse.code/name }, include: { product, warehouse } })`. |
 | Inbound/outbound list   | `list_transaksi`   | `stockTransaction.findMany({ where: { type, createdAt range, productId, warehouseId, partnerId }, include: { product, warehouse, partner, purchaseOrder, deliveryNote } })`. |
 | Daily shipment recap    | `rekap_pengiriman` | `stockTransaction.findMany({ where: { type: OUT, createdAt: dateRange }, include: { partner, product } })`. |
-| PO list                 | `list_po`          | `purchaseOrder.findMany({ where: { status, partnerId, createdAt range }, include: { partner, warehouse, items.product } })`. |
+| PO list (aktif)         | `list_po`          | `purchaseOrder.findMany({ where: { status in (DRAFT, CONFIRMED), partnerId, createdAt range }, include: { partner, warehouse, items.product } })`. |
+| PO list (by status)     | `list_po_status`   | `purchaseOrder.findMany({ where: { status in statuses, partnerId, createdAt range }, include: { partner, warehouse, items.product } })`. |
 | PO detail               | `detail_po`        | `purchaseOrder.findFirst({ where: { poNumber }, include: {...} })` + agregasi realisasi `stockTransaction` IN. |
 | Delivery notes list     | `list_surat_jalan` | `deliveryNote.findMany({ where: { status, partnerId, shipDate range }, include: { po, partner, warehouse, items.product } })`. |
 | Low stock               | `stok_tipis`       | `product.findMany()` lalu filter `stock <= minStock`.                        |

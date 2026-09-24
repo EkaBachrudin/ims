@@ -416,8 +416,11 @@ const poIncludeReport = {
   items: { include: { product: { select: { sku: true, name: true, unit: true } } } },
 } as const;
 
+type PoStatus = "DRAFT" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+
 export async function purchaseOrderListReport(query: {
-  status?: "DRAFT" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+  status?: PoStatus;
+  statuses?: PoStatus[];
   partnerName?: string;
   from?: string;
   to?: string;
@@ -440,8 +443,13 @@ export async function purchaseOrderListReport(query: {
     return { rows: [], meta: buildMeta(page, limit, 0), unmatched, matched };
 
   const createdAt = dateRange(query.from, query.to);
+  const statusWhere: Prisma.PurchaseOrderWhereInput = query.status
+    ? { status: query.status }
+    : query.statuses?.length
+      ? { status: { in: query.statuses } }
+      : {};
   const where: Prisma.PurchaseOrderWhereInput = {
-    ...(query.status ? { status: query.status } : {}),
+    ...statusWhere,
     ...(partners.length ? { partnerId: { in: partners.map((p) => p.id) } } : {}),
     ...(Object.keys(createdAt).length ? { createdAt } : {}),
   };

@@ -39,6 +39,7 @@ describe("buildTools", () => {
       "list_kategori",
       "list_partner",
       "list_po",
+      "list_po_status",
       "list_surat_jalan",
       "list_transaksi",
       "rekap_pengiriman",
@@ -268,7 +269,50 @@ describe("list_transaksi", () => {
 });
 
 describe("list_po", () => {
-  it("menampilkan daftar PO sesuai status", async () => {
+  it("selalu menampilkan PO aktif (DRAFT & CONFIRMED) tanpa filter status", async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        data: [],
+        meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        unmatched: [],
+      },
+    } as never);
+    await findTool("list_po").invoke({ partnerName: "PT Sinar" });
+    expect(mockedGet).toHaveBeenCalledWith("/reports/purchase-orders", {
+      params: { statuses: "DRAFT,CONFIRMED", partnerName: "PT Sinar" },
+    });
+  });
+
+  it("mengabaikan filter status yang keliru (regresi: PO confirmed tidak hilang)", async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            poNumber: "PO-202609-011",
+            status: "CONFIRMED",
+            partner: "UD Amanah",
+            targetDate: null,
+            createdAt: "2026-09-24 05:49",
+            items: [{ product: "Bayam Ikat 250g", quantity: 200, unit: "pack" }],
+          },
+        ],
+        meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+        unmatched: [],
+      },
+    } as never);
+    const result = await findTool("list_po").invoke({
+      status: "DRAFT",
+      partnerName: "UD Amanah",
+    } as never);
+    expect(mockedGet).toHaveBeenCalledWith("/reports/purchase-orders", {
+      params: { statuses: "DRAFT,CONFIRMED", partnerName: "UD Amanah" },
+    });
+    expect(String(result)).toContain("CONFIRMED");
+  });
+});
+
+describe("list_po_status", () => {
+  it("memfilter PO sesuai status yang disebut eksplisit", async () => {
     mockedGet.mockResolvedValue({
       data: {
         data: [
@@ -285,11 +329,25 @@ describe("list_po", () => {
         unmatched: [],
       },
     } as never);
-    const result = await findTool("list_po").invoke({ status: "CONFIRMED" });
+    const result = await findTool("list_po_status").invoke({ statuses: ["CONFIRMED"] });
     expect(String(result)).toContain("PO-202609-001");
     expect(String(result)).toContain("CONFIRMED");
     expect(mockedGet).toHaveBeenCalledWith("/reports/purchase-orders", {
-      params: { status: "CONFIRMED" },
+      params: { statuses: "CONFIRMED" },
+    });
+  });
+
+  it("mendukung beberapa status sekaligus", async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        data: [],
+        meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        unmatched: [],
+      },
+    } as never);
+    await findTool("list_po_status").invoke({ statuses: ["COMPLETED", "CANCELLED"] });
+    expect(mockedGet).toHaveBeenCalledWith("/reports/purchase-orders", {
+      params: { statuses: "COMPLETED,CANCELLED" },
     });
   });
 });

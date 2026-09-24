@@ -66,9 +66,21 @@ export const transactionListReportSchema = z.object({
   }),
 });
 
+const poStatuses = z.preprocess(
+  (value) =>
+    typeof value === "string"
+      ? value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : value,
+  z.array(z.enum(["DRAFT", "CONFIRMED", "COMPLETED", "CANCELLED"])).min(1).optional(),
+);
+
 export const poListReportSchema = z.object({
   query: z.object({
     status: z.enum(["DRAFT", "CONFIRMED", "COMPLETED", "CANCELLED"]).optional(),
+    statuses: poStatuses,
     partnerName: z.string().trim().optional(),
     from: z.string().trim().optional(),
     to: z.string().trim().optional(),

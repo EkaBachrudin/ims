@@ -110,15 +110,36 @@ const transactionSchema = z.object({
 type TransactionInput = z.infer<typeof transactionSchema>;
 
 const poListSchema = z.object({
-  status: z
-    .enum(["DRAFT", "CONFIRMED", "COMPLETED", "CANCELLED"])
-    .optional()
-    .describe("Filter status PO (opsional)"),
   partnerName: z.string().optional().describe("Nama supplier (opsional)"),
-  from: z.string().optional().describe("Tanggal awal dibuat format YYYY-MM-DD (opsional)"),
-  to: z.string().optional().describe("Tanggal akhir dibuat format YYYY-MM-DD (opsional)"),
+  from: z
+    .string()
+    .optional()
+    .describe("Tanggal awal dibuat format YYYY-MM-DD. Isi hanya bila user menyebut rentang tanggal."),
+  to: z
+    .string()
+    .optional()
+    .describe("Tanggal akhir dibuat format YYYY-MM-DD. Isi hanya bila user menyebut rentang tanggal."),
 });
 type PoListInput = z.infer<typeof poListSchema>;
+
+const poStatusListSchema = z.object({
+  statuses: z
+    .array(z.enum(["DRAFT", "CONFIRMED", "COMPLETED", "CANCELLED"]))
+    .min(1)
+    .describe(
+      "Status PO yang disebut user secara eksplisit, mis. ['CONFIRMED'] atau ['COMPLETED','CANCELLED']. Wajib diisi.",
+    ),
+  partnerName: z.string().optional().describe("Nama supplier (opsional)"),
+  from: z
+    .string()
+    .optional()
+    .describe("Tanggal awal dibuat format YYYY-MM-DD. Isi hanya bila user menyebut rentang tanggal."),
+  to: z
+    .string()
+    .optional()
+    .describe("Tanggal akhir dibuat format YYYY-MM-DD. Isi hanya bila user menyebut rentang tanggal."),
+});
+type PoStatusListInput = z.infer<typeof poStatusListSchema>;
 
 const poDetailSchema = z.object({
   poNumber: z.string().describe("Nomor PO, mis. 'PO-202609-001'"),
@@ -177,6 +198,35 @@ function matchedNote(matched?: MatchedNames): string {
   if (matched.warehouses?.length) parts.push(`gudang: ${matched.warehouses.join(", ")}`);
   if (matched.partners?.length) parts.push(`partner: ${matched.partners.join(", ")}`);
   return parts.length ? `\nFilter cocok → ${parts.join(" | ")}` : "";
+}
+
+interface PoListRow {
+  poNumber: string;
+  status: string;
+  partner: string;
+  targetDate: string | null;
+  createdAt: string;
+  items: { product: string; quantity: number; unit: string }[];
+}
+
+function formatPoList(
+  data: PoListRow[],
+  meta: Meta | undefined,
+  matched: MatchedNames | undefined,
+  unmatched: string[] | undefined,
+): string {
+  if (data.length === 0)
+    return `Tidak ada PO yang cocok dengan filter tersebut.${unmatchedNote(unmatched)}`;
+  const lines = data.flatMap((po) => {
+    const created = shortDate(po.createdAt) ?? po.createdAt;
+    const target = shortDate(po.targetDate);
+    return [
+      `• ${po.poNumber} [${po.status}] — ${po.partner}`,
+      ...po.items.map((i) => `  – ${i.quantity} ${i.unit} ${i.product}`),
+      `  Dibuat ${created}${target ? ` — target ${target}` : ""}`,
+    ];
+  });
+  return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} PO.${matchedNote(matched)}${unmatchedNote(unmatched)}`;
 }
 
 async function fetchList<T>(
@@ -444,34 +494,38 @@ export function buildTools(chatId: string) {
   const listPos = new DynamicStructuredTool({
     name: "list_po",
     description:
-      "Menampilkan daftar Purchase Order (PO) dengan filter status, supplier, dan rentang tanggal pembuatan.",
+      "Menampilkan daftar Purchase Order (PO) AKTIF (status DRAFT & CONFIRMED). Tool ini TIDAK menerima filter status. Bila user menyebut status tertentu (mis. confirmed, completed, cancelled), gunakan list_po_status. Isi `from`/`to` HANYA bila user menyebut rentang tanggal.",
     schema: poListSchema,
     func: async (input: PoListInput): Promise<string> => {
-      const { data, meta, unmatched, matched } = await fetchList<{
-        poNumber: string;
-        status: string;
-        partner: string;
-        targetDate: string | null;
-        createdAt: string;
-        items: { product: string; quantity: number; unit: string }[];
-      }>("/reports/purchase-orders", {
-        status: input.status,
-        partnerName: input.partnerName,
-        from: input.from,
-        to: input.to,
-      });
-      if (data.length === 0)
-        return `Tidak ada PO yang cocok dengan filter tersebut.${unmatchedNote(unmatched)}`;
-      const lines = data.flatMap((po) => {
-        const created = shortDate(po.createdAt) ?? po.createdAt;
-        const target = shortDate(po.targetDate);
-        return [
-          `• ${po.poNumber} [${po.status}] — ${po.partner}`,
-          ...po.items.map((i) => `  – ${i.quantity} ${i.unit} ${i.product}`),
-          `  Dibuat ${created}${target ? ` — target ${target}` : ""}`,
-        ];
-      });
-      return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} PO.${matchedNote(matched)}${unmatchedNote(unmatched)}`;
+      const { data, meta, unmatched, matched } = await fetchList<PoListRow>(
+        "/reports/purchase-orders",
+        {
+          statuses: "DRAFT,CONFIRMED",
+          partnerName: input.partnerName,
+          from: input.from,
+          to: input.to,
+        },
+      );
+      return formatPoList(data, meta, matched, unmatched);
+    },
+  });
+
+  const listPosByStatus = new DynamicStructuredTool({
+    name: "list_po_status",
+    description:
+      "Menampilkan daftar Purchase Order (PO) dengan status yang disebut user secara eksplisit (mis. 'PO yang confirmed', 'PO completed', 'PO yang dibatalkan'). JANGAN gunakan tool ini bila user tidak menyebut status tertentu.",
+    schema: poStatusListSchema,
+    func: async (input: PoStatusListInput): Promise<string> => {
+      const { data, meta, unmatched, matched } = await fetchList<PoListRow>(
+        "/reports/purchase-orders",
+        {
+          statuses: input.statuses.join(","),
+          partnerName: input.partnerName,
+          from: input.from,
+          to: input.to,
+        },
+      );
+      return formatPoList(data, meta, matched, unmatched);
     },
   });
 
@@ -609,6 +663,7 @@ export function buildTools(chatId: string) {
     stockPerWarehouse,
     listTransactions,
     listPos,
+    listPosByStatus,
     detailPo,
     listDeliveryNotes,
     lowStock,

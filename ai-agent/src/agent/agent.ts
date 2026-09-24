@@ -47,7 +47,7 @@ export async function runAgent(input: {
       prompt: buildAgentPrompt(),
     }),
     tools,
-    maxIterations: 5,
+    maxIterations: 8,
     returnIntermediateSteps: true,
   });
 

@@ -218,7 +218,7 @@ export function buildTools(chatId: string) {
   const createPoDraft = new DynamicStructuredTool({
     name: "buat_draft_po",
     description:
-      "Membuat draft Purchase Order (PO) baru. Status selalu DRAFT dan wajib dikonfirmasi admin di web.",
+      "Membuat draft Purchase Order (PO) baru. Status selalu DRAFT dan wajib dikonfirmasi admin di web. Gunakan nama produk persis seperti di katalog (lihat hasil cari_produk); nama bebas seperti 'cumi2 beku 1 kilo' bisa gagal dan mengembalikan kandidat/saran.",
     schema: poSchema,
     func: async (input: PoInput): Promise<string> => {
       try {
@@ -241,7 +241,7 @@ export function buildTools(chatId: string) {
   const createDnDraft = new DynamicStructuredTool({
     name: "buat_draft_surat_jalan",
     description:
-      "Membuat draft Surat Jalan (Delivery Note) untuk partner CUSTOMER. Status selalu DRAFT; stok baru berkurang saat surat jalan dikirim (SHIPPED). Wajib dikonfirmasi/dikirim admin di web.",
+      "Membuat draft Surat Jalan (Delivery Note) untuk partner CUSTOMER. Status selalu DRAFT; stok baru berkurang saat surat jalan dikirim (SHIPPED). Wajib dikonfirmasi/dikirim admin di web. Gunakan nama produk persis seperti di katalog (lihat hasil cari_produk); nama bebas seperti 'cumi2 beku 1 kilo' bisa gagal dan mengembalikan kandidat/saran.",
     schema: dnDraftSchema,
     func: async (input: DnDraftInput): Promise<string> => {
       try {
@@ -276,7 +276,7 @@ export function buildTools(chatId: string) {
   const searchProduct = new DynamicStructuredTool({
     name: "cari_produk",
     description:
-      "Mencari/menampilkan daftar produk (katalog) beserta SKU, kategori, stok, dan satuan. Gunakan untuk pertanyaan varian/ukuran lain atau daftar barang.",
+      "Mencari/menampilkan daftar produk (katalog) beserta SKU, kategori, stok, dan satuan. Gunakan untuk pertanyaan varian/ukuran lain, daftar barang, atau untuk menemukan nama produk persis sebelum membuat PO/Surat Jalan (pakai kata kunci pendek seperti 'cumi').",
     schema: productSearchSchema,
     func: async (input: ProductSearchInput): Promise<string> => {
       const { data, meta } = await fetchList<{

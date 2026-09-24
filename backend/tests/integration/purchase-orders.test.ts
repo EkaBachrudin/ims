@@ -14,6 +14,16 @@ let superToken: string;
 beforeAll(async () => {
   await resetDb();
   base = await seedBaseline();
+  await prisma.product.create({
+    data: {
+      sku: "SEA-012",
+      name: "Cumi-Cumi Beku 1kg",
+      unit: "kg",
+      stock: 50,
+      minStock: 5,
+      categoryId: base.category.id,
+    },
+  });
   adminToken = (await loginAs("admin@test.id")).accessToken;
   superToken = (await loginAs("super@test.id")).accessToken;
 });
@@ -76,6 +86,20 @@ describe("Purchase Order lifecycle (AC-07..AC-12)", () => {
     const list = await request(app).get("/api/po?status=DRAFT").set(admin());
     expect(list.status).toBe(200);
     expect(list.body.data.some((po: { poNumber: string }) => po.poNumber === res.body.data.poNumber)).toBe(true);
+  });
+
+  it("mencocokkan nama produk bebas user ke nama katalog pada /po/draft", async () => {
+    const res = await request(app)
+      .post("/api/po/draft")
+      .set("x-internal-key", INTERNAL_KEY)
+      .send({
+        partnerName: "CV Test Sumber",
+        chatId: "900001",
+        items: [{ productName: "cumi2 beku 1 kilo", qty: 10 }],
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.items[0].product.name).toBe("Cumi-Cumi Beku 1kg");
   });
 
   it("menolak /po/draft dari chatId tak terdaftar", async () => {

@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { buildMeta, parsePagination } from "../../utils/pagination";
 import { getReceiptStatus } from "../purchase-orders/purchase-orders.service";
+import { resolveProduct } from "../products/product-resolver";
 
 export async function stockReport(query: {
   q?: string;
@@ -47,9 +48,10 @@ export async function stockReport(query: {
 }
 
 export async function findStockByProductName(productName: string) {
-  const product = await prisma.product.findFirst({
-    where: { name: { contains: productName, mode: "insensitive" } },
-    orderBy: { name: "asc" },
+  const match = await resolveProduct(productName);
+  if (match.status !== "ok") return null;
+  const product = await prisma.product.findUnique({
+    where: { id: match.product.id },
     include: { category: { select: { id: true, name: true } } },
   });
   if (!product) return null;

@@ -5,6 +5,7 @@ import { audit } from "../../utils/audit";
 import { buildMeta, parsePagination } from "../../utils/pagination";
 import { generatePoNumber } from "../../utils/numbering";
 import { assertPoTransition } from "../../utils/po-state";
+import { resolveProductOrThrow } from "../products/product-resolver";
 import type { z } from "zod";
 import type {
   createPoSchema,
@@ -102,10 +103,7 @@ async function resolveWebItems(tx: Tx, items: WebItem[]) {
   for (const item of items) {
     let productId = item.productId;
     if (!productId && item.productName) {
-      const product = await tx.product.findFirst({
-        where: { name: { contains: item.productName, mode: "insensitive" } },
-      });
-      if (!product) throw Errors.unprocessable(`Produk "${item.productName}" tidak ditemukan`);
+      const product = await resolveProductOrThrow(item.productName, tx);
       productId = product.id;
     }
     if (!productId) throw Errors.unprocessable("Item PO membutuhkan productId atau productName");
@@ -303,10 +301,7 @@ export async function createDraftFromChat(
 
   const resolved: { productId: string; quantity: number }[] = [];
   for (const item of input.items) {
-    const product = await prisma.product.findFirst({
-      where: { name: { contains: item.productName, mode: "insensitive" } },
-    });
-    if (!product) throw Errors.unprocessable(`Produk "${item.productName}" tidak ditemukan`);
+    const product = await resolveProductOrThrow(item.productName);
     resolved.push({ productId: product.id, quantity: item.qty });
   }
 

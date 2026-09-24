@@ -124,6 +124,26 @@ describe("buat_draft_surat_jalan", () => {
     expect(String(result)).toContain("Gagal membuat Surat Jalan");
     expect(String(result)).toContain("Partner bukan customer");
   });
+
+  it("meneruskan pesan ambigu beserta kandidat produk dari backend", async () => {
+    mockedPost.mockRejectedValue({
+      response: {
+        data: {
+          error: {
+            message:
+              'Produk "cumi beku" cocok dengan beberapa produk: "Cumi-Cumi Beku 1kg", "Cumi-Cumi Beku 500g".',
+          },
+        },
+      },
+    });
+    const result = await findTool("buat_draft_surat_jalan").invoke({
+      partnerName: "Agen Bahari",
+      items: [{ productName: "cumi beku", qty: 1 }],
+    });
+    expect(String(result)).toContain("beberapa produk");
+    expect(String(result)).toContain("Cumi-Cumi Beku 1kg");
+    expect(String(result)).toContain("Cumi-Cumi Beku 500g");
+  });
 });
 
 describe("cari_sop", () => {

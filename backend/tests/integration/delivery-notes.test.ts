@@ -15,6 +15,26 @@ const bearer = () => ({ Authorization: `Bearer ${token}` });
 beforeAll(async () => {
   await resetDb();
   base = await seedBaseline();
+  await prisma.product.createMany({
+    data: [
+      {
+        sku: "SEA-012",
+        name: "Cumi-Cumi Beku 1kg",
+        unit: "kg",
+        stock: 50,
+        minStock: 5,
+        categoryId: base.category.id,
+      },
+      {
+        sku: "SEA-011",
+        name: "Cumi-Cumi Beku 500g",
+        unit: "pack",
+        stock: 50,
+        minStock: 5,
+        categoryId: base.category.id,
+      },
+    ],
+  });
   token = (await loginAs("admin@test.id")).accessToken;
 });
 
@@ -68,6 +88,35 @@ describe("Draft Surat Jalan via chat (internal)", () => {
         chatId: CHAT_ID,
       });
     expect(res.status).toBe(422);
+  });
+
+  it("mencocokkan nama produk bebas user ke nama katalog", async () => {
+    const res = await request(app)
+      .post("/api/delivery-notes/draft")
+      .set(internal)
+      .send({
+        partnerName: "PT Test Jaya",
+        items: [{ productName: "cumi2 beku 1 kilo", qty: 2 }],
+        chatId: CHAT_ID,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.items[0].product.name).toBe("Cumi-Cumi Beku 1kg");
+  });
+
+  it("menolak nama produk ambigu dan menyebutkan kandidat (422)", async () => {
+    const res = await request(app)
+      .post("/api/delivery-notes/draft")
+      .set(internal)
+      .send({
+        partnerName: "PT Test Jaya",
+        items: [{ productName: "cumi beku", qty: 1 }],
+        chatId: CHAT_ID,
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error.message).toContain("Cumi-Cumi Beku 1kg");
+    expect(res.body.error.message).toContain("Cumi-Cumi Beku 500g");
   });
 
   it("menolak chatId yang tidak terdaftar (403)", async () => {

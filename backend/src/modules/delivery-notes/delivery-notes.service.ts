@@ -6,6 +6,7 @@ import { buildMeta, parsePagination } from "../../utils/pagination";
 import { generateDnNumber } from "../../utils/numbering";
 import { assertDnTransition } from "../../utils/po-state";
 import { applyStock } from "../transactions/transactions.service";
+import { resolveProductOrThrow } from "../products/product-resolver";
 import type { z } from "zod";
 import type {
   createDnSchema,
@@ -249,11 +250,7 @@ export async function createDraftFromChat(
 
   const items: { productId: string; quantity: number }[] = [];
   for (const item of input.items) {
-    const product = await prisma.product.findFirst({
-      where: { name: { contains: item.productName, mode: "insensitive" } },
-      orderBy: { name: "asc" },
-    });
-    if (!product) throw Errors.unprocessable(`Produk "${item.productName}" tidak ditemukan`);
+    const product = await resolveProductOrThrow(item.productName);
     items.push({ productId: product.id, quantity: item.qty });
   }
 

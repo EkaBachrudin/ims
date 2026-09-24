@@ -191,11 +191,11 @@ ai-agent/
 
 | Tool           | Version (min) | Notes                                       |
 | :------------- | :------------ | :------------------------------------------ |
-| Node.js        | 20 LTS        | Gunakan `nvm`. Sudah termasuk `npm`.        |
-| npm            | 10+           | Bawaan Node.js 20 LTS.                      |
-| Docker         | 24+           | + Docker Compose v2.                        |
+| Docker         | 24+           | + Docker Compose v2. Wajib — semua service berjalan di container. |
 | Git            | 2.40+         |                                             |
 | OpenSSL        | —             | Untuk generate `JWT_SECRET`.                |
+
+> **Node.js tidak perlu dipasang di host.** Semua service (backend, frontend, ai-agent, database) berjalan di dalam Docker; dependency diinstall di dalam image. Node.js 20 LTS hanya menjadi base image container.
 
 **Rekomendasi ekstensi editor:** ESLint, Prettier, Prisma, Tailwind CSS IntelliSense, Mermaid Preview.
 
@@ -303,11 +303,13 @@ DB_PASSWORD=postgres
 
 > **Keamanan:** gunakan user DB terpisah untuk AI Agent dengan hak **`GRANT SELECT`** hanya pada tabel `document_chunks`. Jangan gunakan user superuser. `DATABASE_URL` backend (read/write) tidak dibagikan ke AI Agent.
 >
-> **Host koneksi:** `DATABASE_URL` backend mensyaratkan host `localhost` karena Backend dijalankan di host; jika seluruh service jalan via Docker Compose, host menjadi `db:5432` (lihat `docker-compose.yml` di §6.1).
+> **Host koneksi:** karena seluruh service berjalan via Docker Compose, host DB adalah `db:5432` (lihat `docker-compose.yml`). Nilai `localhost` pada `.env.example` per-service hanya placeholder dan di-override oleh environment Docker.
 
 ---
 
 ## 6. Local Setup Quickstart
+
+Seluruh service berjalan di Docker; tidak ada langkah native di host.
 
 ```bash
 # 1. Clone & masuk
@@ -319,30 +321,26 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 cp ai-agent/.env.example ai-agent/.env
 
-# 3. Nyalakan database (pgvector)
-docker compose up -d db
+# 3. Nyalakan semua service (db + backend + frontend + ai-agent, hot reload)
+make dev            # Ctrl+C untuk berhenti; `make dev-down` dari terminal lain
 
-# 4. Backend: install, migrate, seed, jalankan
-cd backend
-npm install
-npx prisma generate
-npx prisma migrate dev --name init
-npx prisma db seed
-npm run dev         # http://localhost:3000
-
-# 5. Frontend (terminal baru)
-cd frontend
-npm install
-npm run dev         # http://localhost:5173
-
-# 6. AI Agent (terminal baru)
-cd ai-agent
-npm install
-npm run rag:ingest   # opsional: embed dokumen SOP ke document_chunks
-npm run dev          # bot long-polling di http://localhost:8080
+# 4. (terminal lain) isi data awal & embed dokumen SOP
+make seed
+make rag-ingest     # opsional: embed dokumen SOP ke document_chunks
 ```
 
-**Alternatif:** `docker compose up --build` untuk menjalankan semuanya sekaligus (kecuali Anda butuh hot-reload yang lebih cepat di host).
+Migrasi dijalankan otomatis oleh container backend saat start. URL service:
+
+| Service  | URL                     |
+| :------- | :---------------------- |
+| Frontend | http://localhost:5173   |
+| Backend  | http://localhost:3001   |
+| AI Agent | http://localhost:8080   |
+| Database | localhost:5433 (psql)   |
+
+**Alternatif per service:** `make dev-backend`, `make dev-frontend`,
+`make dev-ai-agent`. Untuk mode produksi/tanpa hot reload: `make up` dan
+`make down`.
 
 ### 6.1 `docker-compose.yml` (Local)
 
@@ -681,12 +679,21 @@ res.json({ success: true, data: rows, meta: { page, limit, total } });
 
 ### 7.7 Prisma Workflow
 
+Semua perintah Prisma dijalankan di dalam container backend:
+
 ```bash
-npx prisma generate                 # regenerate client setelah ubah schema
-npx prisma migrate dev --name <msg> # buat & terapkan migration (dev)
-npx prisma migrate reset            # reset DB + re-apply + seed
-npx prisma studio                   # GUI inspeksi data
-npx prisma db seed                  # jalankan seed.ts
+# via target Makefile
+make migrate                        # prisma migrate dev (buat & terapkan migration)
+make migrate-deploy                 # prisma migrate deploy (terapkan migration ada)
+make db-reset                       # reset DB + re-apply + seed
+make seed                           # migrate deploy + jalankan seed.ts
+make shell-backend                  # shell interaktif di container backend
+
+# atau langsung lewat docker compose
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm backend \
+  npx prisma generate                # regenerate client setelah ubah schema
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm backend \
+  npx prisma studio                  # GUI inspeksi data
 ```
 
 ### 7.8 Seed Example (`prisma/seed.ts`)
@@ -1170,8 +1177,8 @@ export async function searchKnowledge(query: string, topK = 12) {
 | `AGENT_TOP_K`               | `12`          | Jumlah chunk konteks yang diambil per query.                          |
 
 ```bash
-# Jalankan ingestion dokumen SOP
-npm run rag:ingest   # membaca ai-agent/docs/knowledge/*.md
+# Jalankan ingestion dokumen SOP (via Docker)
+make rag-ingest   # membaca ai-agent/docs/knowledge/*.md
 ```
 
 > **Penting:** AI Agent di runtime **hanya membaca** `document_chunks`. Proses ingest dapat memakai kredensial write terpisah; jangan memberi hak tulis ke proses runtime (least privilege).
@@ -1297,27 +1304,29 @@ sequenceDiagram
 **Prinsip:** skenario `AC-01`…`AC-14` di [FSD](./FSD.md) dipetakan ke test otomatis.
 
 ```bash
-# contoh perintah
-npm test           # unit + integration
-npm run test:e2e   # e2e (opsional)
-npm run lint
-npm run typecheck
+# contoh perintah (semua via Docker)
+make test          # unit + integration
+make lint
+make typecheck
 ```
 
 ---
 
 ## 12. Local Development Workflow
 
-### 12.1 Scripts per Service
+Semua perintah dijalankan lewat Docker (`make` membungkus `docker compose`).
+Tidak ada `npm`/`tsx` di host.
+
+### 12.1 Scripts per Service (dijalankan di dalam container)
 
 ```json
 // backend/package.json (excerpt)
 {
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
-    "prisma": "prisma",
+    "build": "tsc -p tsconfig.build.json",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
     "lint": "eslint .",
@@ -1332,36 +1341,45 @@ npm run typecheck
 {
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "NODE_OPTIONS=--max-old-space-size=6144 tsc -p tsconfig.build.json",
     "rag:ingest": "tsx src/rag/ingest.ts",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit",
     "test": "vitest run"
   }
 }
 ```
 
+Perintah Makefile untuk menjalankannya di container:
+
+| Kebutuhan        | Perintah                                             |
+| :--------------- | :--------------------------------------------------- |
+| Semua service    | `make dev` (Ctrl+C) / `make dev-down`                |
+| Per service      | `make dev-backend` · `make dev-frontend` · `make dev-ai-agent` |
+| Log              | `make dev-logs`                                      |
+| Lint / Typecheck | `make lint` · `make typecheck`                       |
+| Test             | `make test`                                          |
+| Build produksi   | `make build`                                         |
+
 ### 12.2 Daily Loop
 
 ```bash
-docker compose up -d db      # hanya DB
-cd backend && npm run dev    # terminal 1 (http://localhost:3000)
-cd frontend && npm run dev   # terminal 2 (http://localhost:5173)
-cd ai-agent && npm run dev   # terminal 3 (http://localhost:8080)
+make dev          # db + backend + frontend + ai-agent (hot reload)
+make dev-logs     # terminal lain: ikuti log
 ```
 
 ### 12.3 Reset & Reseed
 
 ```bash
-# hapus data dan ulangi migration + seed
-cd backend && npm run db:reset
+# hapus data dan ulangi migration + seed (di dalam container backend)
+make db-reset
 ```
 
 ### 12.4 Ingest Knowledge Base (RAG)
 
 ```bash
 # taruh dokumen SOP di ai-agent/docs/knowledge/*.md, lalu:
-cd ai-agent && npm run rag:ingest
+make rag-ingest
 ```
 
 Verifikasi isi tabel:
@@ -1370,10 +1388,12 @@ Verifikasi isi tabel:
 SELECT source, count(*) FROM document_chunks GROUP BY source;
 ```
 
+Jalankan lewat container DB: `make db-shell`.
+
 ### 12.5 Menguji Bot Lokal
 
 1. Buat bot lewat **@BotFather** → dapat `TELEGRAM_BOT_TOKEN`.
-2. Set token di `ai-agent/.env`, jalankan `npm run dev`.
+2. Set token di `.env` (root) atau `ai-agent/.env`, lalu jalankan `make dev-ai-agent` (atau `make dev`).
 3. Kirim pesan ke bot di Telegram. Untuk mode webhook, gunakan tunnel (mis. `cloudflared`/`ngrok`) dan set `domain`.
 
 ---
@@ -1395,7 +1415,7 @@ SELECT source, count(*) FROM document_chunks GROUP BY source;
 
 - `strict: true`, hindari `any` (kecuali sangat terpaksa & diberi komentar).
 - ESLint + Prettier dengan config seragam di ketiga service.
-- Jalankan `npm run lint && npm run typecheck` sebelum commit.
+- Jalankan `make lint && make typecheck` sebelum commit (via Docker).
 
 ### 13.3 Git Commit (Conventional Commits)
 
@@ -1424,19 +1444,19 @@ Type: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`.
 
 | Masalah                                            | Penyebab umum                              | Solusi                                                            |
 | :------------------------------------------------- | :----------------------------------------- | :---------------------------------------------------------------- |
-| `PrismaClientInitializationError`                  | DB belum siap / URL salah                  | `docker compose up -d db`, cek `DATABASE_URL`.                    |
-| `@prisma/client did not initialize`                | Belum `prisma generate`                    | `npx prisma generate`.                                            |
+| `PrismaClientInitializationError`                  | DB belum siap / URL salah                  | `make db-up`, cek `DATABASE_URL` di compose.                      |
+| `@prisma/client did not initialize`                | Belum `prisma generate`                    | `make dev` (generate otomatis saat start) atau `make shell-backend` lalu `npx prisma generate`. |
 | Error ekstensi `vector` saat migrate               | Pakai image Postgres biasa                 | Gunakan `ankane/pgvector` (lihat compose).                        |
 | Port 3000/5173/8080/5432 sudah dipakai             | Service lain berjalan                      | Hentikan proses atau ubah port.                                   |
 | Bot tidak merespons                                | Token salah / bot belum di-`launch`        | Cek `TELEGRAM_BOT_TOKEN`, lihat log ai-agent.                     |
 | `401` berulang di frontend                         | Access token expired, refresh gagal        | Cek interceptor & `JWT_REFRESH_SECRET`.                           |
 | `403 FORBIDDEN` pada AI `POST /po/draft`           | `INTERNAL_API_KEY` tidak cocok             | Samakan key di backend & ai-agent.                                |
 | Jawaban AI mengarang                               | Temperature > 0 / tools tak dipanggil      | Set `LLM_TEMPERATURE=0`, periksa deskripsi tool.                  |
-| Jawaban SOP tidak relevan / kosong                 | `document_chunks` belum di-ingest          | Jalankan `npm run rag:ingest`, cek `AGENT_TOP_K`.                 |
+| Jawaban SOP tidak relevan / kosong                 | `document_chunks` belum di-ingest          | Jalankan `make rag-ingest`, cek `AGENT_TOP_K`.                    |
 | Error `expected 1536 dimensions`                   | Dimensi embedding tak cocok dengan kolom   | Samakan `EMBEDDING_DIMENSIONS` dgn `vector(1536)`; re-ingest.     |
 | AI `permission denied for table document_chunks`   | User DB read-only kurang `GRANT SELECT`    | Beri `GRANT SELECT` pada `document_chunks` (lihat §2.3 rule 5).   |
-| Outbound selalu ditolak                            | Stok belum di-seed / salah gudang          | Cek `Inventory` per `warehouseId`; jalankan seed.                 |
-| Perubahan schema tidak terpakai                    | Client belum di-regenerate                 | `npx prisma generate` lalu restart `dev`.                         |
+| Outbound selalu ditolak                            | Stok belum di-seed / salah gudang          | Cek `Inventory` per `warehouseId`; jalankan `make seed`.          |
+| Perubahan schema tidak terpakai                    | Client belum di-regenerate                 | `make dev` (generate otomatis saat start) lalu restart container. |
 
 ---
 

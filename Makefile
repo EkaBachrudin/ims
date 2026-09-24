@@ -3,15 +3,11 @@ SHELL := /bin/bash
 
 COMPOSE ?= docker compose
 COMPOSE_DEV := $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
-BACKEND := npm --prefix backend
-FRONTEND := npm --prefix frontend
-AI := npm --prefix ai-agent
 
-.PHONY: help env install setup db-up db-wait db-down db-shell migrate migrate-deploy \
-        seed seed-docker shell-backend db-reset test-db \
+.PHONY: help env setup db-up db-wait db-down db-shell migrate migrate-deploy \
+        seed shell-backend db-reset test-db \
         dev dev-down dev-logs dev-backend dev-frontend dev-ai-agent \
-        dev-native dev-backend-native dev-frontend-native dev-ai-agent-native \
-        rag-ingest rag-ingest-docker \
+        rag-ingest \
         lint typecheck test build up down logs ps nuke nuke-global
 
 ## help: tampilkan daftar perintah
@@ -29,14 +25,8 @@ env:
 	@test -f ai-agent/.env || cp ai-agent/.env.example ai-agent/.env
 	@echo "File .env siap."
 
-## install: install dependency semua service
-install: env
-	$(BACKEND) install
-	$(FRONTEND) install
-	$(AI) install
-
-## setup: siapkan .env + install dependency
-setup: install
+## setup: siapkan .env (dependency diinstall di dalam image Docker)
+setup: env
 
 # ------------------------------------------------------------- Database ----
 
@@ -59,29 +49,25 @@ db-down:
 db-shell:
 	$(COMPOSE) exec db sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"'
 
-## migrate: buat & terapkan migration baru (development)
-migrate: db-up
-	$(BACKEND) run db:migrate
+## migrate: buat & terapkan migration baru (development, via Docker)
+migrate: env
+	$(COMPOSE_DEV) run --rm backend npx prisma migrate dev
 
-## migrate-deploy: terapkan migration yang sudah ada
-migrate-deploy: db-up
-	$(BACKEND) run db:deploy
+## migrate-deploy: terapkan migration yang sudah ada (via Docker)
+migrate-deploy: env
+	$(COMPOSE_DEV) run --rm backend npx prisma migrate deploy
 
-## seed: isi data awal (user, produk, partner, gudang) - native
-seed: db-up
-	$(BACKEND) run db:seed
-
-## seed-docker: isi data awal lewat container backend (Docker dev)
-seed-docker: env
+## seed: isi data awal (user, produk, partner, gudang) via Docker
+seed: env
 	$(COMPOSE_DEV) run --rm backend sh -c "npx prisma migrate deploy && npm run db:seed"
 
 ## shell-backend: buka shell di container backend (Docker dev)
 shell-backend: env
 	$(COMPOSE_DEV) run --rm backend sh
 
-## db-reset: reset database + migration + seed
-db-reset: db-up
-	$(BACKEND) run db:reset
+## db-reset: reset database + migration + seed (via Docker)
+db-reset: env
+	$(COMPOSE_DEV) run --rm backend npm run db:reset
 
 ## test-db: buat database test (wms_test) untuk integration test
 test-db: db-up
@@ -117,60 +103,35 @@ dev-frontend: env
 dev-ai-agent: env
 	$(COMPOSE_DEV) up --build ai-agent
 
-## dev-native: jalankan semua service tanpa Docker (butuh DB lokal)
-dev-native: db-up
-	@echo "Menjalankan backend, frontend, ai-agent (native). Tekan Ctrl+C untuk berhenti."
-	@trap 'kill 0' INT TERM; \
-	 $(BACKEND) run dev 2>&1 | sed 's/^/[backend]  /' & \
-	 $(FRONTEND) run dev 2>&1 | sed 's/^/[frontend] /' & \
-	 $(AI) run dev 2>&1 | sed 's/^/[ai-agent] /' & \
-	 wait
-
-## dev-backend-native: jalankan backend native (butuh DB lokal)
-dev-backend-native: db-up
-	$(BACKEND) run dev
-
-## dev-frontend-native: jalankan frontend native
-dev-frontend-native:
-	$(FRONTEND) run dev
-
-## dev-ai-agent-native: jalankan ai-agent native (butuh DB lokal)
-dev-ai-agent-native: db-up
-	$(AI) run dev
-
-## rag-ingest: embed dokumen SOP ke tabel document_chunks (native)
-rag-ingest: db-up
-	$(AI) run rag:ingest
-
-## rag-ingest-docker: embed dokumen SOP lewat container ai-agent (Docker dev)
-rag-ingest-docker: env
+## rag-ingest: embed dokumen SOP ke tabel document_chunks (via Docker)
+rag-ingest: env
 	$(COMPOSE_DEV) run --rm ai-agent npm run rag:ingest
 
 # -------------------------------------------------------------- Quality ----
 
-## lint: lint semua service
-lint:
-	$(BACKEND) run lint
-	$(FRONTEND) run lint
-	$(AI) run lint
+## lint: lint semua service (via Docker)
+lint: env
+	$(COMPOSE_DEV) run --rm --no-deps backend npm run lint
+	$(COMPOSE_DEV) run --rm --no-deps frontend npm run lint
+	$(COMPOSE_DEV) run --rm --no-deps ai-agent npm run lint
 
-## typecheck: typecheck semua service
-typecheck:
-	$(BACKEND) run typecheck
-	$(FRONTEND) run typecheck
-	$(AI) run typecheck
+## typecheck: typecheck semua service (via Docker)
+typecheck: env
+	$(COMPOSE_DEV) run --rm --no-deps backend npm run typecheck
+	$(COMPOSE_DEV) run --rm --no-deps frontend npm run typecheck
+	$(COMPOSE_DEV) run --rm --no-deps ai-agent npm run typecheck
 
-## test: jalankan test semua service
-test: test-db
-	$(BACKEND) run test
-	$(FRONTEND) run test
-	$(AI) run test
+## test: jalankan test semua service (via Docker)
+test: env test-db
+	$(COMPOSE_DEV) run --rm backend sh -c 'TEST_DATABASE_URL=$${DATABASE_URL%/*}/wms_test npm run test'
+	$(COMPOSE_DEV) run --rm --no-deps frontend npm run test
+	$(COMPOSE_DEV) run --rm --no-deps ai-agent npm run test
 
-## build: build produksi semua service
-build:
-	$(BACKEND) run build
-	$(FRONTEND) run build
-	$(AI) run build
+## build: build produksi semua service (via Docker)
+build: env
+	$(COMPOSE_DEV) run --rm --no-deps backend npm run build
+	$(COMPOSE_DEV) run --rm --no-deps frontend npm run build
+	$(COMPOSE_DEV) run --rm --no-deps ai-agent npm run build
 
 # -------------------------------------------------- Docker full stack -----
 

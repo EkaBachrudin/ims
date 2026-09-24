@@ -156,10 +156,12 @@ Dokumen lengkap tersedia di folder [`docs/`](./docs):
 
 ### Prasyarat
 
-- **Node.js** 20 LTS + **npm** 10+
 - **Docker** 24+ & Docker Compose v2
 - **Git**
 - Akun **Telegram** (buat bot via [@BotFather](https://t.me/BotFather)) & **OpenAI API Key**
+
+> Seluruh service (backend, frontend, ai-agent, database) berjalan di dalam Docker.
+> Node.js/npm tidak perlu dipasang di host — dependency diinstall di dalam image.
 
 ### 1. Clone & siapkan environment
 
@@ -198,8 +200,8 @@ Migrasi dijalankan otomatis oleh container backend saat start. Isi data awal
 dan embed dokumen SOP (opsional) lewat container:
 
 ```bash
-make seed-docker
-make rag-ingest-docker   # opsional: embed dokumen SOP
+make seed
+make rag-ingest   # opsional: embed dokumen SOP
 ```
 
 Target lain yang sering dipakai: `make dev-logs`, `make shell-backend`,
@@ -207,20 +209,6 @@ Target lain yang sering dipakai: `make dev-logs`, `make shell-backend`,
 
 > **Produksi / tanpa hot reload:** `make up` (build & jalankan detached) dan
 > `make down`.
-
-### 3. Alternatif: jalankan native (tanpa Docker untuk app)
-
-Butuh Node.js 20+ di host dan database sudah jalan (`make db-up`).
-
-```bash
-make setup          # install dependency semua service
-make migrate
-make seed
-make dev-native     # backend + frontend + ai-agent
-```
-
-Per service: `make dev-backend-native`, `make dev-frontend-native`,
-`make dev-ai-agent-native`.
 
 ---
 
@@ -277,10 +265,9 @@ Bot   : (dari knowledge base) Barang retur diverifikasi maksimal 1x24 jam...
 ## Pengujian
 
 ```bash
-npm test           # unit + integration
-npm run test:e2e   # e2e (opsional)
-npm run lint
-npm run typecheck
+make test          # unit + integration (via Docker)
+make lint          # via Docker
+make typecheck     # via Docker
 ```
 
 ---
@@ -289,7 +276,7 @@ npm run typecheck
 
 1. Buat branch fitur: `git checkout -b feat/nama-fitur`.
 2. Gunakan [Conventional Commits](https://www.conventionalcommits.org/): `feat(scope): ...`, `fix(scope): ...`, `docs(scope): ...`.
-3. Pastikan `npm run lint && npm run typecheck && npm test` lulus sebelum membuat PR.
+3. Pastikan `make lint && make typecheck && make test` lulus sebelum membuat PR.
 
 ---
 

@@ -47,9 +47,11 @@ export const productApi = {
 };
 
 export const categoryApi = {
-  list: (params?: Record<string, unknown>) => unwrap<Category[]>(api.get("/categories", { params })),
+  list: (params?: Record<string, unknown>) =>
+    unwrap<Category[]>(api.get("/categories", { params })),
   create: (body: { name: string }) => unwrap<Category>(api.post("/categories", body)),
-  update: (id: number, body: { name: string }) => unwrap<Category>(api.patch(`/categories/${id}`, body)),
+  update: (id: number, body: { name: string }) =>
+    unwrap<Category>(api.patch(`/categories/${id}`, body)),
   remove: (id: number) => api.delete(`/categories/${id}`),
 };
 
@@ -61,17 +63,20 @@ export const partnerApi = {
 };
 
 export const warehouseApi = {
-  list: (params?: Record<string, unknown>) => unwrap<Warehouse[]>(api.get("/warehouses", { params })),
+  list: (params?: Record<string, unknown>) =>
+    unwrap<Warehouse[]>(api.get("/warehouses", { params })),
   create: (body: unknown) => unwrap<Warehouse>(api.post("/warehouses", body)),
   update: (id: string, body: unknown) => unwrap<Warehouse>(api.patch(`/warehouses/${id}`, body)),
   remove: (id: string) => api.delete(`/warehouses/${id}`),
 };
 
 export const transactionApi = {
-  list: (params?: Record<string, unknown>) => unwrapList<StockTransaction>(api.get("/transactions", { params })),
+  list: (params?: Record<string, unknown>) =>
+    unwrapList<StockTransaction>(api.get("/transactions", { params })),
   inbound: (body: unknown) => unwrap<StockTransaction>(api.post("/transactions/inbound", body)),
   outbound: (body: unknown) => unwrap<StockTransaction>(api.post("/transactions/outbound", body)),
-  void: (id: string, reason: string) => unwrap<StockTransaction>(api.post(`/transactions/${id}/void`, { reason })),
+  void: (id: string, reason: string) =>
+    unwrap<StockTransaction>(api.post(`/transactions/${id}/void`, { reason })),
 };
 
 export const poApi = {
@@ -85,21 +90,32 @@ export const poApi = {
 };
 
 export const dnApi = {
-  list: (params?: Record<string, unknown>) => unwrapList<DeliveryNote>(api.get("/delivery-notes", { params })),
+  list: (params?: Record<string, unknown>) =>
+    unwrapList<DeliveryNote>(api.get("/delivery-notes", { params })),
   get: (id: string) => unwrap<DeliveryNote>(api.get(`/delivery-notes/${id}`)),
   create: (body: unknown) => unwrap<DeliveryNote>(api.post("/delivery-notes", body)),
+  update: (id: string, body: unknown) =>
+    unwrap<DeliveryNote>(api.put(`/delivery-notes/${id}`, body)),
   updateStatus: (id: string, status: DnStatus, notes?: string) =>
     unwrap<DeliveryNote>(api.patch(`/delivery-notes/${id}`, { status, notes })),
 };
 
 export const reportApi = {
   dashboard: () => unwrap<DashboardSummary>(api.get("/reports/dashboard")),
-  stock: (params?: Record<string, unknown>) => unwrap<StockReportRow[]>(api.get("/reports/stock", { params })),
+  stock: (params?: Record<string, unknown>) =>
+    unwrap<StockReportRow[]>(api.get("/reports/stock", { params })),
   lowStock: () => unwrap<StockReportRow[]>(api.get("/reports/low-stock")),
   shipments: (date: string) =>
-    unwrap<{ date: string; shipments: { partner: string; product: string; qty: number; unit: string; warehouse: string }[] }>(
-      api.get("/reports/shipments", { params: { date } }),
-    ),
+    unwrap<{
+      date: string;
+      shipments: {
+        partner: string;
+        product: string;
+        qty: number;
+        unit: string;
+        warehouse: string;
+      }[];
+    }>(api.get("/reports/shipments", { params: { date } })),
 };
 
 export const userApi = {
@@ -110,5 +126,6 @@ export const userApi = {
 };
 
 export const auditApi = {
-  list: (params?: Record<string, unknown>) => unwrapList<AuditLog>(api.get("/audit-logs", { params })),
+  list: (params?: Record<string, unknown>) =>
+    unwrapList<AuditLog>(api.get("/audit-logs", { params })),
 };

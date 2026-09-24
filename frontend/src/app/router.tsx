@@ -11,6 +11,7 @@ import { InboundPage, OutboundPage } from "@/features/transactions/pages";
 import { PurchaseOrdersPage } from "@/features/purchase-orders/PurchaseOrdersPage";
 import { PurchaseOrderDetailPage } from "@/features/purchase-orders/PurchaseOrderDetailPage";
 import { DeliveryNotesPage } from "@/features/delivery-notes/DeliveryNotesPage";
+import { DeliveryNoteDetailPage } from "@/features/delivery-notes/DeliveryNoteDetailPage";
 import { ReportsPage } from "@/features/reports/ReportsPage";
 import { UsersPage } from "@/features/users/UsersPage";
 import { AuditLogsPage } from "@/features/audit-logs/AuditLogsPage";
@@ -36,6 +37,7 @@ export function AppRouter() {
         <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
         <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
         <Route path="/delivery-notes" element={<DeliveryNotesPage />} />
+        <Route path="/delivery-notes/:id" element={<DeliveryNoteDetailPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route
           path="/users"

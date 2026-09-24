@@ -35,6 +35,17 @@ export const updateDnStatusSchema = z.object({
   }),
 });
 
+export const updateDnSchema = z.object({
+  params: z.object({ id: z.string().uuid() }),
+  body: z.object({
+    partnerId: z.string().uuid().optional(),
+    warehouseId: z.string().uuid().optional(),
+    shipDate: z.string().optional(),
+    notes: z.string().trim().nullable().optional(),
+    items: z.array(dnItem).min(1).optional(),
+  }),
+});
+
 export const idParamSchema = z.object({ params: z.object({ id: z.string().uuid() }) });
 
 // Internal endpoint dipakai AI Agent (tool `buat_draft_surat_jalan`)

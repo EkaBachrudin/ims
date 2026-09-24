@@ -5,10 +5,7 @@ import { audit } from "../../utils/audit";
 import { buildMeta, parsePagination } from "../../utils/pagination";
 import { getReceiptStatus, syncPoReceiptStatus } from "../purchase-orders/purchase-orders.service";
 import type { z } from "zod";
-import type {
-  listTransactionSchema,
-  recordTransactionSchema,
-} from "./transactions.schema";
+import type { listTransactionSchema, recordTransactionSchema } from "./transactions.schema";
 
 type RecordInput = z.infer<typeof recordTransactionSchema>["body"] & { createdById: string };
 
@@ -60,9 +57,7 @@ export async function applyStock(tx: PrismaTx, type: TransactionType, input: Rec
     const line = lines.find((l) => l.productId === input.productId);
     if (!line) throw Errors.unprocessable("Produk tidak ada pada PO sumber");
     if (input.quantity > line.remaining) {
-      throw Errors.unprocessable(
-        `Qty melebihi sisa pesanan PO (sisa ${line.remaining})`,
-      );
+      throw Errors.unprocessable(`Qty melebihi sisa pesanan PO (sisa ${line.remaining})`);
     }
   }
 
@@ -208,6 +203,7 @@ export async function listTransactions(query: z.infer<typeof listTransactionSche
     ...(query.type ? { type: query.type } : {}),
     ...(query.productId ? { productId: query.productId } : {}),
     ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
+    ...(query.deliveryNoteId ? { deliveryNoteId: query.deliveryNoteId } : {}),
     ...(Object.keys(createdAt).length ? { createdAt } : {}),
   };
 

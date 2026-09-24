@@ -28,6 +28,11 @@ export async function updateStatus(req: Request, res: Response) {
   res.json({ success: true, data });
 }
 
+export async function update(req: Request, res: Response) {
+  const data = await service.updateDn(req.params.id, req.body, req.user?.id, clientIp(req));
+  res.json({ success: true, data });
+}
+
 /** Internal: dipanggil AI Agent. Memetakan chatId → user aktif; status selalu DRAFT. */
 export async function createDraft(req: Request, res: Response) {
   const body = req.body as { chatId?: string };

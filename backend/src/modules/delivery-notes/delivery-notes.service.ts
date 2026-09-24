@@ -11,6 +11,7 @@ import type {
   createDnSchema,
   draftDnSchema,
   listDnSchema,
+  updateDnSchema,
   updateDnStatusSchema,
 } from "./delivery-notes.schema";
 
@@ -154,6 +155,64 @@ export async function updateDnStatus(
       data: { status: input.status, ...(input.notes !== undefined ? { notes: input.notes } : {}) },
       include: dnInclude,
     });
+  });
+
+  await audit(
+    {
+      actorId,
+      action: "UPDATE",
+      entity: "DeliveryNote",
+      entityId: id,
+      before,
+      after: dn,
+      ipAddress: ip,
+    },
+    prisma,
+  );
+  return dn;
+}
+
+/** Ubah detail Surat Jalan (hanya saat DRAFT): partner, gudang, tanggal, catatan, item. */
+export async function updateDn(
+  id: string,
+  input: z.infer<typeof updateDnSchema>["body"],
+  actorId?: string | null,
+  ip?: string | null,
+) {
+  const before = await prisma.deliveryNote.findUnique({ where: { id }, include: { items: true } });
+  if (!before) throw Errors.notFound("Delivery Note");
+  if (before.status !== "DRAFT") {
+    throw Errors.invalidState("Surat Jalan hanya dapat diubah saat DRAFT");
+  }
+
+  const partnerId = input.partnerId ?? before.partnerId;
+  const partner = await prisma.partner.findUnique({ where: { id: partnerId } });
+  if (!partner) throw Errors.notFound("Partner");
+  if (partner.type !== "CUSTOMER") {
+    throw Errors.unprocessable("Surat Jalan hanya untuk partner bertipe CUSTOMER");
+  }
+
+  const warehouseId = input.warehouseId ?? before.warehouseId;
+  const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
+  if (!warehouse) throw Errors.notFound("Warehouse");
+
+  const data = {
+    partnerId,
+    warehouseId,
+    ...(input.shipDate !== undefined ? { shipDate: new Date(input.shipDate) } : {}),
+    ...(input.notes !== undefined ? { notes: input.notes } : {}),
+  };
+
+  const dn = await prisma.$transaction(async (tx) => {
+    if (input.items) {
+      await tx.deliveryNoteItem.deleteMany({ where: { dnId: id } });
+      return tx.deliveryNote.update({
+        where: { id },
+        data: { ...data, items: { create: input.items } },
+        include: dnInclude,
+      });
+    }
+    return tx.deliveryNote.update({ where: { id }, data, include: dnInclude });
   });
 
   await audit(

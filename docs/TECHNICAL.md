@@ -1276,6 +1276,12 @@ sequenceDiagram
     AI-->>Owner: jawaban berdasarkan konteks + sumber
 ```
 
+### 10.5 Delivery Note Detail, Edit & Print (Web)
+
+- Halaman detail `/delivery-notes/:id` menampilkan header, item, dan **transaksi OUT terkait** (`GET /transactions?deliveryNoteId=`).
+- Edit detail (partner/gudang/tanggal/catatan/item) hanya saat status `DRAFT` via `PUT /delivery-notes/:id`; perubahan item mengganti seluruh item DN dan dicatat ke audit log.
+- Cetak memakai **browser print** (`window.print()` + `@media print`) yang menyembunyikan chrome aplikasi dan hanya menampilkan area dokumen; tanpa dependency PDF.
+
 ---
 
 ## 11. Testing Strategy

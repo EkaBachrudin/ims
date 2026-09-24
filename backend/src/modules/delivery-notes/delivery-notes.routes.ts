@@ -8,6 +8,7 @@ import {
   draftDnSchema,
   idParamSchema,
   listDnSchema,
+  updateDnSchema,
   updateDnStatusSchema,
 } from "./delivery-notes.schema";
 import * as controller from "./delivery-notes.controller";
@@ -32,6 +33,12 @@ deliveryNotesRouter.post(
   asyncHandler(controller.create),
 );
 deliveryNotesRouter.get("/:id", validate(idParamSchema), asyncHandler(controller.detail));
+deliveryNotesRouter.put(
+  "/:id",
+  requireRole("SUPER_ADMIN", "ADMIN"),
+  validate(updateDnSchema),
+  asyncHandler(controller.update),
+);
 deliveryNotesRouter.patch(
   "/:id",
   requireRole("SUPER_ADMIN", "ADMIN"),

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, X } from "@phosphor-icons/react";
+import { CaretRight, Plus, X } from "@phosphor-icons/react";
 import { partnerApi, poApi, productApi, warehouseApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -37,10 +37,22 @@ export function PurchaseOrdersPage() {
   const [items, setItems] = useState<ItemRow[]>([{ productId: "", quantity: "1" }]);
 
   const filters = { page, limit: 20, status: status || undefined };
-  const { data, isLoading } = useQuery({ queryKey: qk.purchaseOrders.list(filters), queryFn: () => poApi.list(filters) });
-  const partners = useQuery({ queryKey: qk.partners.list({ all: true }), queryFn: () => partnerApi.list({ limit: 100 }) });
-  const products = useQuery({ queryKey: qk.products.list({ all: true }), queryFn: () => productApi.list({ limit: 100 }) });
-  const warehouses = useQuery({ queryKey: qk.warehouses.list(), queryFn: () => warehouseApi.list() });
+  const { data, isLoading } = useQuery({
+    queryKey: qk.purchaseOrders.list(filters),
+    queryFn: () => poApi.list(filters),
+  });
+  const partners = useQuery({
+    queryKey: qk.partners.list({ all: true }),
+    queryFn: () => partnerApi.list({ limit: 100 }),
+  });
+  const products = useQuery({
+    queryKey: qk.products.list({ all: true }),
+    queryFn: () => productApi.list({ limit: 100 }),
+  });
+  const warehouses = useQuery({
+    queryKey: qk.warehouses.list(),
+    queryFn: () => warehouseApi.list(),
+  });
 
   const createMut = useMutation({
     mutationFn: (body: unknown) => poApi.create(body),
@@ -95,8 +107,8 @@ export function PurchaseOrdersPage() {
       key: "poNumber",
       header: "No. PO",
       render: (po) => (
-        <Link to={`/purchase-orders/${po.id}`} className="link">
-          {po.poNumber}
+        <Link to={`/purchase-orders/${po.id}`} className="doc-link">
+          {po.poNumber} <CaretRight size={12} weight="bold" />
         </Link>
       ),
     },
@@ -108,7 +120,8 @@ export function PurchaseOrdersPage() {
     {
       key: "source",
       header: "Sumber",
-      render: (po) => (po.source === "AI_CHAT" ? <Badge tone="indigo">AI Chat</Badge> : <span>Web</span>),
+      render: (po) =>
+        po.source === "AI_CHAT" ? <Badge tone="indigo">AI Chat</Badge> : <span>Web</span>,
     },
     { key: "partner", header: "Partner", render: (po) => po.partner.name },
     { key: "items", header: "Item", render: (po) => po.items.length },
@@ -153,10 +166,10 @@ export function PurchaseOrdersPage() {
             <div className="data-table__card-head">
               <Link
                 to={`/purchase-orders/${po.id}`}
-                className="po-page__card-link"
+                className="doc-link min-w-0 truncate"
                 title={po.poNumber}
               >
-                {po.poNumber}
+                {po.poNumber} <CaretRight size={12} weight="bold" />
               </Link>
               <Badge tone={poStatusTone[po.status as PoStatus]}>{po.status}</Badge>
             </div>
@@ -218,7 +231,11 @@ export function PurchaseOrdersPage() {
               />
             </Field>
             <Field label="Tanggal Target">
-              <Input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+              <Input
+                type="date"
+                value={targetDate}
+                onChange={(e) => setTargetDate(e.target.value)}
+              />
             </Field>
             <Field label="Catatan">
               <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -228,14 +245,14 @@ export function PurchaseOrdersPage() {
           <div>
             <div className="po-page__items-header">
               <span className="po-page__items-title">Item</span>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setItems([...items, { productId: "", quantity: "1" }])}
-                >
-                  <Plus size={14} weight="bold" /> Item
-                </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setItems([...items, { productId: "", quantity: "1" }])}
+              >
+                <Plus size={14} weight="bold" /> Item
+              </Button>
             </div>
             <div className="po-page__items">
               {items.map((item, idx) => (

@@ -211,8 +211,10 @@ sequenceDiagram
 | FR-07.2  | Sistem men-generate nomor Surat Jalan unik.                                                     | Should   |
 | FR-07.3  | Surat Jalan berisi partner, daftar item, qty, dan tanggal kirim.                                | Should   |
 | FR-07.4  | Konfirmasi Surat Jalan membuat transaksi OUT otomatis (opsional, sesuai konfigurasi).            | Could    |
-| FR-07.5  | Surat Jalan dapat dicetak/diekspor PDF.                                                          | Could    |
+| FR-07.5  | Surat Jalan dapat dicetak (browser print / simpan sebagai PDF).                                   | Could    |
 | FR-07.6  | Status Surat Jalan: `DRAFT`, `SHIPPED`, `DELIVERED`, `CANCELLED`.                               | Should   |
+| FR-07.7  | Admin dapat melihat halaman detail Surat Jalan (header, item, transaksi OUT terkait).            | Should   |
+| FR-07.8  | Admin dapat mengubah detail Surat Jalan (partner, gudang, tanggal, catatan, item) selama status `DRAFT`. | Should |
 
 ### FR-08 — AI Chat Assistant
 
@@ -339,6 +341,7 @@ sequenceDiagram
 | S-10  | Purchase Order List    | `/purchase-orders`        | Tabel + filter status; highlight draft dari AI.           |
 | S-11  | Purchase Order Detail  | `/purchase-orders/:id`    | Header + item (dipesan/diterima/sisa); aksi confirm/cancel/terima barang. |
 | S-12  | Delivery Note List     | `/delivery-notes`         | Tabel + CRUD Surat Jalan customer (tanpa PO).            |
+| S-12b | Delivery Note Detail   | `/delivery-notes/:id`     | Header + item; aksi kirim/terkirim/batal, edit saat DRAFT, cetak, transaksi OUT terkait. |
 | S-13  | Reports                | `/reports`                | Filter periode, tabel, export.                           |
 | S-14  | User Management        | `/users`                  | Tabel user + role + mapping chat ID (Super Admin).        |
 | S-15  | Audit Log              | `/audit-logs`             | Tabel + filter (Super Admin).                             |
@@ -385,7 +388,7 @@ sequenceDiagram
 
 | Method | Endpoint               | Description                          | Auth  |
 | :----- | :--------------------- | :----------------------------------- | :---- |
-| GET    | `/transactions`        | List transactions (type/date filter) | Bearer |
+| GET    | `/transactions`        | List transactions (filter type/date/product/warehouse/deliveryNoteId) | Bearer |
 | POST   | `/transactions/inbound`| Record inbound                       | Admin |
 | POST   | `/transactions/outbound`| Record outbound                     | Admin |
 | POST   | `/transactions/:id/void`| Void transaction (with reason)      | Admin |
@@ -436,8 +439,8 @@ sequenceDiagram
 | POST   | `/delivery-notes`     | Create for customer     | Admin |
 | POST   | `/delivery-notes/draft` | Create draft DN via AI (resolve by nama, status DRAFT) | Internal |
 | GET    | `/delivery-notes/:id` | Detail                  | Bearer |
+| PUT    | `/delivery-notes/:id` | Update detail (only DRAFT) | Admin |
 | PATCH  | `/delivery-notes/:id` | Update status           | Admin |
-| GET    | `/delivery-notes/:id/pdf` | Export PDF          | Bearer |
 
 ### 9.7 Reports (internal for AI + web)
 

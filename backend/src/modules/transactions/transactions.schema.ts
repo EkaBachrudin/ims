@@ -7,6 +7,7 @@ export const listTransactionSchema = z.object({
     type: z.enum(["IN", "OUT", "ADJUSTMENT"]).optional(),
     productId: z.string().uuid().optional(),
     warehouseId: z.string().uuid().optional(),
+    deliveryNoteId: z.string().uuid().optional(),
     from: z.string().optional(),
     to: z.string().optional(),
   }),

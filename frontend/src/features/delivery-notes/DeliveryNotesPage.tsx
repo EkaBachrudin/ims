@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, X } from "@phosphor-icons/react";
+import { CaretRight, Plus, X } from "@phosphor-icons/react";
 import { dnApi, partnerApi, productApi, warehouseApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
@@ -34,10 +35,22 @@ export function DeliveryNotesPage() {
   const [items, setItems] = useState<ItemRow[]>([{ productId: "", quantity: "1" }]);
 
   const filters = { page, limit: 20, status: status || undefined };
-  const { data, isLoading } = useQuery({ queryKey: qk.deliveryNotes.list(filters), queryFn: () => dnApi.list(filters) });
-  const partners = useQuery({ queryKey: qk.partners.list({ all: true }), queryFn: () => partnerApi.list({ limit: 100 }) });
-  const products = useQuery({ queryKey: qk.products.list({ all: true }), queryFn: () => productApi.list({ limit: 100 }) });
-  const warehouses = useQuery({ queryKey: qk.warehouses.list(), queryFn: () => warehouseApi.list() });
+  const { data, isLoading } = useQuery({
+    queryKey: qk.deliveryNotes.list(filters),
+    queryFn: () => dnApi.list(filters),
+  });
+  const partners = useQuery({
+    queryKey: qk.partners.list({ all: true }),
+    queryFn: () => partnerApi.list({ limit: 100 }),
+  });
+  const products = useQuery({
+    queryKey: qk.products.list({ all: true }),
+    queryFn: () => productApi.list({ limit: 100 }),
+  });
+  const warehouses = useQuery({
+    queryKey: qk.warehouses.list(),
+    queryFn: () => warehouseApi.list(),
+  });
 
   const customers = (partners.data?.data ?? []).filter((p) => p.type === "CUSTOMER");
 
@@ -58,7 +71,8 @@ export function DeliveryNotesPage() {
   });
 
   const statusMut = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: DnStatus }) => dnApi.updateStatus(id, status),
+    mutationFn: ({ id, status }: { id: string; status: DnStatus }) =>
+      dnApi.updateStatus(id, status),
     onSuccess: () => invalidate(),
     onError: (e) => setError(errorMessage(e)),
   });
@@ -94,7 +108,13 @@ export function DeliveryNotesPage() {
       setError("Tambahkan minimal satu item.");
       return;
     }
-    createMut.mutate({ partnerId, warehouseId, shipDate, notes: notes || null, items: payloadItems });
+    createMut.mutate({
+      partnerId,
+      warehouseId,
+      shipDate,
+      notes: notes || null,
+      items: payloadItems,
+    });
   }
 
   function renderActions(d: DeliveryNote) {
@@ -128,8 +148,20 @@ export function DeliveryNotesPage() {
   }
 
   const columns: Column<DeliveryNote>[] = [
-    { key: "dnNumber", header: "No. Surat Jalan", render: (d) => d.dnNumber },
-    { key: "status", header: "Status", render: (d) => <Badge tone={dnStatusTone[d.status]}>{d.status}</Badge> },
+    {
+      key: "dnNumber",
+      header: "No. Surat Jalan",
+      render: (d) => (
+        <Link to={`/delivery-notes/${d.id}`} className="doc-link">
+          {d.dnNumber} <CaretRight size={12} weight="bold" />
+        </Link>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (d) => <Badge tone={dnStatusTone[d.status]}>{d.status}</Badge>,
+    },
     { key: "partner", header: "Customer", render: (d) => d.partner.name },
     { key: "warehouse", header: "Gudang", render: (d) => d.warehouse.name },
     { key: "shipDate", header: "Tgl Kirim", render: (d) => formatDate(d.shipDate) },
@@ -181,9 +213,13 @@ export function DeliveryNotesPage() {
         mobileCard={(d) => (
           <div>
             <div className="data-table__card-head">
-              <span className="data-table__card-title" title={d.dnNumber}>
-                {d.dnNumber}
-              </span>
+              <Link
+                to={`/delivery-notes/${d.id}`}
+                className="doc-link min-w-0 truncate"
+                title={d.dnNumber}
+              >
+                {d.dnNumber} <CaretRight size={12} weight="bold" />
+              </Link>
               <Badge tone={dnStatusTone[d.status]}>{d.status}</Badge>
             </div>
             <div className="data-table__card-sub">
@@ -241,7 +277,12 @@ export function DeliveryNotesPage() {
               />
             </Field>
             <Field label="Tanggal Kirim" required>
-              <Input type="date" value={shipDate} onChange={(e) => setShipDate(e.target.value)} required />
+              <Input
+                type="date"
+                value={shipDate}
+                onChange={(e) => setShipDate(e.target.value)}
+                required
+              />
             </Field>
             <Field label="Catatan">
               <Input value={notes} onChange={(e) => setNotes(e.target.value)} />

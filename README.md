@@ -55,7 +55,7 @@ Proyek ini menghadirkan **WMS berbasis web** untuk staf admin gudang, yang dihub
 - **Master Data**: Produk (SKU, unit, kategori), Kategori, Partner (Supplier/Customer), Gudang (multi-gudang).
 - **Transaksi Inventori**: Barang masuk (inbound) & barang keluar (outbound) dengan **stok dihitung otomatis**.
 - **Purchase Order (PO)**: Alur `DRAFT → CONFIRMED → COMPLETED / CANCELLED`, penomoran otomatis, dan realisasi penerimaan (IN) tertaut PO (auto-complete saat penuh).
-- **Surat Jalan (Delivery Note)**: Pengiriman mandiri ke partner `CUSTOMER`, siap cetak/ekspor.
+- **Surat Jalan (Delivery Note)**: Pengiriman mandiri ke partner `CUSTOMER`; halaman detail dengan item, edit saat `DRAFT`, cetak (browser print), dan transaksi OUT terkait.
 - **Dashboard & Laporan**: Ringkasan stok, transaksi harian, low-stock alert, rekap pengiriman.
 - **Autentikasi & RBAC**: Peran `SUPER_ADMIN`, `ADMIN`, `OWNER`.
 - **Audit Log**: Jejak perubahan data penting.

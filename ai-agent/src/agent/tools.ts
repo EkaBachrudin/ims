@@ -51,7 +51,7 @@ const poSchema = z.object({
     .array(z.object({ productName: z.string(), qty: z.number().int().positive() }))
     .min(1)
     .describe("Daftar barang yang dipesan"),
-  targetDate: z.string().optional().describe("Tanggal target format YYYY-MM-DD (opsional)"),
+  targetDate: z.string().optional().nullable().describe("Tanggal target format YYYY-MM-DD (opsional)"),
 });
 type PoInput = z.infer<typeof poSchema>;
 
@@ -63,9 +63,9 @@ const dnDraftSchema = z.object({
     .describe("Daftar barang yang dikirim"),
   shipDate: z
     .string()
-    .optional()
+    .optional().nullable()
     .describe("Tanggal kirim format YYYY-MM-DD (opsional, default hari ini)"),
-  warehouseCode: z.string().optional().describe("Kode/nama gudang asal (opsional)"),
+  warehouseCode: z.string().optional().nullable().describe("Kode/nama gudang asal (opsional)"),
 });
 type DnDraftInput = z.infer<typeof dnDraftSchema>;
 
@@ -77,47 +77,47 @@ type SopInput = z.infer<typeof sopSchema>;
 const productSearchSchema = z.object({
   q: z
     .string()
-    .optional()
+    .optional().nullable()
     .describe("Kata kunci nama/SKU produk (opsional). Kosongkan untuk semua produk."),
 });
 type ProductSearchInput = z.infer<typeof productSearchSchema>;
 
 const partnerSearchSchema = z.object({
-  q: z.string().optional().describe("Kata kunci nama partner (opsional)"),
-  type: z.enum(["SUPPLIER", "CUSTOMER"]).optional().describe("Filter tipe partner (opsional)"),
+  q: z.string().optional().nullable().describe("Kata kunci nama partner (opsional)"),
+  type: z.enum(["SUPPLIER", "CUSTOMER"]).optional().nullable().describe("Filter tipe partner (opsional)"),
 });
 type PartnerSearchInput = z.infer<typeof partnerSearchSchema>;
 
 const inventorySchema = z.object({
-  productName: z.string().optional().describe("Nama produk (opsional)"),
-  warehouseCode: z.string().optional().describe("Kode atau nama gudang (opsional)"),
+  productName: z.string().optional().nullable().describe("Nama produk (opsional)"),
+  warehouseCode: z.string().optional().nullable().describe("Kode atau nama gudang (opsional)"),
 });
 type InventoryInput = z.infer<typeof inventorySchema>;
 
 const transactionSchema = z.object({
   direction: z
     .enum(["masuk", "keluar", "penyesuaian"])
-    .optional()
+    .optional().nullable()
     .describe(
       "Arah transaksi: 'masuk' (inbound), 'keluar' (outbound), 'penyesuaian'. Kosongkan untuk semua.",
     ),
-  from: z.string().optional().describe("Tanggal awal format YYYY-MM-DD (opsional)"),
-  to: z.string().optional().describe("Tanggal akhir format YYYY-MM-DD (opsional)"),
-  productName: z.string().optional().describe("Nama produk (opsional)"),
-  warehouseCode: z.string().optional().describe("Kode atau nama gudang (opsional)"),
-  partnerName: z.string().optional().describe("Nama partner/supplier/customer (opsional)"),
+  from: z.string().optional().nullable().describe("Tanggal awal format YYYY-MM-DD (opsional)"),
+  to: z.string().optional().nullable().describe("Tanggal akhir format YYYY-MM-DD (opsional)"),
+  productName: z.string().optional().nullable().describe("Nama produk (opsional)"),
+  warehouseCode: z.string().optional().nullable().describe("Kode atau nama gudang (opsional)"),
+  partnerName: z.string().optional().nullable().describe("Nama partner/supplier/customer (opsional)"),
 });
 type TransactionInput = z.infer<typeof transactionSchema>;
 
 const poListSchema = z.object({
-  partnerName: z.string().optional().describe("Nama supplier (opsional)"),
+  partnerName: z.string().optional().nullable().describe("Nama supplier (opsional)"),
   from: z
     .string()
-    .optional()
+    .optional().nullable()
     .describe("Tanggal awal dibuat format YYYY-MM-DD. Isi hanya bila user menyebut rentang tanggal."),
   to: z
     .string()
-    .optional()
+    .optional().nullable()
     .describe("Tanggal akhir dibuat format YYYY-MM-DD. Isi hanya bila user menyebut rentang tanggal."),
 });
 type PoListInput = z.infer<typeof poListSchema>;
@@ -129,14 +129,14 @@ const poStatusListSchema = z.object({
     .describe(
       "Status PO yang disebut user secara eksplisit, mis. ['CONFIRMED'] atau ['COMPLETED','CANCELLED']. Wajib diisi.",
     ),
-  partnerName: z.string().optional().describe("Nama supplier (opsional)"),
+  partnerName: z.string().optional().nullable().describe("Nama supplier (opsional)"),
   from: z
     .string()
-    .optional()
+    .optional().nullable()
     .describe("Tanggal awal dibuat format YYYY-MM-DD. Isi hanya bila user menyebut rentang tanggal."),
   to: z
     .string()
-    .optional()
+    .optional().nullable()
     .describe("Tanggal akhir dibuat format YYYY-MM-DD. Isi hanya bila user menyebut rentang tanggal."),
 });
 type PoStatusListInput = z.infer<typeof poStatusListSchema>;
@@ -149,11 +149,11 @@ type PoDetailInput = z.infer<typeof poDetailSchema>;
 const dnListSchema = z.object({
   status: z
     .enum(["DRAFT", "SHIPPED", "DELIVERED", "CANCELLED"])
-    .optional()
+    .optional().nullable()
     .describe("Filter status surat jalan (opsional)"),
-  partnerName: z.string().optional().describe("Nama customer (opsional)"),
-  from: z.string().optional().describe("Tanggal kirim awal format YYYY-MM-DD (opsional)"),
-  to: z.string().optional().describe("Tanggal kirim akhir format YYYY-MM-DD (opsional)"),
+  partnerName: z.string().optional().nullable().describe("Nama customer (opsional)"),
+  from: z.string().optional().nullable().describe("Tanggal kirim awal format YYYY-MM-DD (opsional)"),
+  to: z.string().optional().nullable().describe("Tanggal kirim akhir format YYYY-MM-DD (opsional)"),
 });
 type DnListInput = z.infer<typeof dnListSchema>;
 
@@ -170,7 +170,9 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 function paramsOf(input: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined && v !== ""));
+  return Object.fromEntries(
+    Object.entries(input).filter(([, v]) => v !== undefined && v !== null && v !== ""),
+  );
 }
 
 function shortDate(value?: string | null): string | null {

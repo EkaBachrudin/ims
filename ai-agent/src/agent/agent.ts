@@ -13,6 +13,9 @@ function getLlm(): ChatOpenAI {
       model: env.OPENAI_MODEL,
       temperature: env.LLM_TEMPERATURE,
       apiKey: requireOpenAIKey(),
+      modelKwargs: env.OPENAI_REASONING_EFFORT
+        ? { reasoning_effort: env.OPENAI_REASONING_EFFORT }
+        : undefined,
     });
   }
   return cachedLlm;

@@ -12,6 +12,7 @@ const envSchema = z.object({
 
   OPENAI_API_KEY: z.string().optional().default(""),
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  OPENAI_REASONING_EFFORT: z.enum(["none", "low", "medium", "high"]).optional(),
   OPENAI_EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
   EMBEDDING_DIMENSIONS: z.coerce.number().default(1536),
   LLM_TEMPERATURE: z.coerce.number().default(0),

@@ -1,0 +1,25 @@
+# Override production: NODE_ENV=production + frontend di-serve via nginx.
+# Pakai: docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+# Catatan: butuh Docker Compose >= 2.24.4 untuk tag `!override`.
+services:
+  backend:
+    environment:
+      NODE_ENV: production
+    ports: !override []
+    restart: unless-stopped
+
+  ai-agent:
+    environment:
+      NODE_ENV: production
+    ports: !override []
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+      args:
+        VITE_API_BASE_URL: /api
+    ports: !override
+      - "${FRONTEND_HOST_PORT:-8080}:80"
+    restart: unless-stopped

@@ -3,12 +3,15 @@ SHELL := /bin/bash
 
 COMPOSE ?= docker compose
 COMPOSE_DEV := $(COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml
+COMPOSE_PROD := $(COMPOSE) -f docker-compose.yml -f docker-compose.prod.yml
 
 .PHONY: help env setup db-up db-wait db-down db-shell migrate migrate-deploy \
         seed shell-backend db-reset test-db \
         dev dev-down dev-logs dev-backend dev-frontend dev-ai-agent \
         rag-ingest \
-        lint typecheck test build up down logs ps nuke nuke-global
+        lint typecheck test build up down logs ps \
+        prod prod-down prod-logs prod-seed prod-rag-ingest \
+        nuke nuke-global
 
 ## help: tampilkan daftar perintah
 help:
@@ -151,6 +154,30 @@ logs:
 ## ps: status container
 ps:
 	$(COMPOSE) ps
+
+# ------------------------------------------------- Docker production -----
+
+## prod: build & jalankan seluruh stack mode production (detached)
+prod: env
+	$(COMPOSE_PROD) up --build -d
+	$(COMPOSE_PROD) ps
+
+## prod-down: hentikan stack production (data DB tetap tersimpan)
+prod-down:
+	$(COMPOSE_PROD) down
+
+## prod-logs: ikuti log semua service production
+prod-logs:
+	$(COMPOSE_PROD) logs -f --tail=100
+
+## prod-seed: migration + isi data awal di stack production (DESTRUKTIF, via Docker)
+prod-seed: env
+	$(COMPOSE_PROD) run --rm --build backend sh -c "npx prisma migrate deploy && npm run db:seed"
+
+## prod-rag-ingest: pastikan schema lalu embed dokumen SOP ke document_chunks (via Docker)
+prod-rag-ingest: env
+	$(COMPOSE_PROD) run --rm --build backend npx prisma migrate deploy
+	$(COMPOSE_PROD) run --rm --build ai-agent npm run rag:ingest
 
 # ----------------------------------------------------------------- Nuke ----
 

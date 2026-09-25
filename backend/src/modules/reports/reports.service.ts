@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { buildMeta, parsePagination } from "../../utils/pagination";
 import { getReceiptStatus } from "../purchase-orders/purchase-orders.service";
-import { resolveProduct } from "../products/product-resolver";
+import { resolveProduct, searchProducts } from "../products/product-resolver";
 
 export async function stockReport(query: {
   q?: string;
@@ -47,22 +47,80 @@ export async function stockReport(query: {
   }));
 }
 
-export async function findStockByProductName(productName: string) {
-  const match = await resolveProduct(productName);
-  if (match.status !== "ok") return null;
-  const product = await prisma.product.findUnique({
-    where: { id: match.product.id },
-    include: { category: { select: { id: true, name: true } } },
-  });
-  if (!product) return null;
+export interface StockProduct {
+  id: string;
+  sku: string;
+  name: string;
+  unit: string;
+  stock: number;
+  minStock: number;
+  category: { id: number; name: string } | null;
+}
+
+export interface StockLookupResult {
+  status: "ok" | "ambiguous" | "none";
+  product: StockProduct | null;
+  candidates: StockProduct[];
+  suggestions: { name: string; sku: string }[];
+}
+
+function toStockProduct(p: {
+  id: string;
+  sku: string;
+  name: string;
+  unit: string;
+  stock: number;
+  minStock: number;
+  category: { id: number; name: string } | null;
+}): StockProduct {
   return {
-    id: product.id,
-    sku: product.sku,
-    name: product.name,
-    unit: product.unit,
-    stock: product.stock,
-    minStock: product.minStock,
-    category: product.category,
+    id: p.id,
+    sku: p.sku,
+    name: p.name,
+    unit: p.unit,
+    stock: p.stock,
+    minStock: p.minStock,
+    category: p.category,
+  };
+}
+
+const stockProductInclude = { category: { select: { id: true, name: true } } } as const;
+
+/**
+ * Lookup stok berdasarkan nama bebas. Mengembalikan status eksplisit agar
+ * kandidat (ambiguous) maupun saran (none) tidak hilang menjadi null.
+ */
+export async function findStockByProductName(productName: string): Promise<StockLookupResult> {
+  const match = await resolveProduct(productName);
+
+  if (match.status === "ok") {
+    const product = await prisma.product.findUnique({
+      where: { id: match.product.id },
+      include: stockProductInclude,
+    });
+    if (!product) return { status: "none", product: null, candidates: [], suggestions: [] };
+    return { status: "ok", product: toStockProduct(product), candidates: [], suggestions: [] };
+  }
+
+  if (match.status === "ambiguous") {
+    const candidates = await prisma.product.findMany({
+      where: { id: { in: match.candidates.map((c) => c.id) } },
+      orderBy: { name: "asc" },
+      include: stockProductInclude,
+    });
+    return {
+      status: "ambiguous",
+      product: null,
+      candidates: candidates.map(toStockProduct),
+      suggestions: [],
+    };
+  }
+
+  return {
+    status: "none",
+    product: null,
+    candidates: [],
+    suggestions: match.suggestions.map((s) => ({ name: s.name, sku: s.sku })),
   };
 }
 
@@ -177,8 +235,9 @@ export async function productCatalog(query: {
   limit?: number;
 }) {
   const { page, limit, skip, take } = parsePagination(query);
+  const matchedIds = query.q ? (await searchProducts(query.q)).map((p) => p.id) : null;
   const where: Prisma.ProductWhereInput = {
-    ...(query.q ? { OR: [{ name: insensitive(query.q) }, { sku: insensitive(query.q) }] } : {}),
+    ...(matchedIds ? { id: { in: matchedIds } } : {}),
     ...(query.categoryId ? { categoryId: query.categoryId } : {}),
   };
 
@@ -267,8 +326,11 @@ export async function inventoryReport(query: {
   limit?: number;
 }) {
   const { page, limit, skip, take } = parsePagination(query);
+  const matchedProductIds = query.productName
+    ? (await searchProducts(query.productName)).map((p) => p.id)
+    : null;
   const where: Prisma.InventoryWhereInput = {
-    ...(query.productName ? { product: { name: insensitive(query.productName) } } : {}),
+    ...(matchedProductIds ? { productId: { in: matchedProductIds } } : {}),
     ...(query.warehouseCode
       ? {
           warehouse: {
@@ -321,13 +383,7 @@ export async function transactionListReport(query: {
   const { page, limit, skip, take } = parsePagination(query);
 
   const [products, warehouses, partners] = await Promise.all([
-    query.productName
-      ? prisma.product.findMany({
-          where: { name: insensitive(query.productName) },
-          orderBy: { name: "asc" },
-          select: { id: true, name: true },
-        })
-      : [],
+    query.productName ? searchProducts(query.productName) : [],
     query.warehouseCode
       ? prisma.warehouse.findMany({
           where: {

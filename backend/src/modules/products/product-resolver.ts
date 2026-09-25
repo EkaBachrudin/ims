@@ -10,6 +10,11 @@ export interface ResolvedProduct {
   sku: string;
 }
 
+const TOKEN_ALIASES: Record<string, string> = {
+  mie: "mi",
+  miee: "mi",
+};
+
 const UNIT_ALIASES: Record<string, string> = {
   kg: "kg",
   kilo: "kg",
@@ -49,6 +54,12 @@ export function normalizeName(value: string): string {
 
   s = s.replace(/([a-z]+)2\b/g, "$1$1");
   s = s.replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+
+  s = s
+    .split(" ")
+    .map((token) => TOKEN_ALIASES[token] ?? token)
+    .join(" ");
+
   return s;
 }
 
@@ -62,6 +73,17 @@ function tokenMatches(queryToken: string, candidateToken: string): boolean {
   if (queryToken.length >= 4 && candidateToken.includes(queryToken)) return true;
   if (candidateToken.length >= 4 && queryToken.includes(candidateToken)) return true;
   return false;
+}
+
+/** Produk yang seluruh token query-nya cocok dengan token nama produk. */
+function tokenMatchedProducts(
+  products: ResolvedProduct[],
+  queryTokens: string[],
+): ResolvedProduct[] {
+  if (queryTokens.length === 0) return [];
+  return products.filter((p) =>
+    queryTokens.every((qt) => tokenize(p.name).some((ct) => tokenMatches(qt, ct))),
+  );
 }
 
 async function loadProducts(db: Db): Promise<ResolvedProduct[]> {
@@ -107,15 +129,32 @@ export async function resolveProduct(name: string, db: Db = prisma): Promise<Res
   if (exact.length === 1) return { status: "ok", product: exact[0] };
   if (exact.length > 1) return { status: "ambiguous", candidates: exact };
 
-  const matched = products.filter(
-    (p) =>
-      queryTokens.length > 0 &&
-      queryTokens.every((qt) => tokenize(p.name).some((ct) => tokenMatches(qt, ct))),
-  );
+  const matched = tokenMatchedProducts(products, queryTokens);
   if (matched.length === 1) return { status: "ok", product: matched[0] };
   if (matched.length > 1) return { status: "ambiguous", candidates: matched };
 
   return { status: "none", suggestions: suggestionsFor(queryTokens, products) };
+}
+
+/**
+ * Pencarian produk untuk tool AI: cocok bila nama/SKU mengandung query
+ * (perilaku substring lama) ATAU seluruh token query cocok dengan token nama
+ * (sehingga variasi penulisan seperti "mie instan" -> "Mi Instan" ikut ketemu).
+ */
+export async function searchProducts(query: string, db: Db = prisma): Promise<ResolvedProduct[]> {
+  const products = await loadProducts(db);
+  const trimmed = query.trim();
+  if (!trimmed) return products;
+
+  const normalizedQuery = normalizeName(trimmed);
+  const queryTokens = normalizedQuery.length ? normalizedQuery.split(" ") : [];
+  const lowered = trimmed.toLowerCase();
+
+  return products.filter((p) => {
+    if (p.name.toLowerCase().includes(lowered)) return true;
+    if (p.sku.toLowerCase().includes(lowered)) return true;
+    return tokenMatchedProducts([p], queryTokens).length > 0;
+  });
 }
 
 /**

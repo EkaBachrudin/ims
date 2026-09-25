@@ -903,8 +903,17 @@ import { searchKnowledge } from "../rag/retriever";
 export const checkStockTool = tool(
   async ({ productName }) => {
     const { data } = await backend.get(`/reports/stock/${encodeURIComponent(productName)}`);
-    const p = data.data;
-    if (!p) return `Sistem tidak menemukan barang bernama mirip "${productName}".`;
+    const result = data.data;
+    if (!result || result.status === "none") {
+      return `Sistem tidak menemukan barang bernama mirip "${productName}".`;
+    }
+    if (result.status === "ambiguous") {
+      const lines = result.candidates
+        .map((c) => `• ${c.name} (SKU ${c.sku}): stok ${c.stock} ${c.unit}`)
+        .join("\n");
+      return `Kata kunci "${productName}" cocok dengan beberapa produk:\n${lines}\nMohon sebutkan varian yang dimaksud.`;
+    }
+    const p = result.product;
     return `Info database: ${p.name} (SKU: ${p.sku}) stok ${p.stock} ${p.unit}.`;
   },
   {

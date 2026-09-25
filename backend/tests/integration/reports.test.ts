@@ -126,6 +126,23 @@ describe("Reports read endpoints (AI Agent)", () => {
     expect(res.body.data[0].quantity).toBeGreaterThan(0);
   });
 
+  it("mengembalikan status ambiguous beserta kandidat pada lookup stok (regresi)", async () => {
+    const res = await request(app).get("/api/reports/stock/Tepung").set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe("ambiguous");
+    expect(res.body.data.product).toBeNull();
+    expect(res.body.data.candidates.length).toBeGreaterThanOrEqual(2);
+    expect(res.body.data.candidates[0]).toHaveProperty("stock");
+    expect(res.body.data.candidates[0]).toHaveProperty("unit");
+  });
+
+  it("mengembalikan status none pada lookup stok yang tidak ada", async () => {
+    const res = await request(app).get("/api/reports/stock/TidakAda").set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe("none");
+    expect(res.body.data.product).toBeNull();
+  });
+
   it("menampilkan transaksi IN (barang masuk)", async () => {
     const res = await request(app).get("/api/reports/transactions?type=IN").set(internal);
     expect(res.status).toBe(200);

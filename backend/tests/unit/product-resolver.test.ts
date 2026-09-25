@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { describe, expect, it } from "vitest";
-import { normalizeName, resolveProduct, tokenize } from "../../src/modules/products/product-resolver";
+import { normalizeName, resolveProduct, searchProducts, tokenize } from "../../src/modules/products/product-resolver";
 
 const CATALOG = [
   { id: "1", name: "Cumi-Cumi Beku 1kg", sku: "SEA-012" },
@@ -29,6 +29,11 @@ describe("normalizeName", () => {
 
   it("mengubah strip/tanda baca menjadi pemisah", () => {
     expect(normalizeName("Cumi-Cumi Beku 1kg")).toBe("cumi cumi beku 1kg");
+  });
+
+  it("menyamakan penulisan 'mie' dengan 'mi'", () => {
+    expect(normalizeName("mie instan")).toBe("mi instan");
+    expect(normalizeName("Miee Goreng")).toBe("mi goreng");
   });
 });
 
@@ -63,5 +68,31 @@ describe("resolveProduct", () => {
     if (result.status === "none") {
       expect(result.suggestions.map((c) => c.sku)).toContain("SEA-012");
     }
+  });
+});
+
+describe("searchProducts", () => {
+  const catalog = [
+    { id: "1", name: "Mi Instan Goreng Rasa Original", sku: "INS-001" },
+    { id: "2", name: "Bihun Instan Rasa Original", sku: "INS-007" },
+    { id: "3", name: "Dimsum Ayam Ukuran Sedang", sku: "DMS-001" },
+  ];
+
+  function db() {
+    return { product: { findMany: async () => catalog } } as unknown as PrismaClient;
+  }
+
+  it("cocok pada variasi penulisan (mie instan -> Mi Instan)", async () => {
+    const result = await searchProducts("mie instan", db());
+    expect(result.map((p) => p.sku)).toEqual(["INS-001"]);
+  });
+
+  it("tetap mendukung pencarian substring dan SKU", async () => {
+    expect((await searchProducts("bihun", db())).map((p) => p.sku)).toEqual(["INS-007"]);
+    expect((await searchProducts("DMS-001", db())).map((p) => p.id)).toEqual(["3"]);
+  });
+
+  it("mengembalikan semua produk bila query kosong", async () => {
+    expect(await searchProducts("  ", db())).toHaveLength(3);
   });
 });

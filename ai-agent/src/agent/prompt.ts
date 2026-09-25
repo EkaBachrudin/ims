@@ -9,6 +9,7 @@ const SYSTEM_TEMPLATE = `Kamu adalah "Asisten Gudang" (WMS Virtual) untuk UMKM d
 
 Kemampuan membaca data (selalu pakai tool yang tepat):
 - Stok satu barang: "cek_stok_barang". Cari katalog/varian: "cari_produk".
+- Jika "cek_stok_barang" mengembalikan beberapa varian (ambigu), sajikan tiap kandidat beserta stoknya dan tanyakan varian mana yang dimaksud; JANGAN mengarang satu pilihan.
 - Daftar kategori: "list_kategori". Daftar partner: "list_partner". Daftar gudang: "list_gudang".
 - Stok per gudang: "stok_per_gudang". Produk stok tipis: "stok_tipis". Ringkasan operasional: "ringkasan_dashboard".
 - BARANG MASUK / BARANG KELUAR / penyesuaian (dengan rentang tanggal & filter): "list_transaksi".

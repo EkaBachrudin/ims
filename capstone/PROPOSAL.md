@@ -195,6 +195,8 @@ Survei terkini menunjukkan RAG menjadi pendekatan dominan untuk meningkatkan fak
 
 Pada proyek ini, *tool* didefinisikan dengan skema parameter (Zod) dan dipisahkan menjadi dua jenis: **tool baca** (mis. `cek_stok_barang`, `list_transaksi`, `cari_produk`) dan **tool tulis terbatas** (hanya `buat_draft_po` dan `buat_draft_surat_jalan`). LLM **tidak** menulis SQL langsung untuk data bisnis; seluruh akses data bisnis melalui endpoint backend yang tervalidasi.
 
+Pencarian produk pada tool baca memakai normalisasi nama dan kecocokan token (mis. `mie instan` cocok dengan `Mi Instan`). Bila nama cocok ke beberapa varian, tool mengembalikan daftar kandidat beserta stoknya agar model meminta klarifikasi, bukan menebak satu pilihan.
+
 ## 2.6 Grounding dan Anti-Halusinasi
 
 *Grounding* adalah upaya mengikat jawaban model pada sumber data yang dapat diverifikasi, bukan pada pengetahuan internalnya. Halusinasi dapat ditekan melalui kombinasi beberapa strategi:
@@ -452,8 +454,22 @@ const checkStock = new DynamicStructuredTool({
   schema: stockSchema, // z.object({ productName: z.string() })
   func: async (input) => {
     const { data } = await backend.get(`/reports/stock/${encodeURIComponent(input.productName)}`);
-    const p = data.data as StockRow | null;
-    if (!p) return `Sistem tidak menemukan barang bernama mirip "${input.productName}". ...`;
+    const result = data.data as {
+      status: "ok" | "ambiguous" | "none";
+      product: StockRow | null;
+      candidates?: StockRow[];
+      suggestions?: { name: string; sku: string }[];
+    };
+    if (!result || result.status === "none") {
+      return `Sistem tidak menemukan barang bernama mirip "${input.productName}". ...`;
+    }
+    if (result.status === "ambiguous") {
+      const lines = (result.candidates ?? [])
+        .map((c) => `• ${c.name} (SKU ${c.sku}): stok ${c.stock} ${c.unit}`)
+        .join("\n");
+      return `Kata kunci "${input.productName}" cocok dengan beberapa produk:\n${lines}\nMohon sebutkan varian yang dimaksud.`;
+    }
+    const p = result.product as StockRow;
     return `Info database: ${p.name} (SKU: ${p.sku}) stok ${p.stock} ${p.unit}.`;
   },
 });
@@ -516,7 +532,7 @@ export async function runAgent(input: { chatId: string; message: string; history
 
 | Kategori | Nama Tool | Fungsi |
 | :--- | :--- | :--- |
-| Baca | `cek_stok_barang` | Cek stok satu produk berdasarkan nama. |
+| Baca | `cek_stok_barang` | Cek stok satu produk berdasarkan nama; bila nama ambigu, menampilkan kandidat varian beserta stoknya. |
 | Baca | `cari_produk` | Katalog/varian produk (SKU, kategori, stok). |
 | Baca | `list_kategori`, `list_partner`, `list_gudang` | Daftar master data. |
 | Baca | `stok_per_gudang` | Rincian stok per produk/gudang. |

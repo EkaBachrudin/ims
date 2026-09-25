@@ -248,14 +248,36 @@ export function buildTools(chatId: string) {
   const checkStock = new DynamicStructuredTool({
     name: "cek_stok_barang",
     description:
-      "Cek sisa stok satu barang berdasarkan nama. Untuk mencari/menampilkan banyak produk atau varian, gunakan cari_produk.",
+      "Cek sisa stok satu barang berdasarkan nama. Bila nama cocok ke beberapa varian, tool mengembalikan daftar kandidat; gunakan cari_produk untuk varian/ukuran lain.",
     schema: stockSchema,
     func: async (input: StockInput): Promise<string> => {
       const { data } = await backend.get(`/reports/stock/${encodeURIComponent(input.productName)}`);
-      const p = data.data as StockRow | null;
-      if (!p) {
-        return `Sistem tidak menemukan barang bernama mirip "${input.productName}". Minta user menyebutkan nama lain.`;
+      const result = data.data as
+        | {
+            status: "ok" | "ambiguous" | "none";
+            product: StockRow | null;
+            candidates?: StockRow[];
+            suggestions?: { name: string; sku: string }[];
+          }
+        | null;
+
+      if (!result || result.status === "none") {
+        const suggestions = result?.suggestions ?? [];
+        const hint = suggestions.length
+          ? ` Mungkin maksud: ${suggestions.map((s) => `"${s.name}"`).join(", ")}.`
+          : "";
+        return `Sistem tidak menemukan barang bernama mirip "${input.productName}".${hint} Minta user menyebutkan nama lain.`;
       }
+
+      if (result.status === "ambiguous") {
+        const candidates = result.candidates ?? [];
+        const lines = candidates.map(
+          (c) => `• ${c.name} (SKU ${c.sku}): stok ${c.stock} ${c.unit}`,
+        );
+        return `Kata kunci "${input.productName}" cocok dengan beberapa produk:\n${lines.join("\n")}\nMohon sebutkan varian yang dimaksud.`;
+      }
+
+      const p = result.product as StockRow;
       return `Info database: ${p.name} (SKU: ${p.sku}) stok ${p.stock} ${p.unit}.`;
     },
   });

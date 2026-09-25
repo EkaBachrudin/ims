@@ -466,6 +466,13 @@ Seluruh endpoint di bawah menerima **Bearer (web)** atau **`x-internal-key` (AI 
 
 > Filter berbasis nama (produk/partner/gudang) mencocokkan **semua** substring (mis. `productName=tepung` mengembalikan seluruh produk tepung), bukan hanya yang pertama. Respons menyertakan `matched` (nama entitas yang cocok); bila tidak ada yang cocok, `unmatched` diisi dan `data` kosong (tidak mengembalikan seluruh baris).
 
+> Pencarian produk pada endpoint AI (`/reports/products`, `/reports/inventory`, `/reports/transactions`, `/reports/stock/:productName`) memakai normalisasi + kecocokan token di samping substring, sehingga variasi penulisan seperti `mie instan` cocok dengan `Mi Instan`.
+>
+> `GET /reports/stock/:productName` mengembalikan objek berstatus, bukan `null`:
+> `{ status: "ok", product, candidates: [], suggestions: [] }`,
+> `{ status: "ambiguous", product: null, candidates: [{ name, sku, unit, stock, minStock }], suggestions: [] }`, atau
+> `{ status: "none", product: null, candidates: [], suggestions: [{ name, sku }] }`.
+
 ### 9.8 Error Codes
 
 | HTTP | Code                 | Meaning                              |

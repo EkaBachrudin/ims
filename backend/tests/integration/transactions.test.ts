@@ -193,7 +193,8 @@ describe("Reports (AC-06)", () => {
       .set("x-internal-key", "test_internal_key");
 
     expect(res.status).toBe(200);
-    expect(res.body.data.stock).toBe(product.stock);
+    expect(res.body.data.status).toBe("ok");
+    expect(res.body.data.product.stock).toBe(product.stock);
   });
 
   it("dashboard menyertakan createdBy/product/warehouse pada transaksi terbaru (regresi)", async () => {

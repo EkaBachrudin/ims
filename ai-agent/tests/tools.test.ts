@@ -53,7 +53,14 @@ describe("buildTools", () => {
 describe("cek_stok_barang", () => {
   it("mengembalikan info stok dari backend", async () => {
     mockedGet.mockResolvedValue({
-      data: { data: { name: "Dimsum Ayam", sku: "DMS-01", stock: 120, unit: "pack" } },
+      data: {
+        data: {
+          status: "ok",
+          product: { name: "Dimsum Ayam", sku: "DMS-01", stock: 120, unit: "pack" },
+          candidates: [],
+          suggestions: [],
+        },
+      },
     } as never);
     const result = await findTool("cek_stok_barang").invoke({ productName: "dimsum" });
     expect(String(result)).toContain("120");
@@ -61,8 +68,32 @@ describe("cek_stok_barang", () => {
     expect(mockedGet).toHaveBeenCalledWith("/reports/stock/dimsum");
   });
 
+  it("menampilkan kandidat varian bila nama ambigu", async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        data: {
+          status: "ambiguous",
+          product: null,
+          candidates: [
+            { name: "Bihun Instan Rasa Original", sku: "INS-007", stock: 12, unit: "pack" },
+            { name: "Bihun Instan Rasa Pedas", sku: "INS-009", stock: 8, unit: "pack" },
+          ],
+          suggestions: [],
+        },
+      },
+    } as never);
+    const result = await findTool("cek_stok_barang").invoke({ productName: "bihun" });
+    expect(String(result)).toContain("beberapa produk");
+    expect(String(result)).toContain("Bihun Instan Rasa Original");
+    expect(String(result)).toContain("Bihun Instan Rasa Pedas");
+  });
+
   it("minta klarifikasi bila produk tidak ditemukan (anti-halusinasi)", async () => {
-    mockedGet.mockResolvedValue({ data: { data: null } } as never);
+    mockedGet.mockResolvedValue({
+      data: {
+        data: { status: "none", product: null, candidates: [], suggestions: [] },
+      },
+    } as never);
     const result = await findTool("cek_stok_barang").invoke({ productName: "tidak ada" });
     expect(String(result).toLowerCase()).toContain("tidak menemukan");
   });

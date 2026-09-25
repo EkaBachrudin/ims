@@ -4,6 +4,7 @@ import { PencilSimple, Prohibit } from "@phosphor-icons/react";
 import { userApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Button } from "@/components/ui/Button";
 import { ErrorText, Field, Input, Select } from "@/components/ui/Input";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
@@ -36,13 +37,14 @@ export function UsersPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editing, setEditing] = useState<User | null>(null);
   const [creating, setCreating] = useState(false);
   const [deactivating, setDeactivating] = useState<User | null>(null);
   const [error, setError] = useState("");
 
-  const filters = { page, limit: 20, q: search || undefined };
+  const filters = { page, limit: 20, q: debouncedSearch || undefined };
   const { data, isLoading } = useQuery({ queryKey: qk.users.list(filters), queryFn: () => userApi.list(filters) });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: qk.users.all });

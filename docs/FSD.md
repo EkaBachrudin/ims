@@ -337,8 +337,8 @@ sequenceDiagram
 | S-05  | Category List          | `/categories`             | Tabel + CRUD.                                            |
 | S-06  | Partner List           | `/partners`               | Tabel + filter tipe (Supplier/Customer) + CRUD.          |
 | S-07  | Warehouse List         | `/warehouses`             | Tabel + CRUD.                                            |
-| S-08  | Inbound Transactions   | `/inbound`                | Tabel transaksi masuk + form input.                      |
-| S-09  | Outbound Transactions  | `/outbound`               | Tabel transaksi keluar + form input.                     |
+| S-08  | Inbound Transactions   | `/inbound`                | Tabel + search/filter + form input.                      |
+| S-09  | Outbound Transactions  | `/outbound`               | Tabel + search/filter + form input.                      |
 | S-10  | Purchase Order List    | `/purchase-orders`        | Tabel + filter status; highlight draft dari AI.           |
 | S-11  | Purchase Order Detail  | `/purchase-orders/:id`    | Header + item (dipesan/diterima/sisa); aksi confirm/cancel/terima barang. |
 | S-12  | Delivery Note List     | `/delivery-notes`         | Tabel + CRUD Surat Jalan customer (tanpa PO).            |
@@ -389,7 +389,7 @@ sequenceDiagram
 
 | Method | Endpoint               | Description                          | Auth  |
 | :----- | :--------------------- | :----------------------------------- | :---- |
-| GET    | `/transactions`        | List transactions (filter type/date/product/warehouse/deliveryNoteId) | Bearer |
+| GET    | `/transactions`        | List transactions (filter type/date/product/warehouse/partner/deliveryNoteId/q) | Bearer |
 | POST   | `/transactions/inbound`| Record inbound                       | Admin |
 | POST   | `/transactions/outbound`| Record outbound                     | Admin |
 | POST   | `/transactions/:id/void`| Void transaction (with reason)      | Admin |

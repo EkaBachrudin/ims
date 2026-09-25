@@ -86,6 +86,81 @@ describe("Stock transactions", () => {
   });
 });
 
+describe("Filter transaksi (search & filter)", () => {
+  const uniqueRef = "REF-OUT-UNIK-9001";
+
+  beforeAll(async () => {
+    await request(app)
+      .post("/api/transactions/outbound")
+      .set(auth())
+      .send({
+        productId: base.product.id,
+        warehouseId: base.warehouse.id,
+        partnerId: base.partner.id,
+        quantity: 1,
+        referenceNo: uniqueRef,
+      });
+  });
+
+  it("q mencocokkan nomor referensi", async () => {
+    const res = await request(app).get(`/api/transactions?type=OUT&q=${uniqueRef}`).set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.meta.total).toBe(1);
+    expect(res.body.data[0].referenceNo).toBe(uniqueRef);
+    expect(res.body.data[0].product.name).toContain("Dimsum");
+  });
+
+  it("q mencocokkan nama produk (case-insensitive)", async () => {
+    const res = await request(app).get("/api/transactions?type=OUT&q=dimsum").set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.meta.total).toBeGreaterThan(0);
+    for (const row of res.body.data) {
+      expect(row.product.name.toLowerCase()).toContain("dimsum");
+    }
+  });
+
+  it("filter warehouseId hanya mengembalikan gudang terkait", async () => {
+    const res = await request(app)
+      .get(`/api/transactions?type=OUT&warehouseId=${base.warehouse.id}`)
+      .set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.meta.total).toBeGreaterThan(0);
+    for (const row of res.body.data) {
+      expect(row.warehouseId).toBe(base.warehouse.id);
+    }
+  });
+
+  it("filter partnerId hanya mengembalikan partner terkait", async () => {
+    const res = await request(app)
+      .get(`/api/transactions?type=OUT&partnerId=${base.partner.id}`)
+      .set(auth());
+    expect(res.status).toBe(200);
+    expect(res.body.meta.total).toBeGreaterThan(0);
+    for (const row of res.body.data) {
+      expect(row.partnerId).toBe(base.partner.id);
+    }
+  });
+
+  it("filter rentang tanggal from/to", async () => {
+    const inRange = await request(app)
+      .get(`/api/transactions?type=OUT&from=2000-01-01&to=2100-01-01`)
+      .set(auth());
+    expect(inRange.status).toBe(200);
+    expect(inRange.body.meta.total).toBeGreaterThan(0);
+
+    const future = await request(app)
+      .get(`/api/transactions?type=OUT&from=2100-01-01`)
+      .set(auth());
+    expect(future.status).toBe(200);
+    expect(future.body.meta.total).toBe(0);
+  });
+
+  it("menolak partnerId bukan uuid (400)", async () => {
+    const res = await request(app).get("/api/transactions?partnerId=not-a-uuid").set(auth());
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("PO receipt reconciliation (FR-04.3/FR-04.7)", () => {
   it("IN bertaut PO menambah stok dan menutup PO saat penuh", async () => {
     const created = await request(app)

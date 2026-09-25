@@ -4,6 +4,7 @@ import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { partnerApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
 import { ErrorText, Field, Input } from "@/components/ui/Input";
@@ -28,6 +29,7 @@ export function PartnersPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [type, setType] = useState("");
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editing, setEditing] = useState<Partner | null>(null);
@@ -35,7 +37,7 @@ export function PartnersPage() {
   const [deleting, setDeleting] = useState<Partner | null>(null);
   const [error, setError] = useState("");
 
-  const filters = { page, limit: 20, q: search || undefined, type: type || undefined };
+  const filters = { page, limit: 20, q: debouncedSearch || undefined, type: type || undefined };
   const { data, isLoading } = useQuery({
     queryKey: qk.partners.list(filters),
     queryFn: () => partnerApi.list(filters),

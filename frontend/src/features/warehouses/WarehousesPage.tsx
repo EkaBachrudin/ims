@@ -4,6 +4,7 @@ import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { warehouseApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
 import { ErrorText, Field, Input } from "@/components/ui/Input";
@@ -25,6 +26,7 @@ export function WarehousesPage() {
   const canManage = useCanManage();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editing, setEditing] = useState<Warehouse | null>(null);
   const [creating, setCreating] = useState(false);
@@ -32,8 +34,8 @@ export function WarehousesPage() {
   const [error, setError] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: qk.warehouses.list({ q: search }),
-    queryFn: () => warehouseApi.list({ q: search || undefined }),
+    queryKey: qk.warehouses.list({ q: debouncedSearch }),
+    queryFn: () => warehouseApi.list({ q: debouncedSearch || undefined }),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: qk.warehouses.all });

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { partnerApi, poApi, productApi, transactionApi, warehouseApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
 import { ErrorText, Field, Input, Textarea } from "@/components/ui/Input";
@@ -46,13 +47,28 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
   const poParam = searchParams.get("po");
   const prefilledRef = useRef(false);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const [warehouseId, setWarehouseId] = useState("");
+  const [partnerId, setPartnerId] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [open, setOpen] = useState(false);
   const [voiding, setVoiding] = useState<StockTransaction | null>(null);
   const [reason, setReason] = useState("");
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState("");
 
-  const filters = { page, limit: 20, type };
+  const filters = {
+    page,
+    limit: 20,
+    type,
+    q: debouncedSearch || undefined,
+    warehouseId: warehouseId || undefined,
+    partnerId: partnerId || undefined,
+    from: from || undefined,
+    to: to || undefined,
+  };
   const { data, isLoading } = useQuery({
     queryKey: qk.transactions.list(filters),
     queryFn: () => transactionApi.list(filters),
@@ -226,6 +242,65 @@ export function TransactionTypePage({ type }: { type: "IN" | "OUT" }) {
         description={config[type].description}
         actions={canManage && <Button onClick={openForm}>{config[type].button}</Button>}
       />
+
+      <div className="filter-bar">
+        <Input
+          aria-label="Cari transaksi"
+          placeholder="Cari produk / referensi / partner..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          className="filter-bar__search"
+        />
+        <Combobox
+          className="filter-bar__select"
+          value={warehouseId}
+          onChange={(v) => {
+            setWarehouseId(v);
+            setPage(1);
+          }}
+          placeholder="Semua gudang"
+          searchable
+          aria-label="Gudang"
+          options={(warehouses.data ?? []).map((w) => ({ value: w.id, label: w.name }))}
+        />
+        <Combobox
+          className="filter-bar__select"
+          value={partnerId}
+          onChange={(v) => {
+            setPartnerId(v);
+            setPage(1);
+          }}
+          placeholder={type === "IN" ? "Semua supplier" : "Semua customer"}
+          searchable
+          aria-label={type === "IN" ? "Supplier" : "Customer"}
+          options={(partners.data?.data ?? [])
+            .filter((p) => (type === "IN" ? p.type === "SUPPLIER" : p.type === "CUSTOMER"))
+            .map((p) => ({ value: p.id, label: p.name }))}
+        />
+        <Input
+          type="date"
+          aria-label="Dari tanggal"
+          value={from}
+          onChange={(e) => {
+            setFrom(e.target.value);
+            setPage(1);
+          }}
+          className="filter-bar__date"
+        />
+        <Input
+          type="date"
+          aria-label="Sampai tanggal"
+          value={to}
+          onChange={(e) => {
+            setTo(e.target.value);
+            setPage(1);
+          }}
+          className="filter-bar__date"
+        />
+      </div>
 
       <ErrorText>{error && !open ? error : ""}</ErrorText>
 

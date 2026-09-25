@@ -4,6 +4,7 @@ import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { categoryApi, productApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
 import { ErrorText, Field, Input } from "@/components/ui/Input";
@@ -30,6 +31,7 @@ export function ProductsPage() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [categoryId, setCategoryId] = useState("");
   const [lowStock, setLowStock] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -38,7 +40,7 @@ export function ProductsPage() {
   const [deleting, setDeleting] = useState<Product | null>(null);
   const [error, setError] = useState("");
 
-  const filters = { page, limit: 20, q: search || undefined, categoryId: categoryId || undefined, lowStock };
+  const filters = { page, limit: 20, q: debouncedSearch || undefined, categoryId: categoryId || undefined, lowStock };
   const { data, isLoading } = useQuery({
     queryKey: qk.products.list(filters),
     queryFn: () => productApi.list(filters),

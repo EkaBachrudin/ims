@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { categoryApi, reportApi } from "@/api/endpoints";
 import { qk } from "@/hooks/queryKeys";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { Combobox } from "@/components/ui/Combobox";
@@ -13,12 +14,13 @@ import "./ReportsPage.css";
 
 export function ReportsPage() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [categoryId, setCategoryId] = useState("");
   const [date, setDate] = useState(todayInput());
 
   const stock = useQuery({
-    queryKey: qk.reports.stock({ search, categoryId }),
-    queryFn: () => reportApi.stock({ q: search || undefined, categoryId: categoryId || undefined }),
+    queryKey: qk.reports.stock({ search: debouncedSearch, categoryId }),
+    queryFn: () => reportApi.stock({ q: debouncedSearch || undefined, categoryId: categoryId || undefined }),
   });
   const categories = useQuery({ queryKey: qk.categories.list({}), queryFn: () => categoryApi.list() });
   const shipments = useQuery({

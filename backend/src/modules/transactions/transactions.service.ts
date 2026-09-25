@@ -199,12 +199,27 @@ export async function listTransactions(query: z.infer<typeof listTransactionSche
   if (query.from) createdAt.gte = new Date(query.from);
   if (query.to) createdAt.lte = new Date(query.to);
 
+  const q = query.q;
   const where: Prisma.StockTransactionWhereInput = {
     ...(query.type ? { type: query.type } : {}),
     ...(query.productId ? { productId: query.productId } : {}),
     ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
+    ...(query.partnerId ? { partnerId: query.partnerId } : {}),
     ...(query.deliveryNoteId ? { deliveryNoteId: query.deliveryNoteId } : {}),
     ...(Object.keys(createdAt).length ? { createdAt } : {}),
+    ...(q
+      ? {
+          OR: [
+            { referenceNo: { contains: q, mode: "insensitive" as const } },
+            { product: { name: { contains: q, mode: "insensitive" as const } } },
+            { product: { sku: { contains: q, mode: "insensitive" as const } } },
+            { partner: { name: { contains: q, mode: "insensitive" as const } } },
+            { createdBy: { name: { contains: q, mode: "insensitive" as const } } },
+            { purchaseOrder: { poNumber: { contains: q, mode: "insensitive" as const } } },
+            { deliveryNote: { dnNumber: { contains: q, mode: "insensitive" as const } } },
+          ],
+        }
+      : {}),
   };
 
   const [rows, total] = await Promise.all([

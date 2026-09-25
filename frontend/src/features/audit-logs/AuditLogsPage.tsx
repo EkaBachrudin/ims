@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { auditApi } from "@/api/endpoints";
 import { qk } from "@/hooks/queryKeys";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Input } from "@/components/ui/Input";
 import { Combobox } from "@/components/ui/Combobox";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
@@ -21,9 +22,10 @@ const actionTone: Record<string, "green" | "blue" | "red" | "yellow" | "slate"> 
 export function AuditLogsPage() {
   const [page, setPage] = useState(1);
   const [entity, setEntity] = useState("");
+  const debouncedEntity = useDebouncedValue(entity, 300);
   const [action, setAction] = useState("");
 
-  const filters = { page, limit: 20, entity: entity || undefined, action: action || undefined };
+  const filters = { page, limit: 20, entity: debouncedEntity || undefined, action: action || undefined };
   const { data, isLoading } = useQuery({ queryKey: qk.auditLogs.list(filters), queryFn: () => auditApi.list(filters) });
 
   const columns: Column<AuditLog>[] = [

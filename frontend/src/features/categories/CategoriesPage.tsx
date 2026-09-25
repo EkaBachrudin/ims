@@ -4,6 +4,7 @@ import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { categoryApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useCanManage } from "@/lib/roles";
 import { Button } from "@/components/ui/Button";
 import { ErrorText, Field, Input } from "@/components/ui/Input";
@@ -17,6 +18,7 @@ export function CategoriesPage() {
   const canManage = useCanManage();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [editing, setEditing] = useState<Category | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<Category | null>(null);
@@ -24,8 +26,8 @@ export function CategoriesPage() {
   const [error, setError] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: qk.categories.list({ q: search }),
-    queryFn: () => categoryApi.list({ q: search || undefined }),
+    queryKey: qk.categories.list({ q: debouncedSearch }),
+    queryFn: () => categoryApi.list({ q: debouncedSearch || undefined }),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: qk.categories.all });

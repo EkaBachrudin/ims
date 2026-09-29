@@ -321,6 +321,7 @@ export function buildTools(chatId: string) {
           poNumber: string;
           partner: { name: string };
           targetDate?: string | null;
+          webUrl?: string;
           items?: DraftItem[];
         };
         const target = shortDate(po.targetDate);
@@ -331,6 +332,7 @@ export function buildTools(chatId: string) {
           ...draftItemLines(po.items),
           "Silakan konfirmasi di aplikasi web.",
         ];
+        if (po.webUrl) lines.push(`Buka: ${po.webUrl}`);
         return lines.join("\n");
       } catch (e: unknown) {
         const err = e as { response?: { data?: { error?: { message?: string } } } };

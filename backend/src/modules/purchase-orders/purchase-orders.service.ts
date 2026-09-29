@@ -5,6 +5,7 @@ import { audit } from "../../utils/audit";
 import { buildMeta, parsePagination } from "../../utils/pagination";
 import { generatePoNumber } from "../../utils/numbering";
 import { assertPoTransition } from "../../utils/po-state";
+import { notifyUsers, poUrl } from "../../utils/notify";
 import { resolveProductOrThrow } from "../products/product-resolver";
 import type { z } from "zod";
 import type {
@@ -264,6 +265,31 @@ async function transition(
     { actorId, action: "UPDATE", entity: "PurchaseOrder", entityId: id, before, after: po, ipAddress: ip },
     prisma,
   );
+
+  const [creator, actor] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: po.createdById },
+      select: { name: true, telegramId: true },
+    }),
+    actorId
+      ? prisma.user.findUnique({ where: { id: actorId }, select: { name: true } })
+      : Promise.resolve(null),
+  ]);
+
+  if (creator?.telegramId) {
+    const confirmed = to === "CONFIRMED";
+    await notifyUsers([creator], {
+      text: [
+        `${confirmed ? "✅" : "🚫"} **${po.poNumber}** ${confirmed ? "dikonfirmasi" : "dibatalkan"}.`,
+        `• Supplier: ${po.partner.name}`,
+        actor?.name ? `• Oleh: ${actor.name}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      button: { label: "Lihat PO", url: poUrl(po.id) },
+    });
+  }
+
   return po;
 }
 
@@ -335,5 +361,22 @@ export async function createDraftFromChat(
     { actorId, action: "CREATE", entity: "PurchaseOrder", entityId: po.id, after: po, ipAddress: ip },
     prisma,
   );
-  return po;
+
+  if (po.source === "AI_CHAT") {
+    const admins = await prisma.user.findMany({
+      where: { role: { in: ["ADMIN", "SUPER_ADMIN"] }, isActive: true, telegramId: { not: null } },
+      select: { telegramId: true },
+    });
+    await notifyUsers(admins, {
+      text: [
+        "🆕 **Draft PO baru** (via AI Chat)",
+        `**${po.poNumber}** — ${po.partner.name}`,
+        ...po.items.map((i) => `• ${i.quantity} ${i.product.unit} ${i.product.name}`),
+        `Dibuat oleh: ${po.createdBy.name}`,
+      ].join("\n"),
+      button: { label: "Buka & Konfirmasi PO", url: poUrl(po.id) },
+    });
+  }
+
+  return { ...po, webUrl: poUrl(po.id) };
 }

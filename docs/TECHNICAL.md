@@ -232,6 +232,11 @@ JWT_ACCESS_TTL=15m
 JWT_REFRESH_TTL=7d
 CORS_ORIGIN=http://localhost:5173
 INTERNAL_API_KEY=change_me_internal   # dipakai AI Agent utk endpoint /po/draft & /reports
+
+# Notifikasi Telegram via ai-agent (kosongkan untuk menonaktifkan)
+AI_AGENT_URL=http://localhost:8080
+# Base URL dashboard untuk deep-link notifikasi PO
+WEB_APP_URL=http://localhost:5173
 ```
 
 ### 5.3 Frontend
@@ -299,7 +304,9 @@ DB_PASSWORD=postgres
 | `MAX_HISTORY_TURNS`     | ai-agent | Batas giliran riwayat percakapan yang dikirim ke LLM.                    |
 | `CHUNK_SIZE`/`CHUNK_OVERLAP` | ai-agent | Ukuran & tumpang tindih potongan saat ingest dokumen.              |
 | `DB_*`                  | ai-agent | Koneksi **read-only** runtime ke `document_chunks`; di compose `DB_HOST=db`. |
-| `INTERNAL_API_KEY`      | backend/ai-agent | Menyamakan key untuk endpoint internal (`/po/draft`, `/reports/*`, `/internal/*`). |
+| `INTERNAL_API_KEY`      | backend/ai-agent | Menyamakan key untuk endpoint internal (`/po/draft`, `/reports/*`, `/internal/*`, `POST /notify`). |
+| `AI_AGENT_URL`          | backend | Base URL ai-agent untuk memicu notifikasi Telegram (mis. `http://ai-agent:8080`). Kosong = notifikasi nonaktif. |
+| `WEB_APP_URL`           | backend | Base URL dashboard untuk deep-link notifikasi PO (mis. `http://localhost:5173` → `/purchase-orders/<id>`). |
 
 > **Keamanan:** gunakan user DB terpisah untuk AI Agent dengan hak **`GRANT SELECT`** hanya pada tabel `document_chunks`. Jangan gunakan user superuser. `DATABASE_URL` backend (read/write) tidak dibagikan ke AI Agent.
 >
@@ -1097,6 +1104,32 @@ if (!user || !user.isActive) throw Errors.forbidden();
 ```
 
 User tak terdaftar → pesan diabaikan/ditolak.
+
+### 9.6.1 Notifikasi Telegram (Push)
+
+AI Agent mengekspos satu endpoint internal di HTTP server-nya untuk mengirim pesan proaktif (di luar balasan reaktif):
+
+```ts
+// POST /notify  (header: x-internal-key)
+{
+  "chatIds": ["123456789", "987654321"],
+  "text": "🆕 **Draft PO baru** (via AI Chat)\n**PO-202609-012** — Distributor Sentosa Makmur\n• 100 pack Saus Sambal Kemasan 500g",
+  "button": { "label": "Buka & Konfirmasi PO", "url": "http://localhost:5173/purchase-orders/<id>" }
+}
+```
+
+- `text` berformat Markdown; AI Agent mengonversinya ke HTML Telegram (`markdownToTelegramHtml`) dengan fallback teks polos.
+- `button` opsional → inline keyboard berisi URL deep-link.
+
+Backend memicu endpoint ini secara **best-effort** (timeout 5 detik, gagal hanya di-log) melalui `src/utils/notify.ts`:
+
+| Trigger | Penerima |
+| :------ | :------- |
+| Draft PO dibuat via chat (`source = AI_CHAT`) | Semua user aktif `ADMIN`/`SUPER_ADMIN` yang punya `telegramId` |
+| PO `CONFIRMED`/`CANCELLED` | Pembuat PO (owner) |
+| PO menjadi `COMPLETED` (penerimaan penuh) | Pembuat PO (owner) |
+
+> Prasyarat: penerima harus mengisi `telegramId` dan pernah `/start` bot (Telegram tidak mengizinkan bot memulai percakapan baru).
 
 ### 9.7 RAG Pipeline (Vector Store Read-Only)
 

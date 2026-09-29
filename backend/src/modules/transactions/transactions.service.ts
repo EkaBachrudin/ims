@@ -3,6 +3,7 @@ import { prisma, type PrismaTx } from "../../lib/prisma";
 import { Errors } from "../../lib/errors";
 import { audit } from "../../utils/audit";
 import { buildMeta, parsePagination } from "../../utils/pagination";
+import { notifyUsers, poUrl } from "../../utils/notify";
 import { getReceiptStatus, syncPoReceiptStatus } from "../purchase-orders/purchase-orders.service";
 import type { z } from "zod";
 import type { listTransactionSchema, recordTransactionSchema } from "./transactions.schema";
@@ -109,6 +110,11 @@ export async function recordTransaction(
   actorId?: string | null,
   ip?: string | null,
 ) {
+  const poId = type === "IN" ? (input.purchaseOrderId ?? null) : null;
+  const beforePo = poId
+    ? await prisma.purchaseOrder.findUnique({ where: { id: poId }, select: { status: true } })
+    : null;
+
   const txn = await prisma.$transaction((tx) => applyStock(tx, type, input));
 
   await audit(
@@ -122,6 +128,29 @@ export async function recordTransaction(
     },
     prisma,
   );
+
+  // Kabari pembuat PO saat realisasi penerimaan menuntaskan seluruh item.
+  if (poId && beforePo?.status !== "COMPLETED") {
+    const po = await prisma.purchaseOrder.findUnique({
+      where: { id: poId },
+      select: { status: true, poNumber: true, createdById: true },
+    });
+    if (po?.status === "COMPLETED") {
+      const creator = await prisma.user.findUnique({
+        where: { id: po.createdById },
+        select: { telegramId: true },
+      });
+      if (creator?.telegramId) {
+        await notifyUsers([creator], {
+          text: [
+            "📦 **Penerimaan selesai**",
+            `**${po.poNumber}** — seluruh barang sudah diterima.`,
+          ].join("\n"),
+          button: { label: "Lihat PO", url: poUrl(poId) },
+        });
+      }
+    }
+  }
 
   return txn;
 }

@@ -74,6 +74,7 @@ Proyek ini menghadirkan **WMS berbasis web** untuk staf admin gudang, yang dihub
 - **Tanya SOP/knowledge** (RAG) — _"Apa SOP penerimaan barang retur?"_
 - **Anti-halusinasi** — jawaban hanya dari data perusahaan/konteks RAG, bukan pengetahuan umum.
 - **Intent-to-action** — perintah chat dapat memicu pembuatan draft PO di sistem.
+- **Notifikasi Telegram** — saat owner membuat draft PO via chat, admin gudang menerima pesan bot berisi ringkasan PO + tombol tautan langsung ke halaman detail untuk konfirmasi & terima barang; owner dikabari saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai (`COMPLETED`).
 
 > **Catatan:** seluruh pembacaan data bisnis (produk, kategori, partner, gudang, transaksi, PO, surat jalan, laporan) dilakukan lewat Backend API (`/reports/*`) dengan **internal key**. Data transaksional **tidak** di-embed ke vector store; hanya SOP/kebijakan yang di-RAG.
 
@@ -243,6 +244,8 @@ Bot   : Draft PO PO-202609-002 untuk CV Sumber Frozen berhasil dibuat (status DR
         • Target: 2026-09-24
         • Item: 50 pack Dimsum Ayam
         Silakan konfirmasi di aplikasi web.
+        Buka: http://localhost:5173/purchase-orders/<id>
+        (Admin gudang otomatis menerima notifikasi Telegram + tombol "Buka & Konfirmasi PO".)
 
 Owner : Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum.
 Bot   : Draft Surat Jalan DN-202609-001 untuk Agen Bahari berhasil dibuat (status DRAFT).

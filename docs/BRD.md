@@ -104,6 +104,7 @@ Kesenjangan antara **kompleksitas sistem** dan **kebiasaan komunikasi alami** pe
    - Data bisnis diakses via *function/tool calling* ke backend API (bukan Text-to-SQL langsung).
    - Knowledge/SOP dijawab via **RAG retrieval** *read-only* dari vector store (`document_chunks`).
    - Guardrail anti-halusinasi & audit percakapan.
+   - **Notifikasi proaktif (Telegram):** admin gudang menerima notifikasi berisi ringkasan PO + tautan konfirmasi saat draft PO dibuat dari chat; owner menerima notifikasi saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai.
 3. **Backend REST API** terpusat sebagai sumber logika bisnis.
 4. **Deployment** berbasis container (Docker Compose).
 
@@ -159,7 +160,9 @@ flowchart LR
     AI -->|Jawaban Akurat| O
     AI -->|Buat Draft PO| API
     API --> E[Draft PO di Sistem]
-    E --> F[Admin Konfirmasi 1 Klik]
+    E --> N[Notifikasi Telegram ke Admin<br/>+ tautan konfirmasi]
+    N --> F[Admin Konfirmasi 1 Klik]
+    F --> N2[Notifikasi ke Owner<br/>saat CONFIRMED/COMPLETED]
     KB[(Knowledge/SOP<br/>pgvector)] -.->|read-only| AI
 ```
 
@@ -185,6 +188,8 @@ flowchart LR
 | BR-012 | Sistem harus berjalan pada arsitektur container yang dapat di-deploy ulang.    | Should   | NFR-10         |
 | BR-013 | Owner dapat menanyakan SOP/kebijakan internal melalui chat, dijawab dari knowledge base (RAG). | Should | FR-08 |
 | BR-014 | Owner dapat menanyakan seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) melalui chat. | Should | FR-08 |
+| BR-015 | Admin gudang menerima notifikasi Telegram beserta tautan konfirmasi saat draft PO dibuat via chat AI. | Should | FR-08 |
+| BR-016 | Owner menerima notifikasi Telegram saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai (`COMPLETED`). | Should | FR-08 |
 
 ---
 
@@ -212,6 +217,7 @@ flowchart LR
 | KPI-3 | Waktu pembuatan draft PO                            | 5–10 menit          | < 1 menit (via chat)      |
 | KPI-4 | Akurasi jawaban AI terhadap data aktual             | N/A                 | 100% (dari DB, no halusinasi) |
 | KPI-5 | Adopsi chat assistant oleh owner                    | 0%                  | ≥ 70% interaksi harian    |
+| KPI-6 | Waktu admin mengetahui draft PO baru dari chat      | Cek berkala manual  | < 10 detik (notifikasi)   |
 
 ---
 

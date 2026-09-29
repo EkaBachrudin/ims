@@ -80,6 +80,7 @@ Selain tujuan di atas, proyek menargetkan indikator keberhasilan (KPI) yang dapa
 | KPI-3 | Waktu pembuatan draft PO | 5–10 menit | < 1 menit (via chat) |
 | KPI-4 | Akurasi jawaban AI terhadap data aktual | N/A | 100% (dari basis data, tanpa halusinasi) |
 | KPI-5 | Adopsi asisten chat oleh pemilik | 0% | ≥ 70% interaksi harian |
+| KPI-6 | Waktu admin mengetahui draft PO baru dari chat | Cek berkala manual | < 10 detik (notifikasi Telegram) |
 
 ## 1.3 Ruang Lingkup
 
@@ -98,6 +99,7 @@ Selain tujuan di atas, proyek menargetkan indikator keberhasilan (KPI) yang dapa
    - Intent tulis (hanya draft): buat draft PO (partner `SUPPLIER`) dan buat draft Surat Jalan (partner `CUSTOMER`).
    - Tanya SOP/kebijakan internal melalui **RAG** dari *knowledge base*.
    - *Guardrail* anti-halusinasi dan pencatatan percakapan untuk audit.
+   - **Notifikasi proaktif (Telegram):** saat draft PO dibuat via chat, admin gudang menerima notifikasi berisi ringkasan PO + tautan langsung ke halaman detail untuk konfirmasi; owner menerima notifikasi saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai (`COMPLETED`).
 3. **Backend REST API terpusat** sebagai satu-satunya penulis data bisnis dan sumber logika bisnis.
 4. **Deployment berbasis container** (Docker Compose) yang dapat dijalankan ulang di Linux/WSL2/VPS.
 
@@ -486,7 +488,8 @@ const createPoDraft = new DynamicStructuredTool({
       source: "AI_CHAT",
       chatId,
     });
-    return `Draft PO ${data.data.poNumber} untuk ${data.data.partner.name} berhasil dibuat (status DRAFT).`;
+    // Backend juga memicu POST /notify ke ai-agent → notifikasi admin + deep-link.
+    return `Draft PO ${data.data.poNumber} untuk ${data.data.partner.name} berhasil dibuat (status DRAFT).\nSilakan konfirmasi di aplikasi web.\nBuka: ${data.data.webUrl}`;
   },
 });
 
@@ -501,6 +504,8 @@ const searchSop = new DynamicStructuredTool({
   },
 });
 ```
+
+> **Notifikasi PO:** backend memanggil `POST /notify` (header `x-internal-key`) ke AI Agent yang menyimpan instance bot, lalu AI Agent mengirim DM ke `telegramId` admin (ringkasan PO + tombol "Buka & Konfirmasi PO") dan ke owner saat status PO berubah. Pengiriman bersifat *best-effort* (timeout 5 detik) sehingga kegagalan notifikasi tidak menggagalkan transaksi.
 
 ### A.5 Perakitan Agent (`ai-agent/src/agent/agent.ts`)
 
@@ -616,8 +621,10 @@ sequenceDiagram
     AI->>BE: POST /po/draft (x-internal-key)
     BE->>DB: Cari Partner & Product → insert PO (DRAFT) + item
     DB-->>BE: Success
-    BE-->>AI: 201 Created { poNumber }
+    BE-->>AI: 201 Created { poNumber, webUrl }
     AI-->>TG: "Draft PO ... dibuat. Cek web untuk konfirmasi."
+    BE->>AI: POST /notify (ringkasan PO + webUrl)
+    AI-->>TG: Notifikasi ke Admin + tombol "Buka & Konfirmasi PO"
     FE->>BE: GET /po?status=DRAFT
     BE-->>FE: Draft PO list (muncul di antrean admin)
 ```
@@ -655,7 +662,7 @@ sequenceDiagram
 
 | Entitas | Contoh Nilai |
 | :--- | :--- |
-| User | `owner@umkm.id` (OWNER, telegramId `123456789`), `admin@umkm.id` (ADMIN) |
+| User | `owner@umkm.id` (OWNER, telegramId `123456789`), `admin@umkm.id` (ADMIN, telegramId `987654321`) |
 | Kategori | `Frozen Food`, `Minuman`, `Bumbu` |
 | Produk | `DMS-SDG-01` — Dimsum Ayam Ukuran Sedang, unit `pack`, stok `120` |
 | Partner | `PT Maju Jaya` (CUSTOMER), `CV Sumber Frozen` (SUPPLIER) |
@@ -684,6 +691,8 @@ Kolom **Hasil Aktual** dan **Status** diisi saat pengujian dijalankan.
 | AC-15 | AI jawab SOP via RAG | Ingest SOP → chat "Apa SOP retur?" | Jawaban sesuai konteks SOP + menyebut sumber. | | |
 | AC-16 | RAG anti-halusinasi | Ingest SOP tanpa topik X → tanya X | AI menyatakan SOP tidak ditemukan (tidak mengarang). | | |
 | AC-17 | AI Agent read-only DB | Coba tulis `document_chunks` dari runtime AI | Ditolak (*permission denied*). | | |
+| AC-18 | Notifikasi admin saat draft PO AI | Owner chat buat PO → cek Telegram admin | Admin menerima pesan bot berisi ringkasan PO + tombol tautan ke `/purchase-orders/<id>`. | | |
+| AC-19 | Notifikasi owner saat status PO berubah | Admin konfirmasi PO lalu catat penerimaan penuh | Owner menerima notifikasi saat `CONFIRMED` dan saat `COMPLETED`. | | |
 
 ### C.4 Contoh Skenario Uji Manual (E2E Chat → Web)
 
@@ -694,6 +703,7 @@ Kolom **Hasil Aktual** dan **Status** diisi saat pengujian dijalankan.
 5. Konfirmasi PO → catat penerimaan barang masuk → verifikasi `Product.stock` bertambah.
 6. Kirim: *"Apa SOP penerimaan barang retur?"* → verifikasi jawaban bersumber dari knowledge base dan menyebut sumber.
 7. Catat latensi balasan (target < 5 detik) dan isi kolom **Hasil Aktual** pada Tabel C.3.
+8. Verifikasi notifikasi: admin menerima pesan bot saat draft PO dibuat (dengan tautan konfirmasi); owner menerima pesan saat PO dikonfirmasi dan saat penerimaan selesai.
 
 ## Lampiran D — Surat Pernyataan
 
@@ -810,6 +820,8 @@ make rag-ingest     # opsional: embed dokumen SOP
 | `INTERNAL_API_KEY` | backend/ai-agent | Key untuk endpoint internal (`/po/draft`, `/reports/*`). |
 | `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | backend | Penandatanganan token autentikasi. |
 | `DATABASE_URL` | backend | Koneksi Prisma read/write (tidak dibagikan ke AI Agent). |
+| `AI_AGENT_URL` | backend | Base URL ai-agent untuk memicu notifikasi Telegram (`/notify`); kosong = nonaktif. |
+| `WEB_APP_URL` | backend | Base URL dashboard untuk deep-link notifikasi PO (mis. `https://domain/purchase-orders/<id>`). |
 
 ### F.5 Perintah Makefile yang Sering Dipakai
 
@@ -820,7 +832,8 @@ make rag-ingest     # opsional: embed dokumen SOP
 | Log | `make dev-logs` |
 | Seed / ingest RAG | `make seed` · `make rag-ingest` |
 | Lint / Typecheck / Test | `make lint` · `make typecheck` · `make test` |
-| Build produksi | `make up` / `make down` |
+| Build produksi | `make prod` / `make prod-down` |
+| Log produksi | `make prod-logs` |
 
 ---
 

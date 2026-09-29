@@ -11,6 +11,9 @@ const envSchema = z.object({
   JWT_REFRESH_TTL: z.string().default("7d"),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
   INTERNAL_API_KEY: z.string().min(1, "INTERNAL_API_KEY wajib diisi"),
+  // Kosong = notifikasi Telegram ke admin/owner dinonaktifkan.
+  AI_AGENT_URL: z.string().default(""),
+  WEB_APP_URL: z.string().default("http://localhost:5173"),
 });
 
 const parsed = envSchema.safeParse(process.env);

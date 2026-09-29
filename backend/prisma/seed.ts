@@ -538,6 +538,7 @@ async function main() {
       name: "Admin Gudang",
       passwordHash,
       role: "ADMIN",
+      telegramId: "987654321",
     },
   });
 
@@ -940,7 +941,7 @@ async function main() {
 
   console.log("Seed selesai.");
   console.log(`  superadmin: ${superAdmin.email} / ${PASSWORD}`);
-  console.log(`  admin:      ${admin.email} / ${PASSWORD}`);
+  console.log(`  admin:      ${admin.email} / ${PASSWORD} (telegramId 987654321)`);
   console.log("  owner:      owner@umkm.id / password123 (telegramId 123456789)");
   console.log("Ringkasan data:");
   console.log(`  produk:      ${productCount}`);

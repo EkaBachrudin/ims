@@ -139,12 +139,8 @@ export function Combobox({
 
   useEffect(() => {
     if (!open) return;
-    if (searchable) {
-      const t = window.setTimeout(() => searchRef.current?.focus(), 0);
-      return () => window.clearTimeout(t);
-    }
     triggerRef.current?.focus();
-  }, [open, searchable]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

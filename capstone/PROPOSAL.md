@@ -39,7 +39,7 @@ Meskipun demikian, praktik pencatatan pada banyak UMKM masih dilakukan secara ma
 
 Tantangan adopsi teknologi pada UMKM juga bukan semata soal ketersediaan perangkat lunak. Sistem ERP/WMS yang canggih sering ditinggalkan karena dianggap "terlalu rumit" dan membutuhkan kurva pembelajaran yang tinggi. Tinjauan pustaka sistematis menunjukkan bahwa transformasi digital UMKM di Indonesia memang memberikan manfaat signifikan berupa perluasan pasar, efisiensi operasional, dan peningkatan profitabilitas, namun terhambat oleh keterbatasan sumber daya, keterampilan teknis, serta kebiasaan bisnis yang telah mengakar [4], [5]. Karena itu, dibutuhkan solusi yang menyatukan **data operasional terstruktur** dengan **antarmuka yang sudah familiar** bagi pengguna.
 
-Perkembangan *Large Language Model* (LLM) membuka peluang baru untuk menjembatani kesenjangan tersebut. Melalui pola *tool/function calling*, model bahasa dapat dipandu untuk mengakses data perusahaan secara terkendali, bukan mengandalkan pengetahuannya sendiri [2], [3]. Dengan arsitektur *Retrieval-Augmented Generation* (RAG), jawaban model dapat *dibumikan* (grounded) pada sumber pengetahuan perusahaan sehingga menekan halusinasi [1], [9]. Pendekatan ini memungkinkan pemilik usaha cukup "mengobrol" untuk mengecek stok, merekap pengiriman, hingga membuat draft dokumen, sementara staf tetap bekerja pada *dashboard* web yang komprehensif.
+Perkembangan *Large Language Model* (LLM) membuka peluang baru untuk menjembatani kesenjangan tersebut. Melalui pola *tool/function calling*, model bahasa dapat dipandu untuk mengakses data perusahaan secara terkendali, bukan mengandalkan pengetahuannya sendiri [2], [3]. Dengan arsitektur *Retrieval-Augmented Generation* (RAG), jawaban model dapat *dibumikan* (grounded) pada sumber pengetahuan perusahaan sehingga menekan halusinasi [1], [8]. Pendekatan ini memungkinkan pemilik usaha cukup "mengobrol" untuk mengecek stok, merekap pengiriman, hingga membuat draft dokumen, sementara staf tetap bekerja pada *dashboard* web yang komprehensif.
 
 Berdasarkan uraian tersebut, proyek ini mengusulkan pembangunan **sistem Warehouse Management System (WMS) berbasis web** yang terintegrasi dengan **asisten AI berbasis RAG** melalui platform pesan instan (Telegram, dengan WhatsApp sebagai tahap lanjut). Masalah yang diidentifikasi dan dampaknya dirangkum pada Tabel 1.1.
 
@@ -162,7 +162,7 @@ Bab ini mengulas teori dan penelitian terdahulu yang mendasari perancangan siste
 
 *Warehouse Management System* (WMS) adalah sistem informasi yang mengelola dan mengendalikan seluruh aktivitas gudang, meliputi penerimaan barang, penyimpanan, pengeluaran, hingga pelaporan. Manajemen persediaan mencakup kebijakan penentuan tingkat stok yang tepat, waktu pemesanan ulang, dan ukuran pesanan, dengan tujuan memenuhi permintaan sekaligus meminimalkan kelebihan atau kekurangan stok.
 
-Pada praktiknya, sistem persediaan digital menonjolkan kemampuan pemantauan stok secara *real-time*, pengurangan kesalahan pencatatan, serta dukungan pengambilan keputusan berbasis data [6]. Prinsip penting yang diadopsi pada proyek ini adalah **stok sebagai konsekuensi transaksi**: nilai stok tidak boleh diubah manual, melainkan dihitung dari akumulasi transaksi masuk, keluar, dan penyesuaian. Prinsip ini menjamin konsistensi dan auditabilitas data.
+Pada praktiknya, sistem persediaan digital menonjolkan kemampuan pemantauan stok secara *real-time*, pengurangan kesalahan pencatatan, serta dukungan pengambilan keputusan berbasis data. Prinsip penting yang diadopsi pada proyek ini adalah **stok sebagai konsekuensi transaksi**: nilai stok tidak boleh diubah manual, melainkan dihitung dari akumulasi transaksi masuk, keluar, dan penyesuaian. Prinsip ini menjamin konsistensi dan auditabilitas data.
 
 ## 2.2 Digitalisasi UMKM di Indonesia
 
@@ -172,7 +172,7 @@ Temuan ini mengindikasikan bahwa solusi bagi UMKM tidak cukup hanya "canggih", t
 
 ## 2.3 Large Language Model dan Arsitektur Transformer
 
-*Large Language Model* (LLM) adalah model bahasa berskala besar yang dilatih pada korpus teks masif dengan arsitektur **Transformer** [7]. Kemampuan *in-context learning* memungkinkan LLM mengikuti instruksi dan melakukan tugas baru hanya dari beberapa contoh atau deskripsi tugas, tanpa pelatihan ulang [8].
+*Large Language Model* (LLM) adalah model bahasa berskala besar yang dilatih pada korpus teks masif dengan arsitektur **Transformer** [6]. Kemampuan *in-context learning* memungkinkan LLM mengikuti instruksi dan melakukan tugas baru hanya dari beberapa contoh atau deskripsi tugas, tanpa pelatihan ulang [7].
 
 Namun, LLM memiliki keterbatasan mendasar: pengetahuan yang tersimpan di dalam parameternya (memori parametrik) tidak selalu *up-to-date*, sulit ditelusuri sumbernya, dan cenderung berhalusinasi pada tugas yang membutuhkan fakta spesifik. Keterbatasan inilah yang mendorong pendekatan augmentasi eksternal berupa RAG dan *tool calling*.
 
@@ -187,7 +187,7 @@ Komponen utama RAG pada proyek ini meliputi:
 - **Penyimpanan vektor** — ekstensi `pgvector` pada PostgreSQL untuk pencarian tetangga terdekat dengan operasi cosine distance (`<=>`).
 - **Retrieval** — pengambilan *top-K* chunk relevan sebagai konteks jawaban.
 
-Survei terkini menunjukkan RAG menjadi pendekatan dominan untuk meningkatkan faktualitas dan *provenance* jawaban LLM pada domain pengetahuan spesifik [9].
+Survei terkini menunjukkan RAG menjadi pendekatan dominan untuk meningkatkan faktualitas dan *provenance* jawaban LLM pada domain pengetahuan spesifik [8].
 
 ## 2.5 Tool/Function Calling dan Augmented Language Models
 
@@ -222,7 +222,6 @@ Tabel 2.1 merangkum penelitian/kajian relevan dan posisi proyek ini.
 | Mialon et al. (2023) [3] | Survei ALM | Peta riset augmentasi LLM dengan *tools*. | Konseptual; bukan implementasi sistem informasi. |
 | Purnomo et al. (2024) [4] | Digitalisasi UMKM Indonesia | Manfaat & hambatan transformasi digital UMKM. | Tidak menyentuh asisten AI berbasis chat maupun WMS. |
 | Hasanah et al. (2024) [5] | ERP untuk UMKM | Integrasi proses bisnis & akses data *real-time*. | Sistem ERP tergolong berat/mahal untuk UMKM mikro. |
-| Neka et al. (2025) [6] | Manajemen persediaan digital | Tren pengembangan aplikasi persediaan berbasis UCD. | Belum mengintegrasikan LLM/RAG sebagai antarmuka. |
 
 **Kebaruan (novelty) proyek** terletak pada penggabungan tiga elemen dalam satu sistem yang dapat dijalankan mandiri oleh UMKM: (1) WMS web terpusat sebagai sumber kebenaran data, (2) asisten AI berbasis chat dengan *tool calling* ke API backend, dan (3) RAG *read-only* untuk menjawab SOP/kebijakan. Kombinasi ini menyediakan antarmuka *zero-learning-curve* tanpa mengorbankan integritas dan auditabilitas data operasional.
 
@@ -279,10 +278,9 @@ flowchart TB
 3. Mialon, G., Dessì, R., Lomeli, M., Nalmpantis, C., Pasunuru, R., Raileanu, R., Rozière, B., Schick, T., Dwivedi-Yu, J., Celikyilmaz, A., Grave, E., LeCun, Y., & Scialom, T. (2023). *Augmented Language Models: a Survey.* arXiv preprint arXiv:2302.07842. https://arxiv.org/abs/2302.07842
 4. Purnomo, S., Nurmalitasari, N., & Nurchim, N. (2024). *Digital transformation of MSMEs in Indonesia: A systematic literature review.* 4(2). https://doi.org/10.53088/jmdb.v4i2.1121
 5. Hasanah, N., Saputra, D. I. S., & Hiiyatin, D. L. (2024). *ERP-Based Management Information System for MSMEs in Indonesia: A Systematic Literature Review.* 2(2). https://doi.org/10.31004/riggs.v2i2.224
-6. Neka, D. R., Akbar, R. S., & Prabadhi, I. A. (2025). *Tinjauan Literatur Manajemen Persediaan Digital Menggunakan Metode PRISMA.* Jurnal Ilmiah Ilmu Pendidikan (JIIP), 8(4). https://doi.org/10.54371/jiip.v8i4.7609
-7. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). *Attention Is All You Need.* Advances in Neural Information Processing Systems (NeurIPS), 30. https://arxiv.org/abs/1706.03762
-8. Brown, T. B., Mann, B., Ryder, N., Subbiah, M., Kaplan, J., Dhariwal, P., … Amodei, D. (2020). *Language Models are Few-Shot Learners.* Advances in Neural Information Processing Systems (NeurIPS), 33. https://arxiv.org/abs/2005.14165
-9. Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, M., & Wang, H. (2023). *Retrieval-Augmented Generation for Large Language Models: A Survey.* arXiv preprint arXiv:2312.10997. https://arxiv.org/abs/2312.10997
+6. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). *Attention Is All You Need.* Advances in Neural Information Processing Systems (NeurIPS), 30. https://arxiv.org/abs/1706.03762
+7. Brown, T. B., Mann, B., Ryder, N., Subbiah, M., Kaplan, J., Dhariwal, P., … Amodei, D. (2020). *Language Models are Few-Shot Learners.* Advances in Neural Information Processing Systems (NeurIPS), 33. https://arxiv.org/abs/2005.14165
+8. Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, M., & Wang, H. (2023). *Retrieval-Augmented Generation for Large Language Models: A Survey.* arXiv preprint arXiv:2312.10997. https://arxiv.org/abs/2312.10997
 
 ---
 

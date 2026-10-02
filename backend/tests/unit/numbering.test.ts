@@ -1,32 +1,23 @@
-import { describe, expect, it, vi } from "vitest";
-import { generateDnNumber, generatePoNumber } from "../../src/utils/numbering";
-import type { PrismaTx } from "../../src/lib/prisma";
+import { describe, expect, it } from "vitest";
+import { buildDocumentNumber, numberPrefix } from "../../src/domain/numbering";
 
-function mockTx(count: number) {
-  return {
-    purchaseOrder: { count: vi.fn().mockResolvedValue(count) },
-    deliveryNote: { count: vi.fn().mockResolvedValue(count) },
-  } as unknown as PrismaTx;
-}
-
-describe("generatePoNumber (BR-RULE-003)", () => {
-  it("membuat nomor PO-YYYYMM-001 saat belum ada", async () => {
-    const tx = mockTx(0);
-    const poNumber = await generatePoNumber(tx, new Date("2026-09-22T00:00:00Z"));
-    expect(poNumber).toBe("PO-202609-001");
-  });
-
-  it("menaikkan sequence sesuai jumlah existing", async () => {
-    const tx = mockTx(4);
-    const poNumber = await generatePoNumber(tx, new Date("2026-09-01T00:00:00Z"));
-    expect(poNumber).toBe("PO-202609-005");
+describe("numberPrefix", () => {
+  it("membentuk prefix dokumen per bulan", () => {
+    expect(numberPrefix("PO", new Date("2026-09-22T00:00:00Z"))).toBe("PO-202609-");
+    expect(numberPrefix("SJ", new Date("2026-10-05T00:00:00Z"))).toBe("SJ-202610-");
   });
 });
 
-describe("generateDnNumber", () => {
-  it("membuat nomor SJ-YYYYMM-NNN", async () => {
-    const tx = mockTx(1);
-    const dnNumber = await generateDnNumber(tx, new Date("2026-10-05T00:00:00Z"));
-    expect(dnNumber).toBe("SJ-202610-002");
+describe("buildDocumentNumber (BR-RULE-003)", () => {
+  it("membuat nomor PO-YYYYMM-001 saat belum ada", () => {
+    expect(buildDocumentNumber("PO", new Date("2026-09-22T00:00:00Z"), 0)).toBe("PO-202609-001");
+  });
+
+  it("menaikkan sequence sesuai jumlah existing", () => {
+    expect(buildDocumentNumber("PO", new Date("2026-09-01T00:00:00Z"), 4)).toBe("PO-202609-005");
+  });
+
+  it("membuat nomor SJ-YYYYMM-NNN", () => {
+    expect(buildDocumentNumber("SJ", new Date("2026-10-05T00:00:00Z"), 1)).toBe("SJ-202610-002");
   });
 });

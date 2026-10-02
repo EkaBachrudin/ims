@@ -1,8 +1,5 @@
-import type { PrismaClient } from "@prisma/client";
-import { prisma, type PrismaTx } from "../../lib/prisma";
+import { prisma, type Db } from "../../infrastructure/prisma/client";
 import { Errors } from "../../lib/errors";
-
-type Db = PrismaTx | PrismaClient;
 
 export interface ResolvedProduct {
   id: string;

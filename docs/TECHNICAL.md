@@ -3,10 +3,10 @@
 **Project:** Otomatisasi Warehouse Management System (WMS) dan Tata Kelola Dokumen Berbasis Web dengan Integrasi Asisten AI (RAG) pada Platform Pesan Instan
 
 **Document Type:** Technical Design Document / Developer Build Guide
-**Version:** 1.0.0
-**Status:** Draft
+**Version:** 1.1.0
+**Status:** Updated
 **Author:** Project Owner
-**Date:** 2026-09-22
+**Date:** 2026-10-02
 
 **Related Documents:** [BRD](./BRD.md) · [FSD](./FSD.md) · [ERD](./ERD.md)
 
@@ -21,6 +21,7 @@
 | Version | Date       | Author        | Description                                  |
 | :------ | :--------- | :------------ | :------------------------------------------- |
 | 1.0.0   | 2026-09-22 | Project Owner | Initial technical build guide from BRD/FSD/ERD|
+| 1.1.0   | 2026-10-02 | Project Owner | Refactor layered architecture (backend & ai-agent); update Repository Layout, §7, §9 |
 
 ### 1.2 Convention Reference
 
@@ -95,6 +96,8 @@ inventory-rag/
 
 ### 3.1 Backend
 
+Backend menerapkan **3 layer**: **Presentation** (route/controller) → **Business** (service/domain) → **Persistence** (repository/Prisma), dengan port untuk dependensi outbound.
+
 ```text
 backend/
 ├── prisma/
@@ -102,33 +105,47 @@ backend/
 │   ├── seed.ts
 │   └── migrations/
 ├── src/
-│   ├── config/               # env loader, constants
-│   ├── lib/
-│   │   ├── prisma.ts         # PrismaClient singleton
-│   │   └── errors.ts         # AppError
-│   ├── middlewares/
-│   │   ├── auth.ts           # verify JWT
-│   │   ├── rbac.ts           # requireRole(...)
-│   │   ├── validate.ts       # Zod validator
-│   │   └── errorHandler.ts   # global error handler
-│   ├── modules/              # per domain: route + controller + service
-│   │   ├── auth/
-│   │   ├── users/
-│   │   ├── products/
-│   │   ├── categories/
-│   │   ├── partners/
-│   │   ├── warehouses/
-│   │   ├── transactions/
-│   │   ├── purchase-orders/
-│   │   ├── delivery-notes/
-│   │   └── reports/
-│   ├── utils/                # numbering, pagination, datetime
-│   ├── app.ts                # express app assembly
-│   └── server.ts             # listen()
+│   ├── config/
+│   │   └── env.ts              # env loader + validasi Zod
+│   ├── lib/                    # utilitas bersama (bukan layer)
+│   │   ├── errors.ts           # AppError
+│   │   ├── pagination.ts       # parsePagination, buildMeta
+│   │   ├── password.ts         # hash/verify (bcrypt)
+│   │   ├── asyncHandler.ts
+│   │   └── http/clientIp.ts
+│   ├── presentation/
+│   │   └── http/respond.ts     # helper respons { success, data, meta }
+│   ├── middlewares/            # PRESENTATION (boundary)
+│   │   ├── auth.ts             # verify JWT
+│   │   ├── rbac.ts             # requireRole(...)
+│   │   ├── validate.ts         # Zod validator
+│   │   └── errorHandler.ts     # global error handler
+│   ├── modules/                # feature-first; layer internal per module
+│   │   └── <feature>/
+│   │       ├── <f>.routes.ts       # PRESENTATION: peta path + middleware
+│   │       ├── <f>.controller.ts   # PRESENTATION: req/res ↔ use-case
+│   │       ├── <f>.schema.ts       # PRESENTATION: validasi Zod
+│   │       ├── <f>.service.ts      # BUSINESS: aturan & workflow
+│   │       └── <f>.repository.ts   # PERSISTENCE: akses Prisma
+│   ├── application/
+│   │   └── ports/              # kontrak outbound (audit, notifier, unitOfWork)
+│   ├── domain/                 # logic murni (numbering, po-state)
+│   ├── infrastructure/         # adapter outbound
+│   │   ├── prisma/             # client.ts (PrismaClient + Db), unitOfWork.ts
+│   │   ├── audit/              # prismaAudit.ts
+│   │   ├── notifier/           # telegram.ts (HTTP ke ai-agent)
+│   │   └── auth/               # tokens.ts (JWT sign/verify)
+│   ├── composition/
+│   │   └── container.ts        # wiring port ↔ adapter
+│   ├── routes.ts               # registrasi seluruh router
+│   ├── app.ts                  # express app assembly
+│   └── server.ts               # listen()
 ├── .env
 ├── tsconfig.json
 └── package.json
 ```
+
+> **Aturan dependensi** (ditegakkan ESLint): presentation tidak mengakses Prisma/repository; service tidak mengimpor Prisma/express; adapter outbound mengimplementasikan port di `application/ports`.
 
 ### 3.2 Frontend
 
@@ -160,30 +177,39 @@ frontend/
 
 ### 3.3 AI Agent
 
+AI Agent juga menerapkan **3 layer** dengan entry point event-driven (Telegram + HTTP) dan CLI ingest:
+
 ```text
 ai-agent/
 ├── src/
 │   ├── config/env.ts
-│   ├── db.ts                 # pg/Prisma client READ-ONLY (document_chunks)
-│   ├── services/
-│   │   └── backendClient.ts  # HTTP client ke backend
-│   ├── rag/
-│   │   ├── embeddings.ts     # OpenAI embeddings helper
-│   │   ├── retriever.ts      # query top-K ke document_chunks
-│   │   └── ingest.ts         # (offline) chunk + embed + upsert dokumen SOP
-│   ├── agent/
-│   │   ├── tools.ts          # LangChain tools (baca data + tulis draft PO + knowledge)
-│   │   ├── prompt.ts         # system prompt
-│   │   └── agent.ts          # createToolCallingAgent + executor
-│   ├── bot/
-│   │   ├── telegram.ts       # Telegraf setup + handlers
-│   │   └── auth.ts           # mapping chatId -> user
-│   ├── logger.ts             # log ke AiConversationLog (via BE)
-│   └── index.ts
+│   ├── lib/
+│   │   └── telegramFormat.ts # renderer murni Markdown→HTML Telegram (shared)
+│   ├── presentation/         # PRESENTATION: batas inbound/outbound channel
+│   │   ├── http/
+│   │   │   ├── server.ts     # health + POST /notify
+│   │   │   └── notify.schema.ts
+│   │   └── telegram/
+│   │       ├── bot.ts        # handler pesan Telegram (entry point)
+│   │       └── format.ts     # kirim balasan terformat (sendFormatted)
+│   ├── application/          # BUSINESS
+│   │   ├── ports/            # backendGateway.ts, knowledgeBase.ts, notifier.ts
+│   │   ├── agent/            # agent.ts (executor), prompt.ts
+│   │   ├── tools/            # schemas.ts, read.ts, write.ts, rag.ts, format.ts, index.ts
+│   │   └── chat/             # handleMessage.ts, memory.ts, rateLimit.ts
+│   ├── infrastructure/       # PERSISTENCE / adapter outbound
+│   │   ├── backend/backendGateway.ts  # HTTP client ke Backend API (impl port)
+│   │   ├── telegram/notifier.ts       # push notifikasi Telegram (impl port)
+│   │   ├── rag/              # embeddings.ts, retriever.ts, ingest.ts, knowledgeBase.ts
+│   │   └── db.ts             # pg Pool READ-ONLY (document_chunks)
+│   ├── composition/container.ts
+│   └── index.ts              # bootstrap (server + bot)
 ├── docs/knowledge/           # sumber dokumen SOP (markdown/txt) untuk ingest
 ├── .env
 └── package.json
 ```
+
+> **Catatan:** `bot/auth.ts` dan `logger.ts` pada rancangan awal tidak dipakai — mapping `chatId → user` dan logging kini melalui Backend API (`BackendGateway`).
 
 ---
 
@@ -433,30 +459,48 @@ volumes:
 
 ```mermaid
 flowchart LR
-    R[Route] --> V[validate Zod] --> MW[auth / rbac] --> C[Controller] --> S[Service] --> P[Prisma] --> DB[(PostgreSQL)]
-    S --> A[Audit helper]
+    R[Route] --> V[validate Zod] --> MW[auth / rbac] --> C[Controller] --> S[Service] --> RP[Repository] --> P[Prisma] --> DB[(PostgreSQL)]
+    S --> DOM[Domain<br/>numbering, po-state]
+    S --> PORT[Ports<br/>audit / notifier / unitOfWork]
+    PORT -.-> INF[Infrastructure adapter]
+    INF --> DB
 ```
 
-- **Route**: hanya memetakan path + middleware + controller.
-- **Controller**: parsing request, memanggil service, membentuk response. Tidak ada logika bisnis.
-- **Service**: logika bisnis, validasi aturan, akses Prisma. **Satu-satunya tempat** Prisma dipakai.
-- **Utils/helper**: numbering, pagination, audit.
+- **Presentation** (`routes` + `controller` + `schema` + `middlewares`): memetakan path & middleware, parsing request, memanggil service, membentuk response. Tidak ada logika bisnis, tidak mengakses Prisma.
+- **Business** (`service` + `domain`): logika bisnis, validasi aturan, orkestrasi. Mengakses data lewat repository, dan side-effect lewat **port** (`application/ports`).
+- **Persistence** (`repository` + `infrastructure`): **satu-satunya tempat** Prisma dipakai. Adapter outbound (Prisma, notifier Telegram, audit, JWT) mengimplementasikan port.
+- **Composition** (`composition/container.ts`): wiring port ↔ adapter.
+- **Utils/helper** (`lib/`): pagination, password, `clientIp`, `asyncHandler`, `AppError`.
 
 ### 7.2 Core Files
 
-**`src/lib/prisma.ts`** — singleton (hindari koneksi ganda saat hot-reload):
+**`src/infrastructure/prisma/client.ts`** — PrismaClient singleton + tipe klien (`Db`) untuk repository:
 
 ```ts
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type Prisma } from "@prisma/client";
+import { env } from "../../config/env";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export const prisma =
   globalForPrisma.prisma ??
-  new PrismaClient({ log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"] });
+  new PrismaClient({ log: env.NODE_ENV === "development" ? ["warn", "error"] : ["error"] });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+export type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+export type Db = PrismaClient | Prisma.TransactionClient;
 ```
+
+**`src/infrastructure/prisma/unitOfWork.ts`** — adapter transaksi (implementasi port `UnitOfWork`):
+
+```ts
+export const prismaUnitOfWork: UnitOfWork = {
+  run: (fn) => prisma.$transaction(fn),
+};
+```
+
+Utilitas bersama lain: `src/lib/pagination.ts` (`parsePagination`/`buildMeta`), `src/lib/password.ts` (`hashPassword`/`verifyPassword`), `src/lib/http/clientIp.ts`, `src/lib/asyncHandler.ts`. `src/lib/errors.ts` (`AppError`) tetap seperti sebelumnya.
 
 **`src/lib/errors.ts`** — error terstruktur:
 
@@ -573,9 +617,13 @@ export function createApp() {
 Semua perubahan stok **wajib** melalui DB transaction. Contoh service transaksi:
 
 ```ts
-import { TransactionType } from "@prisma/client";
-import { prisma } from "../lib/prisma";
+import type { TransactionType } from "@prisma/client";
 import { Errors } from "../lib/errors";
+import { container } from "../composition/container";
+import type { Db } from "../infrastructure/prisma/client";
+import * as productsRepo from "../products/products.repository";
+import * as inventory from "./inventory.repository";
+import * as repo from "./transactions.repository";
 
 type RecordInput = {
   productId: string;
@@ -586,92 +634,84 @@ type RecordInput = {
   createdById: string;
 };
 
-async function applyStock(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  type: TransactionType,
-  input: RecordInput,
-) {
-  const product = await tx.product.findUnique({
-    where: { id: input.productId },
-    select: { id: true, stock: true },
-  });
+// Inti perubahan stok. WAJIB dipanggil di dalam sebuah transaksi.
+export async function applyStock(tx: Db, type: TransactionType, input: RecordInput) {
+  const product = await productsRepo.findStock(input.productId, tx);
   if (!product) throw Errors.notFound("Product");
 
   if (type === "OUT" && product.stock < input.quantity) throw Errors.insufficientStock();
-
   const delta = type === "OUT" ? -input.quantity : input.quantity;
 
-  const txn = await tx.stockTransaction.create({
-    data: { type, ...input },
-  });
-
-  await tx.product.update({
-    where: { id: input.productId },
-    data: { stock: { increment: delta } },
-  });
-
-  await tx.inventory.upsert({
-    where: { productId_warehouseId: { productId: input.productId, warehouseId: input.warehouseId } },
-    create: { productId: input.productId, warehouseId: input.warehouseId, quantity: input.quantity },
-    update: { quantity: { increment: delta } },
-  });
+  const txn = await repo.create({ type, ...input }, tx);
+  await productsRepo.adjustStock(input.productId, delta, tx);
+  await inventory.upsertInventory(input.productId, input.warehouseId, input.quantity, delta, tx);
 
   return txn;
 }
 
-export const recordTransaction = (type: "IN" | "OUT", input: RecordInput) =>
-  prisma.$transaction((tx) => applyStock(tx, type, input));
+// Entry point service: transaksi via port UnitOfWork (bukan Prisma langsung).
+export function recordTransaction(type: "IN" | "OUT", input: RecordInput, actorId: string) {
+  return container.uow.run((tx) => applyStock(tx, type, { ...input, createdById: actorId }));
+}
 ```
+
+> **Catatan arsitektur:** snippet di atas ringkas. Implementasi asli (`src/modules/transactions/transactions.service.ts`) memakai `container.uow.run(...)`, repository (`products`, `inventory`, `transactions`, `purchase-orders`) dan validasi PO; Prisma tidak pernah diakses langsung dari service.
 
 > **Catatan race condition:** Pendekatan di atas aman untuk skala UMKM/capstone. Untuk trafik tinggi, pertimbangkan `SELECT ... FOR UPDATE` atau kolom versi optimistik.
 
 ### 7.4 PO Number Generation
 
+Logika format nomor ada di **domain** (`src/domain/numbering.ts`), sedangkan penghitungan *sequence* lewat repository (di dalam transaksi):
+
 ```ts
+// src/domain/numbering.ts — logika murni, tanpa DB
 import { format } from "date-fns";
 
-export async function generatePoNumber(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  date: Date = new Date(),
-) {
-  const yyyymm = format(date, "yyyyMM");
-  const prefix = `PO-${yyyymm}-`;
-  const count = await tx.purchaseOrder.count({ where: { poNumber: { startsWith: prefix } } });
-  return `${prefix}${String(count + 1).padStart(3, "0")}`;
+export type DocumentKind = "PO" | "SJ";
+
+export function numberPrefix(kind: DocumentKind, date: Date): string {
+  return `${kind}-${format(date, "yyyyMM")}-`;
+}
+
+export function buildDocumentNumber(kind: DocumentKind, date: Date, existingCount: number): string {
+  return `${numberPrefix(kind, date)}${String(existingCount + 1).padStart(3, "0")}`;
 }
 ```
-
-Validasi transisi status PO (`DRAFT → CONFIRMED → COMPLETED`, `→ CANCELLED`):
 
 ```ts
-const allowed: Record<string, string[]> = {
-  DRAFT: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["COMPLETED", "CANCELLED"],
-  COMPLETED: [],
-  CANCELLED: [],
-};
-
-export function assertPoTransition(from: string, to: string) {
-  if (!allowed[from]?.includes(to)) throw Errors.invalidState(`Cannot change PO ${from} -> ${to}`);
-}
+// dipanggil di dalam transaksi (purchase-orders.service)
+const date = new Date();
+const poNumber = buildDocumentNumber(
+  "PO",
+  date,
+  await purchaseOrdersRepo.countByNumberPrefix(numberPrefix("PO", date), tx),
+);
 ```
+
+Validasi transisi status PO/DN tinggal di `src/domain/po-state.ts` (`assertPoTransition`, `assertDnTransition`).
 
 ### 7.5 Audit Log Helper
 
-```ts
-import { prisma } from "./prisma";
+Kontrak di `src/application/ports/audit.ts`, implementasi di `src/infrastructure/audit/prismaAudit.ts`; service memanggil via `container.audit`:
 
-export async function audit(params: {
-  actorId?: string;
-  action: "CREATE" | "UPDATE" | "DELETE" | "LOGIN" | "VOID";
-  entity: string;
-  entityId?: string;
-  before?: unknown;
-  after?: unknown;
-  ipAddress?: string;
-}) {
-  await prisma.auditLog.create({ data: params as any });
+```ts
+// application/ports/audit.ts
+export interface AuditPort {
+  record(params: AuditParams, db?: Db): Promise<void>;
 }
+
+// infrastructure/audit/prismaAudit.ts
+export async function audit(params: AuditParams, db: Db = prisma): Promise<void> {
+  await db.auditLog.create({ data: { ...params, before: params.before ?? null, after: params.after ?? null } });
+}
+
+export const prismaAudit: AuditPort = { record: audit };
+```
+
+Pemakaian di service (contoh `categories.service.ts`):
+
+```ts
+await container.audit.record({ actorId, action: "CREATE", entity: "Category", entityId, after: category, ipAddress: ip });
 ```
 
 ### 7.6 API Response Conventions
@@ -886,100 +926,124 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 AI Agent memiliki **dua sumber data**: (1) **data bisnis** melalui Backend REST API (function calling), dan (2) **knowledge/SOP** melalui retrieval vector **read-only** dari `document_chunks`. Riwayat percakapan dibatasi `MAX_HISTORY_TURNS` agar konteks LLM tetap efisien.
 
-### 9.1 Backend Client
+### 9.0 Layered Architecture (AI Agent)
+
+AI Agent tidak memakai route HTTP seperti backend; entry point-nya event-driven. Layer tetap dipisah: **Presentation → Business → Persistence**, dengan port untuk dependensi outbound.
+
+```mermaid
+flowchart LR
+    subgraph INBOUND["Presentation (inbound)"]
+        TG[Telegram update] --> BOT[presentation/telegram/bot.ts]
+        BE[backend POST /notify] --> HTTP[presentation/http/server.ts]
+    end
+    BOT --> HM[application/chat/handleMessage.ts]
+    HM --> AG[application/agent/agent.ts]
+    AG --> TL[application/tools/*]
+    TL --> PORT[application/ports/*]
+    HTTP --> NOT[presentation + infrastructure/telegram notifier]
+    PORT -.-> GW[infrastructure/backend/backendGateway.ts]
+    PORT -.-> KB[infrastructure/rag/retriever.ts]
+    GW --> BAPI[(Backend REST API)]
+    KB --> EMB[embeddings] --> PG[(document_chunks)]
+```
+
+| Layer | Isi | Contoh |
+| :--- | :--- | :--- |
+| Presentation | batas channel (inbound handler, formatting, route HTTP) | `presentation/telegram/bot.ts`, `presentation/http/server.ts` |
+| Business | workflow, agent, tools, ports | `application/chat/handleMessage.ts`, `application/agent/*`, `application/tools/*`, `application/ports/*` |
+| Persistence | adapter outbound (HTTP ke backend, pg, embeddings, push Telegram) | `infrastructure/backend/backendGateway.ts`, `infrastructure/rag/*`, `infrastructure/telegram/notifier.ts`, `infrastructure/db.ts` |
+
+Alur pesan Telegram: `bot.ts` (presentation) → `handleMessage` (business) → `agent`/`tools` (business) → **port** `BackendGateway`/`KnowledgeBase` → adapter di `infrastructure/` → `format.ts` mengirim balasan.
+
+### 9.1 Backend Client (Port + Adapter)
+
+Kontrak di `src/application/ports/backendGateway.ts`; implementasi axios di `src/infrastructure/backend/backendGateway.ts`:
 
 ```ts
-// src/services/backendClient.ts
-import axios from "axios";
+// application/ports/backendGateway.ts — kontrak (business tidak tahu HTTP)
+export interface BackendGateway {
+  getStockByProductName(name: string): Promise<StockLookup | null>;
+  listTransactions(filter: TransactionFilter): Promise<ListResult<TransactionRow>>;
+  createPoDraft(input: PoDraftInput & { chatId: string; source: "AI_CHAT" }): Promise<PoDraftResult>;
+  // ... endpoint lain: products, categories, partners, warehouses, inventory, PO, DN, dashboard
+}
 
+// infrastructure/backend/backendGateway.ts — adapter (axios)
 export const backend = axios.create({
-  baseURL: process.env.BACKEND_API_URL, // http://localhost:3000/api
-  headers: { "x-internal-key": process.env.INTERNAL_API_KEY },
+  baseURL: env.BACKEND_API_URL,
+  headers: { "x-internal-key": env.INTERNAL_API_KEY },
 });
+
+export const backendGateway: BackendGateway = {
+  getStockByProductName: async (name) => {
+    const { data } = await backend.get(`/reports/stock/${encodeURIComponent(name)}`);
+    return data.data;
+  },
+  // ...
+};
 ```
 
 ### 9.2 Tools (LangChain + Zod → Backend HTTP)
 
+Tools tinggal di `src/application/tools/` (dipecah: `schemas.ts`, `read.ts`, `write.ts`, `rag.ts`, `format.ts`, `index.ts`) dan menerima **port** lewat `buildTools(deps, chatId)`, bukan adapter konkret:
+
 ```ts
-// src/agent/tools.ts
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
-import { backend } from "../services/backendClient";
-import { searchKnowledge } from "../rag/retriever";
+// src/application/tools/read.ts (contoh)
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import type { BackendGateway } from "../ports/backendGateway";
 
-export const checkStockTool = tool(
-  async ({ productName }) => {
-    const { data } = await backend.get(`/reports/stock/${encodeURIComponent(productName)}`);
-    const result = data.data;
-    if (!result || result.status === "none") {
-      return `Sistem tidak menemukan barang bernama mirip "${productName}".`;
-    }
-    if (result.status === "ambiguous") {
-      const lines = result.candidates
-        .map((c) => `• ${c.name} (SKU ${c.sku}): stok ${c.stock} ${c.unit}`)
-        .join("\n");
-      return `Kata kunci "${productName}" cocok dengan beberapa produk:\n${lines}\nMohon sebutkan varian yang dimaksud.`;
-    }
-    const p = result.product;
-    return `Info database: ${p.name} (SKU: ${p.sku}) stok ${p.stock} ${p.unit}.`;
-  },
-  {
+export function buildReadTools({ backend }: { backend: BackendGateway }) {
+  const checkStock = new DynamicStructuredTool({
     name: "cek_stok_barang",
-    description: "Gunakan untuk mengetahui sisa stok barang di gudang.",
-    schema: z.object({ productName: z.string().describe("Nama barang, mis. 'dimsum'") }),
-  },
-);
+    description: "Cek sisa stok satu barang berdasarkan nama.",
+    schema: stockSchema,
+    func: async (input) => {
+      const result = await backend.getStockByProductName(input.productName);
+      if (!result || result.status === "none") {
+        return `Sistem tidak menemukan barang bernama mirip "${input.productName}".`;
+      }
+      // status "ambiguous" -> tampilkan kandidat; "ok" -> tampilkan stok.
+      return `Info database: ${result.product?.name} stok ${result.product?.stock} ${result.product?.unit}.`;
+    },
+  });
+  return [checkStock /* ...tool baca lain */];
+}
+```
 
-export const shipmentRecapTool = tool(
-  async ({ date }) => {
-    const { data } = await backend.get(`/reports/shipments`, { params: { date } });
-    const rows = data.data as { partner: string; product: string; qty: number }[];
-    if (!rows.length) return `Tidak ada pengiriman tercatat pada ${date}.`;
-    return rows.map((r) => `- ${r.partner}: ${r.qty}x ${r.product}`).join("\n");
-  },
-  {
-    name: "rekap_pengiriman",
-    description: "Merekap pengiriman harian. Gunakan saat user menanyakan kirim ke mana pada tanggal tertentu.",
-    schema: z.object({ date: z.string().describe("Tanggal format YYYY-MM-DD") }),
-  },
-);
-
-// Tool knowledge/RAG: menjawab pertanyaan SOP/kebijakan dari document_chunks.
-export const searchSopTool = tool(
-  async ({ query }) => {
-    const chunks = await searchKnowledge(query, Number(process.env.AGENT_TOP_K ?? 12));
-    if (!chunks.length) return "Tidak ada SOP/panduan yang relevan di knowledge base.";
-    return chunks.map((c, i) => `[${i + 1}] (${c.source}) ${c.content}`).join("\n\n");
-  },
-  {
-    name: "cari_sop",
-    description: "Mencari SOP, kebijakan, atau panduan internal. Gunakan untuk pertanyaan prosedural yang bukan data stok/pengiriman.",
-    schema: z.object({ query: z.string().describe("Pertanyaan/kata kunci pengguna") }),
-  },
-);
-
-export const createPoDraftTool = tool(
-  async ({ partnerName, items }) => {
-    try {
-      const { data } = await backend.post("/po/draft", { partnerName, items, source: "AI_CHAT" });
-      const po = data.data;
-      return `Draft PO ${po.poNumber} untuk ${po.partner.name} berhasil dibuat (status DRAFT). Silakan konfirmasi di aplikasi web.`;
-    } catch (e: any) {
-      return `Gagal membuat PO: ${e.response?.data?.error?.message ?? "kesalahan sistem"}.`;
-    }
-  },
-  {
+```ts
+// src/application/tools/write.ts (contoh)
+export function buildWriteTools({ backend }: { backend: BackendGateway }, chatId: string) {
+  const createPoDraft = new DynamicStructuredTool({
     name: "buat_draft_po",
     description: "Membuat draft Purchase Order (PO) baru untuk supplier. Status selalu DRAFT.",
-    schema: z.object({
-      partnerName: z.string().describe("Nama supplier, mis. 'CV Sumber Frozen'"),
-      items: z
-        .array(z.object({ productName: z.string(), qty: z.number().int().positive() }))
-        .min(1)
-        .describe("Daftar barang yang dipesan"),
-    }),
-  },
-);
+    schema: poSchema,
+    func: async (input) => {
+      try {
+        const po = await backend.createPoDraft({ ...input, source: "AI_CHAT", chatId });
+        return `Draft PO ${po.poNumber} untuk ${po.partner.name} berhasil dibuat (status DRAFT).`;
+      } catch (e) {
+        return `Gagal membuat PO: ${(e as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message ?? "kesalahan sistem"}.`;
+      }
+    },
+  });
+  return [createPoDraft];
+}
+```
+
+```ts
+// src/application/tools/rag.ts (contoh)
+export function buildSopTool({ knowledge }: { knowledge: KnowledgeBase }) {
+  return new DynamicStructuredTool({
+    name: "cari_sop",
+    description: "Mencari SOP, kebijakan, atau panduan internal (RAG).",
+    schema: sopSchema,
+    func: async ({ query }) => {
+      const chunks = await knowledge.search(query, env.AGENT_TOP_K);
+      if (!chunks.length) return "Tidak ada SOP/panduan yang relevan di knowledge base.";
+      return chunks.map((c, i) => `[${i + 1}] (${c.source}) ${c.content}`).join("\n\n");
+    },
+  });
+}
 ```
 
 > Perhatikan: parameter `items` berbentuk array — berbeda dari rancangan awal (single item) — agar mendukung multi-item PO sekaligus konsisten dengan `PurchaseOrderItem` di ERD.
@@ -989,7 +1053,7 @@ export const createPoDraftTool = tool(
 ### 9.3 System Prompt
 
 ```ts
-// src/agent/prompt.ts
+// src/application/agent/prompt.ts
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 
 export const agentPrompt = ChatPromptTemplate.fromMessages([
@@ -1014,81 +1078,83 @@ export const agentPrompt = ChatPromptTemplate.fromMessages([
 Agar balasan rapi saat dibaca, output LLM (yang umumnya Markdown) dikonversi ke subset HTML Telegram sebelum dikirim:
 
 ```ts
-// src/bot/format.ts
+// src/lib/telegramFormat.ts (renderer murni) + src/presentation/telegram/format.ts (sendFormatted)
 // - escape &, <, > lebih dulu, lalu konversi **tebal** -> <b>, *miring* -> <i>, `kode` -> <code>
 // - normalisasi bullet "- " -> "• ", buang heading "#", ubah baris tabel "|" menjadi daftar
 // - sendFormatted() mengirim dengan parse_mode "HTML"; bila Telegram menolak parse,
 //   pesan dikirim ulang sebagai teks polos agar tidak hilang.
 ```
 
-System prompt (`src/agent/prompt.ts`) juga memuat aturan **"Gaya & format jawaban"**: satu item per baris dengan awalan `• `, satu baris kosong antar seksi, tanpa heading/tabel Markdown, serta template baku untuk balasan Draft PO, Draft Surat Jalan, dan daftar.
+System prompt (`src/application/agent/prompt.ts`) juga memuat aturan **"Gaya & format jawaban"**: satu item per baris dengan awalan `• `, satu baris kosong antar seksi, tanpa heading/tabel Markdown, serta template baku untuk balasan Draft PO, Draft Surat Jalan, dan daftar.
 
 ### 9.4 Agent Assembly
 
 ```ts
-// src/agent/agent.ts
+// src/application/agent/agent.ts
 import { ChatOpenAI } from "@langchain/openai";
 import { createToolCallingAgent, AgentExecutor } from "langchain/agents";
-import { agentPrompt } from "./prompt";
-import { checkStockTool, shipmentRecapTool, createPoDraftTool, searchSopTool } from "./tools";
+import { container } from "../../composition/container";
+import { buildTools, type ToolDeps } from "../tools";
+import { buildAgentPrompt } from "./prompt";
 
-const llm = new ChatOpenAI({
-  model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-  temperature: Number(process.env.LLM_TEMPERATURE ?? 0),
-});
-
-const tools = [checkStockTool, shipmentRecapTool, createPoDraftTool, searchSopTool];
-
-export const agentExecutor = new AgentExecutor({
-  agent: createToolCallingAgent({ llm, tools, prompt: agentPrompt }),
-  tools,
-  maxIterations: 5,
-});
+// Dibangun per pesan agar chatId ter-inject; tools dari port (bukan adapter konkret).
+export async function runAgent(
+  input: { chatId: string; message: string; history: BaseMessage[] },
+  deps: ToolDeps = container,
+) {
+  const tools = buildTools(deps, input.chatId);
+  const executor = new AgentExecutor({
+    agent: createToolCallingAgent({ llm: getLlm(), tools, prompt: buildAgentPrompt() }),
+    tools,
+    maxIterations: 8,
+    returnIntermediateSteps: true,
+  });
+  return executor.invoke({ input: input.message, chat_history: input.history });
+}
 ```
 
 ### 9.5 Bot + Auth Mapping + Logging
 
+Presentation (`presentation/telegram/bot.ts`) hanya menerima event & mengirim balasan; workflow ada di business (`application/chat/handleMessage.ts`):
+
 ```ts
-// src/bot/telegram.ts
-import { Telegraf } from "telegraf";
-import { agentExecutor } from "../agent/agent";
-import { backend } from "../services/backendClient";
+// src/presentation/telegram/bot.ts
+import { Telegraf, type Context } from "telegraf";
+import { message } from "telegraf/filters";
+import { container } from "../../composition/container";
+import { handleMessage } from "../../application/chat/handleMessage";
 import { sendFormatted } from "./format";
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
+export function createBot(): Telegraf {
+  const bot = new Telegraf(requireTelegramToken());
 
-bot.start((ctx) => ctx.reply("Halo Bos! Ketik mis. 'Cek stok dimsum' atau 'Buat PO untuk CV Sumber Frozen'"));
+  bot.start((ctx) => ctx.reply("Halo Bos! Ketik mis. 'Cek stok dimsum' atau 'Buat PO untuk CV Sumber Frozen'"));
 
-bot.on("text", async (ctx) => {
-  const chatId = String(ctx.chat.id);
-  ctx.sendChatAction("typing");
-
-  const started = Date.now();
-  try {
-    const response = await agentExecutor.invoke({ input: ctx.message.text });
-    const latencyMs = Date.now() - started;
-    await sendFormatted(ctx, response.output);
-    await backend.post("/internal/ai-log", {
-      platform: "TELEGRAM",
+  bot.on(message("text"), async (ctx: Context) => {
+    const chatId = String(ctx.chat!.id);
+    const result = await handleMessage(container, {
       chatId,
-      messageIn: ctx.message.text,
-      messageOut: response.output,
-      latencyMs,
+      text: (ctx.message as { text: string }).text,
+      onThinking: async () => { await ctx.sendChatAction("typing"); },
     });
-  } catch (err) {
-    await ctx.reply("Maaf, sistem sedang mengalami gangguan. Coba lagi nanti.");
-    await backend.post("/internal/ai-log", {
-      platform: "TELEGRAM",
-      chatId,
-      messageIn: ctx.message.text,
-      latencyMs: Date.now() - started,
-    });
-  }
-});
+    await sendFormatted(ctx, result.reply);
+  });
 
-// Long polling cocok untuk local development (tanpa HTTPS/webhook publik).
-bot.launch();
-console.log("Asisten WMS bot running (local long-polling)...");
+  return bot;
+}
+```
+
+```ts
+// src/application/chat/handleMessage.ts — business: validasi user (via BackendGateway),
+// rate limit, runAgent, simpan riwayat, dan log percakapan (best-effort).
+export async function handleMessage(deps: ToolDeps, input: { chatId: string; text: string }) {
+  const user = await deps.backend.resolveChatUser(input.chatId);
+  if (!user) return { status: "unregistered", reply: "Maaf, akun Anda belum terdaftar..." };
+  if (isRateLimited(input.chatId)) return { status: "rate_limited", reply: "Terlalu banyak permintaan..." };
+  const result = await runAgent({ chatId: input.chatId, message: input.text, history: getHistory(input.chatId) }, deps);
+  await deps.backend.logConversation({ platform: "TELEGRAM", chatId: input.chatId, messageIn: input.text, messageOut: result.output });
+  return { status: "ok", reply: result.output };
+}
 ```
 
 > **Alternatif webhook untuk produksi:** gunakan `bot.launch({ webhook: { domain, port } })` atau `@telegraf/… webhookCallback` yang di-mount pada Express. Untuk local dev, long-polling lebih sederhana.
@@ -1098,8 +1164,8 @@ console.log("Asisten WMS bot running (local long-polling)...");
 Backend memetakan `telegramId`/`whatsappNumber` ke `User`. Pada endpoint `/internal/ai-log` & `/po/draft`, backend memvalidasi:
 
 ```ts
-// contoh service backend
-const user = await prisma.user.findUnique({ where: { telegramId: chatId } });
+// users.service.ts (business) — data diakses lewat repository
+const user = await usersRepo.findByChatId(chatId); // cocokkan telegramId / whatsappNumber
 if (!user || !user.isActive) throw Errors.forbidden();
 ```
 
@@ -1121,7 +1187,7 @@ AI Agent mengekspos satu endpoint internal di HTTP server-nya untuk mengirim pes
 - `text` berformat Markdown; AI Agent mengonversinya ke HTML Telegram (`markdownToTelegramHtml`) dengan fallback teks polos.
 - `button` opsional → inline keyboard berisi URL deep-link.
 
-Backend memicu endpoint ini secara **best-effort** (timeout 5 detik, gagal hanya di-log) melalui `src/utils/notify.ts`:
+Backend memicu endpoint ini secara **best-effort** (timeout 5 detik, gagal hanya di-log) melalui adapter outbound `src/infrastructure/notifier/telegram.ts` (implementasi `NotifierPort` di `src/application/ports/notifier.ts`). Di ai-agent, request diterima `presentation/http/server.ts` lalu dikirim oleh `infrastructure/telegram/notifier.ts` (implementasi port `Notifier`):
 
 | Trigger | Penerima |
 | :------ | :------- |
@@ -1138,23 +1204,23 @@ AI Agent menggunakan dua jalur data: **(1)** data bisnis via Backend API (functi
 ```mermaid
 flowchart LR
     subgraph Offline["Ingestion (offline, admin)"]
-        DOC[Dokumen SOP/FAQ<br/>docs/knowledge/*.md] --> ING[rag/ingest.ts]
+        DOC[Dokumen SOP/FAQ<br/>docs/knowledge/*.md] --> ING[infrastructure/rag/ingest.ts]
         ING --> CH[chunk<br/>CHUNK_SIZE / CHUNK_OVERLAP]
         CH --> EMB[embed<br/>OPENAI_EMBEDDING_MODEL]
         EMB --> VDB[(document_chunks<br/>pgvector)]
     end
     subgraph Runtime["Runtime (read-only)"]
-        Q[Pesan user] --> RET[rag/retriever.ts]
+        Q[Pesan user] --> RET[infrastructure/rag/retriever.ts]
         RET -->|top-K AGENT_TOP_K| VDB
         RET --> CTX[Konteks SOP]
         CTX --> AG[AgentExecutor]
     end
 ```
 
-**`src/db.ts`** — koneksi read-only (gunakan user DB ber-`SELECT` saja):
+**`src/infrastructure/db.ts`** — koneksi read-only (gunakan user DB ber-`SELECT` saja):
 
 ```ts
-// src/db.ts
+// src/infrastructure/db.ts
 import { Pool } from "pg";
 
 export const db = new Pool({
@@ -1167,7 +1233,7 @@ export const db = new Pool({
 });
 ```
 
-**`src/rag/embeddings.ts`:**
+**`src/infrastructure/rag/embeddings.ts`:**
 
 ```ts
 import { OpenAIEmbeddings } from "@langchain/openai";
@@ -1179,7 +1245,7 @@ export const embeddings = new OpenAIEmbeddings({
 });
 ```
 
-**`src/rag/ingest.ts`** — chunk + embed + upsert (dijalankan manual, boleh pakai kredensial write):
+**`src/infrastructure/rag/ingest.ts`** — chunk + embed + upsert (dijalankan manual, boleh pakai kredensial write):
 
 ```ts
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
@@ -1207,7 +1273,7 @@ export async function ingestFile(source: string, path: string) {
 }
 ```
 
-**`src/rag/retriever.ts`** — retrieval top-K (read-only):
+**`src/infrastructure/rag/retriever.ts`** — retrieval top-K (read-only):
 
 ```ts
 import { db } from "../db";
@@ -1399,7 +1465,7 @@ Tidak ada `npm`/`tsx` di host.
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "NODE_OPTIONS=--max-old-space-size=6144 tsc -p tsconfig.build.json",
-    "rag:ingest": "tsx src/rag/ingest.ts",
+    "rag:ingest": "tsx src/infrastructure/rag/ingest.ts",
     "lint": "eslint .",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit",
     "test": "vitest run"
@@ -1462,7 +1528,7 @@ Jalankan lewat container DB: `make db-shell`.
 | Item          | Convention            | Example                       |
 | :------------ | :-------------------- | :---------------------------- |
 | File (modul)  | kebab-case            | `purchase-orders.service.ts`  |
-| Variabel/fn   | camelCase             | `generatePoNumber`            |
+| Variabel/fn   | camelCase             | `buildDocumentNumber`         |
 | Tipe/Class    | PascalCase            | `StockTransactionInput`       |
 | Konstanta     | UPPER_SNAKE_CASE      | `JWT_ACCESS_TTL`              |
 | Tabel DB      | snake_case plural     | `purchase_order_items`        |

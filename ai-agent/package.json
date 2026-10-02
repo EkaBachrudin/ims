@@ -8,7 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "NODE_OPTIONS=--max-old-space-size=6144 tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "rag:ingest": "tsx src/rag/ingest.ts",
+    "rag:ingest": "tsx src/infrastructure/rag/ingest.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit",

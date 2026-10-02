@@ -1,51 +1,46 @@
-import type { Prisma, TransactionType } from "@prisma/client";
-import { prisma, type PrismaTx } from "../../lib/prisma";
+import type { TransactionType } from "@prisma/client";
 import { Errors } from "../../lib/errors";
-import { audit } from "../../utils/audit";
-import { buildMeta, parsePagination } from "../../utils/pagination";
-import { notifyUsers, poUrl } from "../../utils/notify";
-import { getReceiptStatus, syncPoReceiptStatus } from "../purchase-orders/purchase-orders.service";
+import { buildMeta, parsePagination } from "../../lib/pagination";
+import { container } from "../../composition/container";
+import type { Db } from "../../infrastructure/prisma/client";
+import * as repo from "./transactions.repository";
+import * as inventory from "./inventory.repository";
+import * as productsRepo from "../products/products.repository";
+import * as warehousesRepo from "../warehouses/warehouses.repository";
+import * as usersRepo from "../users/users.repository";
+import * as purchaseOrdersRepo from "../purchase-orders/purchase-orders.repository";
+import {
+  getReceiptStatus,
+  syncPoReceiptStatus,
+} from "../purchase-orders/purchase-orders.service";
 import type { z } from "zod";
 import type { listTransactionSchema, recordTransactionSchema } from "./transactions.schema";
 
 type RecordInput = z.infer<typeof recordTransactionSchema>["body"] & { createdById: string };
 
 /**
- * Inti perubahan stok. WAJIB dipanggil di dalam `prisma.$transaction`.
+ * Inti perubahan stok. WAJIB dipanggil di dalam sebuah transaksi (`container.uow.run`).
  * - Membuat baris StockTransaction
  * - Update denormalized Product.stock
  * - Update Inventory per gudang
  */
-export async function applyStock(tx: PrismaTx, type: TransactionType, input: RecordInput) {
-  const product = await tx.product.findUnique({
-    where: { id: input.productId },
-    select: { id: true, stock: true },
-  });
+export async function applyStock(tx: Db, type: TransactionType, input: RecordInput) {
+  const product = await productsRepo.findStock(input.productId, tx);
   if (!product) throw Errors.notFound("Product");
 
-  const warehouse = await tx.warehouse.findUnique({ where: { id: input.warehouseId } });
+  const warehouse = await warehousesRepo.findById(input.warehouseId, tx);
   if (!warehouse) throw Errors.notFound("Warehouse");
 
   const delta = type === "OUT" ? -input.quantity : input.quantity;
 
   if (type === "OUT") {
     if (product.stock < input.quantity) throw Errors.insufficientStock();
-    const inventory = await tx.inventory.findUnique({
-      where: {
-        productId_warehouseId: {
-          productId: input.productId,
-          warehouseId: input.warehouseId,
-        },
-      },
-    });
-    if (!inventory || inventory.quantity < input.quantity) throw Errors.insufficientStock();
+    const inventoryRow = await inventory.findInventory(input.productId, input.warehouseId, tx);
+    if (!inventoryRow || inventoryRow.quantity < input.quantity) throw Errors.insufficientStock();
   }
 
   if (type === "IN" && input.purchaseOrderId) {
-    const po = await tx.purchaseOrder.findUnique({
-      where: { id: input.purchaseOrderId },
-      include: { partner: { select: { type: true } } },
-    });
+    const po = await purchaseOrdersRepo.findReceiptInfo(input.purchaseOrderId, tx);
     if (!po) throw Errors.notFound("Purchase Order");
     if (po.status !== "CONFIRMED") {
       throw Errors.invalidState("Penerimaan hanya untuk PO berstatus CONFIRMED");
@@ -54,7 +49,7 @@ export async function applyStock(tx: PrismaTx, type: TransactionType, input: Rec
       throw Errors.unprocessable("PO sumber penerimaan harus dari partner SUPPLIER");
     }
 
-    const lines = await getReceiptStatus(tx, po.id);
+    const lines = await getReceiptStatus(input.purchaseOrderId, tx);
     const line = lines.find((l) => l.productId === input.productId);
     if (!line) throw Errors.unprocessable("Produk tidak ada pada PO sumber");
     if (input.quantity > line.remaining) {
@@ -62,8 +57,8 @@ export async function applyStock(tx: PrismaTx, type: TransactionType, input: Rec
     }
   }
 
-  const txn = await tx.stockTransaction.create({
-    data: {
+  const txn = await repo.create(
+    {
       type,
       quantity: input.quantity,
       notes: input.notes ?? null,
@@ -75,30 +70,15 @@ export async function applyStock(tx: PrismaTx, type: TransactionType, input: Rec
       deliveryNoteId: input.deliveryNoteId ?? null,
       createdById: input.createdById,
     },
-  });
+    tx,
+  );
 
-  await tx.product.update({
-    where: { id: input.productId },
-    data: { stock: { increment: delta } },
-  });
+  await productsRepo.adjustStock(input.productId, delta, tx);
 
-  await tx.inventory.upsert({
-    where: {
-      productId_warehouseId: {
-        productId: input.productId,
-        warehouseId: input.warehouseId,
-      },
-    },
-    create: {
-      productId: input.productId,
-      warehouseId: input.warehouseId,
-      quantity: input.quantity,
-    },
-    update: { quantity: { increment: delta } },
-  });
+  await inventory.upsertInventory(input.productId, input.warehouseId, input.quantity, delta, tx);
 
   if (type === "IN" && input.purchaseOrderId) {
-    await syncPoReceiptStatus(tx, input.purchaseOrderId);
+    await syncPoReceiptStatus(input.purchaseOrderId, tx);
   }
 
   return txn;
@@ -111,42 +91,31 @@ export async function recordTransaction(
   ip?: string | null,
 ) {
   const poId = type === "IN" ? (input.purchaseOrderId ?? null) : null;
-  const beforePo = poId
-    ? await prisma.purchaseOrder.findUnique({ where: { id: poId }, select: { status: true } })
-    : null;
+  const beforePo = poId ? await purchaseOrdersRepo.findStatus(poId) : null;
 
-  const txn = await prisma.$transaction((tx) => applyStock(tx, type, input));
+  const txn = await container.uow.run((tx) => applyStock(tx, type, input));
 
-  await audit(
-    {
-      actorId,
-      action: "CREATE",
-      entity: "StockTransaction",
-      entityId: txn.id,
-      after: txn,
-      ipAddress: ip,
-    },
-    prisma,
-  );
+  await container.audit.record({
+    actorId,
+    action: "CREATE",
+    entity: "StockTransaction",
+    entityId: txn.id,
+    after: txn,
+    ipAddress: ip,
+  });
 
   // Kabari pembuat PO saat realisasi penerimaan menuntaskan seluruh item.
   if (poId && beforePo?.status !== "COMPLETED") {
-    const po = await prisma.purchaseOrder.findUnique({
-      where: { id: poId },
-      select: { status: true, poNumber: true, createdById: true },
-    });
+    const po = await purchaseOrdersRepo.findNotificationInfo(poId);
     if (po?.status === "COMPLETED") {
-      const creator = await prisma.user.findUnique({
-        where: { id: po.createdById },
-        select: { telegramId: true },
-      });
+      const creator = await usersRepo.findById(po.createdById);
       if (creator?.telegramId) {
-        await notifyUsers([creator], {
+        await container.notifier.notifyUsers([creator], {
           text: [
             "📦 **Penerimaan selesai**",
             `**${po.poNumber}** — seluruh barang sudah diterima.`,
           ].join("\n"),
-          button: { label: "Lihat PO", url: poUrl(poId) },
+          button: { label: "Lihat PO", url: container.notifier.poUrl(poId) },
         });
       }
     }
@@ -161,8 +130,8 @@ export async function voidTransaction(
   actorId?: string | null,
   ip?: string | null,
 ) {
-  return prisma.$transaction(async (tx) => {
-    const original = await tx.stockTransaction.findUnique({ where: { id } });
+  return container.uow.run(async (tx) => {
+    const original = await repo.findById(id, tx);
     if (!original) throw Errors.notFound("Transaction");
     if (original.type === "ADJUSTMENT" && (original.notes ?? "").startsWith("VOID:")) {
       throw Errors.invalidState("Transaksi void tidak dapat di-void ulang");
@@ -171,8 +140,8 @@ export async function voidTransaction(
     // Soft reversal: catat ADJUSTMENT kompensasi lalu koreksi stok.
     const reversalDelta = original.type === "OUT" ? original.quantity : -original.quantity;
 
-    const adjustment = await tx.stockTransaction.create({
-      data: {
+    const adjustment = await repo.create(
+      {
         type: "ADJUSTMENT",
         quantity: original.quantity,
         notes: `VOID: ${reason} (ref ${original.id})`,
@@ -184,28 +153,18 @@ export async function voidTransaction(
         referenceNo: original.referenceNo,
         createdById: actorId ?? original.createdById,
       },
-    });
+      tx,
+    );
 
-    await tx.product.update({
-      where: { id: original.productId },
-      data: { stock: { increment: reversalDelta } },
-    });
+    await productsRepo.adjustStock(original.productId, reversalDelta, tx);
 
-    await tx.inventory.update({
-      where: {
-        productId_warehouseId: {
-          productId: original.productId,
-          warehouseId: original.warehouseId,
-        },
-      },
-      data: { quantity: { increment: reversalDelta } },
-    });
+    await inventory.incrementInventory(original.productId, original.warehouseId, reversalDelta, tx);
 
     if (original.type === "IN" && original.purchaseOrderId) {
-      await syncPoReceiptStatus(tx, original.purchaseOrderId);
+      await syncPoReceiptStatus(original.purchaseOrderId, tx);
     }
 
-    await audit(
+    await container.audit.record(
       {
         actorId,
         action: "VOID",
@@ -224,50 +183,19 @@ export async function voidTransaction(
 
 export async function listTransactions(query: z.infer<typeof listTransactionSchema>["query"]) {
   const { page, limit, skip, take } = parsePagination(query);
-  const createdAt: Prisma.DateTimeFilter = {};
-  if (query.from) createdAt.gte = new Date(query.from);
-  if (query.to) createdAt.lte = new Date(query.to);
-
-  const q = query.q;
-  const where: Prisma.StockTransactionWhereInput = {
-    ...(query.type ? { type: query.type } : {}),
-    ...(query.productId ? { productId: query.productId } : {}),
-    ...(query.warehouseId ? { warehouseId: query.warehouseId } : {}),
-    ...(query.partnerId ? { partnerId: query.partnerId } : {}),
-    ...(query.deliveryNoteId ? { deliveryNoteId: query.deliveryNoteId } : {}),
-    ...(Object.keys(createdAt).length ? { createdAt } : {}),
-    ...(q
-      ? {
-          OR: [
-            { referenceNo: { contains: q, mode: "insensitive" as const } },
-            { product: { name: { contains: q, mode: "insensitive" as const } } },
-            { product: { sku: { contains: q, mode: "insensitive" as const } } },
-            { partner: { name: { contains: q, mode: "insensitive" as const } } },
-            { createdBy: { name: { contains: q, mode: "insensitive" as const } } },
-            { purchaseOrder: { poNumber: { contains: q, mode: "insensitive" as const } } },
-            { deliveryNote: { dnNumber: { contains: q, mode: "insensitive" as const } } },
-          ],
-        }
-      : {}),
-  };
-
-  const [rows, total] = await Promise.all([
-    prisma.stockTransaction.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip,
-      take,
-      include: {
-        product: { select: { id: true, sku: true, name: true, unit: true } },
-        warehouse: { select: { id: true, code: true, name: true } },
-        partner: { select: { id: true, name: true } },
-        purchaseOrder: { select: { id: true, poNumber: true } },
-        deliveryNote: { select: { id: true, dnNumber: true } },
-        createdBy: { select: { id: true, name: true } },
-      },
-    }),
-    prisma.stockTransaction.count({ where }),
-  ]);
+  const { rows, total } = await repo.listTransactions(
+    {
+      type: query.type,
+      productId: query.productId,
+      warehouseId: query.warehouseId,
+      partnerId: query.partnerId,
+      deliveryNoteId: query.deliveryNoteId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+      q: query.q,
+    },
+    { skip, take },
+  );
 
   return { rows, meta: buildMeta(page, limit, total) };
 }

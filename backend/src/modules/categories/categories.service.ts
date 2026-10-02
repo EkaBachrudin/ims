@@ -1,15 +1,17 @@
-import { prisma } from "../../lib/prisma";
 import { Errors } from "../../lib/errors";
-import { audit } from "../../utils/audit";
+import { container } from "../../composition/container";
+import * as repo from "./categories.repository";
 import type { z } from "zod";
 import type { createCategorySchema, listCategorySchema, updateCategorySchema } from "./categories.schema";
 
 export async function listCategories(query: z.infer<typeof listCategorySchema>["query"]) {
-  return prisma.category.findMany({
-    where: query.q ? { name: { contains: query.q, mode: "insensitive" } } : {},
-    orderBy: { name: "asc" },
-    include: { _count: { select: { products: true } } },
-  });
+  return repo.listCategories(query.q);
+}
+
+export async function getCategory(id: number) {
+  const category = await repo.findById(id);
+  if (!category) throw Errors.notFound("Category");
+  return category;
 }
 
 export async function createCategory(
@@ -17,10 +19,9 @@ export async function createCategory(
   actorId?: string | null,
   ip?: string | null,
 ) {
-  const category = await prisma.category.create({ data: { name: input.name } });
-  await audit(
+  const category = await repo.create(input.name);
+  await container.audit.record(
     { actorId, action: "CREATE", entity: "Category", entityId: String(category.id), after: category, ipAddress: ip },
-    prisma,
   );
   return category;
 }
@@ -31,10 +32,10 @@ export async function updateCategory(
   actorId?: string | null,
   ip?: string | null,
 ) {
-  const before = await prisma.category.findUnique({ where: { id } });
+  const before = await repo.findById(id);
   if (!before) throw Errors.notFound("Category");
-  const category = await prisma.category.update({ where: { id }, data: { name: input.name } });
-  await audit(
+  const category = await repo.update(id, input.name);
+  await container.audit.record(
     {
       actorId,
       action: "UPDATE",
@@ -44,21 +45,19 @@ export async function updateCategory(
       after: category,
       ipAddress: ip,
     },
-    prisma,
   );
   return category;
 }
 
 export async function deleteCategory(id: number, actorId?: string | null, ip?: string | null) {
-  const before = await prisma.category.findUnique({ where: { id } });
+  const before = await repo.findById(id);
   if (!before) throw Errors.notFound("Category");
 
-  const used = await prisma.product.count({ where: { categoryId: id } });
+  const used = await repo.countProducts(id);
   if (used > 0) throw Errors.conflict("Kategori masih dipakai oleh produk");
 
-  await prisma.category.delete({ where: { id } });
-  await audit(
+  await repo.remove(id);
+  await container.audit.record(
     { actorId, action: "DELETE", entity: "Category", entityId: String(id), before, ipAddress: ip },
-    prisma,
   );
 }

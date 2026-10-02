@@ -1,12 +1,15 @@
-import type { PoSource, Prisma, PrismaClient } from "@prisma/client";
-import { prisma, type PrismaTx } from "../../lib/prisma";
+import type { PoSource } from "@prisma/client";
 import { Errors } from "../../lib/errors";
-import { audit } from "../../utils/audit";
-import { buildMeta, parsePagination } from "../../utils/pagination";
-import { generatePoNumber } from "../../utils/numbering";
-import { assertPoTransition } from "../../utils/po-state";
-import { notifyUsers, poUrl } from "../../utils/notify";
+import { buildMeta, parsePagination } from "../../lib/pagination";
+import { buildDocumentNumber, numberPrefix } from "../../domain/numbering";
+import { assertPoTransition } from "../../domain/po-state";
+import { container } from "../../composition/container";
+import type { Db } from "../../infrastructure/prisma/client";
 import { resolveProductOrThrow } from "../products/product-resolver";
+import * as partnersRepo from "../partners/partners.repository";
+import * as warehousesRepo from "../warehouses/warehouses.repository";
+import * as usersRepo from "../users/users.repository";
+import * as repo from "./purchase-orders.repository";
 import type { z } from "zod";
 import type {
   createPoSchema,
@@ -15,15 +18,7 @@ import type {
   updatePoSchema,
 } from "./purchase-orders.schema";
 
-const poInclude = {
-  partner: { select: { id: true, name: true, type: true } },
-  warehouse: { select: { id: true, code: true, name: true } },
-  createdBy: { select: { id: true, name: true, role: true } },
-  items: { include: { product: { select: { id: true, sku: true, name: true, unit: true } } } },
-} as const;
-
 type WebItem = z.infer<typeof createPoSchema>["body"]["items"][number];
-type Tx = PrismaTx | PrismaClient;
 
 export type PoReceiptLine = {
   productId: string;
@@ -36,22 +31,10 @@ export type PoReceiptLine = {
  * Rekap realisasi penerimaan PO: agregasi transaksi IN bertaut `purchaseOrderId`
  * per produk, dibandingkan dengan qty yang dipesan.
  */
-export async function getReceiptStatus(tx: Tx, poId: string): Promise<PoReceiptLine[]> {
-  const [items, inbound, adjustments] = await Promise.all([
-    tx.purchaseOrderItem.findMany({
-      where: { poId },
-      select: { productId: true, quantity: true },
-    }),
-    tx.stockTransaction.groupBy({
-      by: ["productId"],
-      where: { purchaseOrderId: poId, type: "IN" },
-      _sum: { quantity: true },
-    }),
-    tx.stockTransaction.groupBy({
-      by: ["productId"],
-      where: { purchaseOrderId: poId, type: "ADJUSTMENT" },
-      _sum: { quantity: true },
-    }),
+export async function getReceiptStatus(poId: string, db?: Db): Promise<PoReceiptLine[]> {
+  const [items, { inbound, adjustments }] = await Promise.all([
+    repo.listItems(poId, db),
+    repo.receiptAggregates(poId, db),
   ]);
 
   const ordered = new Map<string, number>();
@@ -82,29 +65,26 @@ export async function getReceiptStatus(tx: Tx, poId: string): Promise<PoReceiptL
  * - Semua item terpenuhi: CONFIRMED -> COMPLETED
  * - Realisasi berkurang (mis. void): COMPLETED -> CONFIRMED
  */
-export async function syncPoReceiptStatus(tx: Tx, poId: string): Promise<void> {
-  const po = await tx.purchaseOrder.findUnique({
-    where: { id: poId },
-    select: { status: true },
-  });
+export async function syncPoReceiptStatus(poId: string, db?: Db): Promise<void> {
+  const po = await repo.findStatus(poId, db);
   if (!po || (po.status !== "CONFIRMED" && po.status !== "COMPLETED")) return;
 
-  const lines = await getReceiptStatus(tx, poId);
+  const lines = await getReceiptStatus(poId, db);
   const fullyReceived = lines.length > 0 && lines.every((line) => line.received >= line.ordered);
 
   if (fullyReceived && po.status === "CONFIRMED") {
-    await tx.purchaseOrder.update({ where: { id: poId }, data: { status: "COMPLETED" } });
+    await repo.updateStatus(poId, "COMPLETED", db);
   } else if (!fullyReceived && po.status === "COMPLETED") {
-    await tx.purchaseOrder.update({ where: { id: poId }, data: { status: "CONFIRMED" } });
+    await repo.updateStatus(poId, "CONFIRMED", db);
   }
 }
 
-async function resolveWebItems(tx: Tx, items: WebItem[]) {
+async function resolveWebItems(db: Db, items: WebItem[]) {
   const resolved: { productId: string; quantity: number; unitPrice: number | null }[] = [];
   for (const item of items) {
     let productId = item.productId;
     if (!productId && item.productName) {
-      const product = await resolveProductOrThrow(item.productName, tx);
+      const product = await resolveProductOrThrow(item.productName, db);
       productId = product.id;
     }
     if (!productId) throw Errors.unprocessable("Item PO membutuhkan productId atau productName");
@@ -115,36 +95,25 @@ async function resolveWebItems(tx: Tx, items: WebItem[]) {
 
 export async function listPos(query: z.infer<typeof listPoSchema>["query"]) {
   const { page, limit, skip, take } = parsePagination(query);
-  const createdAt: Prisma.DateTimeFilter = {};
-  if (query.from) createdAt.gte = new Date(query.from);
-  if (query.to) createdAt.lte = new Date(query.to);
-
-  const where: Prisma.PurchaseOrderWhereInput = {
-    ...(query.status ? { status: query.status } : {}),
-    ...(query.partnerId ? { partnerId: query.partnerId } : {}),
-    ...(query.source ? { source: query.source } : {}),
-    ...(Object.keys(createdAt).length ? { createdAt } : {}),
-  };
-
-  const [rows, total] = await Promise.all([
-    prisma.purchaseOrder.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip,
-      take,
-      include: poInclude,
-    }),
-    prisma.purchaseOrder.count({ where }),
-  ]);
+  const { rows, total } = await repo.listPos(
+    {
+      status: query.status,
+      partnerId: query.partnerId,
+      source: query.source,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+    },
+    { skip, take },
+  );
 
   return { rows, meta: buildMeta(page, limit, total) };
 }
 
 export async function getPo(id: string) {
-  const po = await prisma.purchaseOrder.findUnique({ where: { id }, include: poInclude });
+  const po = await repo.findByIdWithDetails(id);
   if (!po) throw Errors.notFound("Purchase Order");
 
-  const lines = await getReceiptStatus(prisma, id);
+  const lines = await getReceiptStatus(id);
   const byProduct = new Map(lines.map((line) => [line.productId, line]));
 
   return {
@@ -165,17 +134,22 @@ export async function createPo(
   actorId: string,
   ip?: string | null,
 ) {
-  const partner = await prisma.partner.findUnique({ where: { id: input.partnerId } });
+  const partner = await partnersRepo.findById(input.partnerId);
   if (!partner) throw Errors.notFound("Partner");
   if (partner.type !== "SUPPLIER") {
     throw Errors.unprocessable("Purchase Order hanya untuk partner bertipe SUPPLIER");
   }
 
-  const po = await prisma.$transaction(async (tx) => {
+  const po = await container.uow.run(async (tx) => {
     const items = await resolveWebItems(tx, input.items);
-    const poNumber = await generatePoNumber(tx, new Date());
-    return tx.purchaseOrder.create({
-      data: {
+    const date = new Date();
+    const poNumber = buildDocumentNumber(
+      "PO",
+      date,
+      await repo.countByNumberPrefix(numberPrefix("PO", date), tx),
+    );
+    return repo.create(
+      {
         poNumber,
         partnerId: input.partnerId,
         warehouseId: input.warehouseId ?? null,
@@ -185,14 +159,18 @@ export async function createPo(
         createdById: actorId,
         items: { create: items },
       },
-      include: poInclude,
-    });
+      tx,
+    );
   });
 
-  await audit(
-    { actorId, action: "CREATE", entity: "PurchaseOrder", entityId: po.id, after: po, ipAddress: ip },
-    prisma,
-  );
+  await container.audit.record({
+    actorId,
+    action: "CREATE",
+    entity: "PurchaseOrder",
+    entityId: po.id,
+    after: po,
+    ipAddress: ip,
+  });
   return po;
 }
 
@@ -202,17 +180,17 @@ export async function updatePo(
   actorId?: string | null,
   ip?: string | null,
 ) {
-  const before = await prisma.purchaseOrder.findUnique({ where: { id }, include: poInclude });
+  const before = await repo.findByIdWithDetails(id);
   if (!before) throw Errors.notFound("Purchase Order");
   if (before.status !== "DRAFT") throw Errors.invalidState("PO hanya dapat diubah saat DRAFT");
 
-  const po = await prisma.$transaction(async (tx) => {
+  const po = await container.uow.run(async (tx) => {
     if (input.items) {
       const items = await resolveWebItems(tx, input.items);
-      await tx.purchaseOrderItem.deleteMany({ where: { poId: id } });
-      return tx.purchaseOrder.update({
-        where: { id },
-        data: {
+      await repo.deleteItems(id, tx);
+      return repo.update(
+        id,
+        {
           ...(input.partnerId !== undefined ? { partnerId: input.partnerId } : {}),
           ...(input.warehouseId !== undefined ? { warehouseId: input.warehouseId } : {}),
           ...(input.targetDate !== undefined
@@ -221,12 +199,12 @@ export async function updatePo(
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
           items: { create: items },
         },
-        include: poInclude,
-      });
+        tx,
+      );
     }
-    return tx.purchaseOrder.update({
-      where: { id },
-      data: {
+    return repo.update(
+      id,
+      {
         ...(input.partnerId !== undefined ? { partnerId: input.partnerId } : {}),
         ...(input.warehouseId !== undefined ? { warehouseId: input.warehouseId } : {}),
         ...(input.targetDate !== undefined
@@ -234,14 +212,19 @@ export async function updatePo(
           : {}),
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
       },
-      include: poInclude,
-    });
+      tx,
+    );
   });
 
-  await audit(
-    { actorId, action: "UPDATE", entity: "PurchaseOrder", entityId: id, before, after: po, ipAddress: ip },
-    prisma,
-  );
+  await container.audit.record({
+    actorId,
+    action: "UPDATE",
+    entity: "PurchaseOrder",
+    entityId: id,
+    before,
+    after: po,
+    ipAddress: ip,
+  });
   return po;
 }
 
@@ -251,34 +234,30 @@ async function transition(
   actorId?: string | null,
   ip?: string | null,
 ) {
-  const before = await prisma.purchaseOrder.findUnique({ where: { id } });
+  const before = await repo.findById(id);
   if (!before) throw Errors.notFound("Purchase Order");
   assertPoTransition(before.status, to);
 
-  const po = await prisma.purchaseOrder.update({
-    where: { id },
-    data: { status: to },
-    include: poInclude,
+  const po = await repo.updateStatus(id, to);
+
+  await container.audit.record({
+    actorId,
+    action: "UPDATE",
+    entity: "PurchaseOrder",
+    entityId: id,
+    before,
+    after: po,
+    ipAddress: ip,
   });
 
-  await audit(
-    { actorId, action: "UPDATE", entity: "PurchaseOrder", entityId: id, before, after: po, ipAddress: ip },
-    prisma,
-  );
-
   const [creator, actor] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: po.createdById },
-      select: { name: true, telegramId: true },
-    }),
-    actorId
-      ? prisma.user.findUnique({ where: { id: actorId }, select: { name: true } })
-      : Promise.resolve(null),
+    usersRepo.findById(po.createdById),
+    actorId ? usersRepo.findById(actorId) : Promise.resolve(null),
   ]);
 
   if (creator?.telegramId) {
     const confirmed = to === "CONFIRMED";
-    await notifyUsers([creator], {
+    await container.notifier.notifyUsers([creator], {
       text: [
         `${confirmed ? "✅" : "🚫"} **${po.poNumber}** ${confirmed ? "dikonfirmasi" : "dibatalkan"}.`,
         `• Supplier: ${po.partner.name}`,
@@ -286,7 +265,7 @@ async function transition(
       ]
         .filter(Boolean)
         .join("\n"),
-      button: { label: "Lihat PO", url: poUrl(po.id) },
+      button: { label: "Lihat PO", url: container.notifier.poUrl(po.id) },
     });
   }
 
@@ -300,15 +279,19 @@ export const cancelPo = (id: string, actorId?: string | null, ip?: string | null
   transition(id, "CANCELLED", actorId, ip);
 
 export async function deletePo(id: string, actorId?: string | null, ip?: string | null) {
-  const before = await prisma.purchaseOrder.findUnique({ where: { id }, include: poInclude });
+  const before = await repo.findByIdWithDetails(id);
   if (!before) throw Errors.notFound("Purchase Order");
   if (before.status !== "DRAFT") throw Errors.invalidState("Hanya PO DRAFT yang dapat dihapus");
 
-  await prisma.purchaseOrder.delete({ where: { id } });
-  await audit(
-    { actorId, action: "DELETE", entity: "PurchaseOrder", entityId: id, before, ipAddress: ip },
-    prisma,
-  );
+  await repo.remove(id);
+  await container.audit.record({
+    actorId,
+    action: "DELETE",
+    entity: "PurchaseOrder",
+    entityId: id,
+    before,
+    ipAddress: ip,
+  });
 }
 
 /** Dibuat dari chat AI: resolve partner/produk by nama, status selalu DRAFT. */
@@ -317,9 +300,7 @@ export async function createDraftFromChat(
   actorId: string,
   ip?: string | null,
 ) {
-  const partner = await prisma.partner.findFirst({
-    where: { name: { contains: input.partnerName, mode: "insensitive" } },
-  });
+  const partner = await partnersRepo.findFirstByName(input.partnerName);
   if (!partner) throw Errors.unprocessable(`Partner "${input.partnerName}" tidak ditemukan`);
   if (partner.type !== "SUPPLIER") {
     throw Errors.unprocessable(`Partner "${partner.name}" bukan supplier`);
@@ -333,17 +314,22 @@ export async function createDraftFromChat(
 
   let warehouseId: string | null = null;
   if (input.warehouseCode) {
-    const warehouse = await prisma.warehouse.findUnique({ where: { code: input.warehouseCode } });
+    const warehouse = await warehousesRepo.findByCode(input.warehouseCode);
     warehouseId = warehouse?.id ?? null;
   } else {
-    const warehouse = await prisma.warehouse.findFirst({ where: { isActive: true } });
+    const warehouse = await warehousesRepo.findFirstActive();
     warehouseId = warehouse?.id ?? null;
   }
 
-  const po = await prisma.$transaction(async (tx) => {
-    const poNumber = await generatePoNumber(tx, new Date());
-    return tx.purchaseOrder.create({
-      data: {
+  const po = await container.uow.run(async (tx) => {
+    const date = new Date();
+    const poNumber = buildDocumentNumber(
+      "PO",
+      date,
+      await repo.countByNumberPrefix(numberPrefix("PO", date), tx),
+    );
+    return repo.create(
+      {
         poNumber,
         partnerId: partner.id,
         warehouseId,
@@ -353,30 +339,31 @@ export async function createDraftFromChat(
         createdById: actorId,
         items: { create: resolved },
       },
-      include: poInclude,
-    });
+      tx,
+    );
   });
 
-  await audit(
-    { actorId, action: "CREATE", entity: "PurchaseOrder", entityId: po.id, after: po, ipAddress: ip },
-    prisma,
-  );
+  await container.audit.record({
+    actorId,
+    action: "CREATE",
+    entity: "PurchaseOrder",
+    entityId: po.id,
+    after: po,
+    ipAddress: ip,
+  });
 
   if (po.source === "AI_CHAT") {
-    const admins = await prisma.user.findMany({
-      where: { role: { in: ["ADMIN", "SUPER_ADMIN"] }, isActive: true, telegramId: { not: null } },
-      select: { telegramId: true },
-    });
-    await notifyUsers(admins, {
+    const admins = await usersRepo.findAdminsWithTelegram();
+    await container.notifier.notifyUsers(admins, {
       text: [
         "🆕 **Draft PO baru** (via AI Chat)",
         `**${po.poNumber}** — ${po.partner.name}`,
         ...po.items.map((i) => `• ${i.quantity} ${i.product.unit} ${i.product.name}`),
         `Dibuat oleh: ${po.createdBy.name}`,
       ].join("\n"),
-      button: { label: "Buka & Konfirmasi PO", url: poUrl(po.id) },
+      button: { label: "Buka & Konfirmasi PO", url: container.notifier.poUrl(po.id) },
     });
   }
 
-  return { ...po, webUrl: poUrl(po.id) };
+  return { ...po, webUrl: container.notifier.poUrl(po.id) };
 }

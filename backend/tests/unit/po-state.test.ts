@@ -3,7 +3,7 @@ import {
   assertPoTransition,
   canTransitionDn,
   canTransitionPo,
-} from "../../src/utils/po-state";
+} from "../../src/domain/po-state";
 import { AppError } from "../../src/lib/errors";
 
 describe("PO state machine (FSD §11.1)", () => {

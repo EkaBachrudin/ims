@@ -1,6 +1,6 @@
 import request from "supertest";
-import { prisma } from "../../src/lib/prisma";
-import { hashPassword } from "../../src/utils/password";
+import { prisma } from "../../src/infrastructure/prisma/client";
+import { hashPassword } from "../../src/lib/password";
 import { createApp } from "../../src/app";
 
 export async function resetDb() {

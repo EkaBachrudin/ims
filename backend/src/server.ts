@@ -1,6 +1,6 @@
 import { createApp } from "./app";
 import { env } from "./config/env";
-import { prisma } from "./lib/prisma";
+import { prisma } from "./infrastructure/prisma/client";
 
 const app = createApp();
 

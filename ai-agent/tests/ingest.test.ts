@@ -5,17 +5,17 @@ const fakePool = {
   end: vi.fn().mockResolvedValue(undefined),
 };
 
-vi.mock("../src/db", () => ({
+vi.mock("../src/infrastructure/db", () => ({
   ingestPool: () => fakePool,
   db: {},
 }));
-vi.mock("../src/rag/embeddings", () => ({
+vi.mock("../src/infrastructure/rag/embeddings", () => ({
   getEmbeddings: () => ({
     embedDocuments: async (texts: string[]) => texts.map(() => [0.1, 0.2, 0.3]),
   }),
 }));
 
-import { ingestAll } from "../src/rag/ingest";
+import { ingestAll } from "../src/infrastructure/rag/ingest";
 
 beforeEach(() => {
   fakePool.query.mockClear();

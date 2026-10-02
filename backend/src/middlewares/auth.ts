@@ -1,23 +1,13 @@
 import type { RequestHandler } from "express";
-import { randomUUID } from "node:crypto";
-import jwt, { type SignOptions } from "jsonwebtoken";
-import type { UserRole } from "@prisma/client";
 import { env } from "../config/env";
 import { Errors } from "../lib/errors";
-
-export type JwtPayload = { sub: string; role: UserRole };
-
-export function signAccessToken(payload: JwtPayload): string {
-  return jwt.sign({ ...payload, jti: randomUUID() }, env.JWT_ACCESS_SECRET, {
-    expiresIn: env.JWT_ACCESS_TTL as SignOptions["expiresIn"],
-  });
-}
+import { verifyAccessToken } from "../infrastructure/auth/tokens";
 
 export const authenticate: RequestHandler = (req, _res, next) => {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) return next(Errors.unauthenticated());
   try {
-    const payload = jwt.verify(header.slice(7), env.JWT_ACCESS_SECRET) as JwtPayload;
+    const payload = verifyAccessToken(header.slice(7));
     req.user = { id: payload.sub, role: payload.role };
     next();
   } catch {

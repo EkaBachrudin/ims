@@ -312,39 +312,27 @@ flowchart TB
 
 ### A.1 Transaksi Stok Atomik (`backend/src/modules/transactions/transactions.service.ts`)
 
-Fungsi `applyStock` adalah inti perubahan stok. Fungsi ini **wajib** dipanggil di dalam `prisma.$transaction` agar pembuatan transaksi, pembaruan `Product.stock`, dan pembaruan `Inventory` per gudang berlangsung atomik.
+Fungsi `applyStock` adalah inti perubahan stok. Fungsi ini **wajib** dipanggil di dalam `container.uow.run(...)` agar pembuatan transaksi, pembaruan `Product.stock`, dan pembaruan `Inventory` per gudang berlangsung atomik. Semua akses data melewati repository — Prisma tidak diakses langsung dari service.
 
 ```ts
-export async function applyStock(tx: PrismaTx, type: TransactionType, input: RecordInput) {
-  const product = await tx.product.findUnique({
-    where: { id: input.productId },
-    select: { id: true, stock: true },
-  });
+// transactions.service.ts (business) — memakai repository + Db (klien transaksi)
+export async function applyStock(tx: Db, type: TransactionType, input: RecordInput) {
+  const product = await productsRepo.findStock(input.productId, tx);
   if (!product) throw Errors.notFound("Product");
 
-  const warehouse = await tx.warehouse.findUnique({ where: { id: input.warehouseId } });
+  const warehouse = await warehousesRepo.findById(input.warehouseId, tx);
   if (!warehouse) throw Errors.notFound("Warehouse");
 
   const delta = type === "OUT" ? -input.quantity : input.quantity;
 
   if (type === "OUT") {
     if (product.stock < input.quantity) throw Errors.insufficientStock();
-    const inventory = await tx.inventory.findUnique({
-      where: {
-        productId_warehouseId: {
-          productId: input.productId,
-          warehouseId: input.warehouseId,
-        },
-      },
-    });
+    const inventory = await inventoryRepo.findInventory(input.productId, input.warehouseId, tx);
     if (!inventory || inventory.quantity < input.quantity) throw Errors.insufficientStock();
   }
 
   if (type === "IN" && input.purchaseOrderId) {
-    const po = await tx.purchaseOrder.findUnique({
-      where: { id: input.purchaseOrderId },
-      include: { partner: { select: { type: true } } },
-    });
+    const po = await purchaseOrdersRepo.findReceiptInfo(input.purchaseOrderId, tx);
     if (!po) throw Errors.notFound("Purchase Order");
     if (po.status !== "CONFIRMED") {
       throw Errors.invalidState("Penerimaan hanya untuk PO berstatus CONFIRMED");
@@ -352,62 +340,44 @@ export async function applyStock(tx: PrismaTx, type: TransactionType, input: Rec
     // ... validasi over-receipt terhadap sisa pesanan PO ...
   }
 
-  const txn = await tx.stockTransaction.create({
-    data: {
-      type,
-      quantity: input.quantity,
-      notes: input.notes ?? null,
-      productId: input.productId,
-      warehouseId: input.warehouseId,
-      createdById: input.createdById,
-    },
-  });
-
-  await tx.product.update({
-    where: { id: input.productId },
-    data: { stock: { increment: delta } },
-  });
-
-  await tx.inventory.upsert({
-    where: {
-      productId_warehouseId: {
-        productId: input.productId,
-        warehouseId: input.warehouseId,
-      },
-    },
-    create: { productId: input.productId, warehouseId: input.warehouseId, quantity: input.quantity },
-    update: { quantity: { increment: delta } },
-  });
+  const txn = await transactionsRepo.create({ type, ...input }, tx);
+  await productsRepo.adjustStock(input.productId, delta, tx);
+  await inventoryRepo.upsertInventory(input.productId, input.warehouseId, input.quantity, delta, tx);
 
   if (type === "IN" && input.purchaseOrderId) {
-    await syncPoReceiptStatus(tx, input.purchaseOrderId);
+    await syncPoReceiptStatus(input.purchaseOrderId, tx);
   }
 
   return txn;
 }
 ```
 
-### A.2 Penomoran Dokumen Otomatis (`backend/src/utils/numbering.ts`)
+### A.2 Penomoran Dokumen Otomatis (`backend/src/domain/numbering.ts`)
 
-Format nomor PO `PO-YYYYMM-NNN` dan Surat Jalan `SJ-YYYYMM-NNN`, dibangkitkan di dalam transaksi agar konsisten.
+Format nomor PO `PO-YYYYMM-NNN` dan Surat Jalan `SJ-YYYYMM-NNN`. Logika format bersifat murni di **domain**, sedangkan penghitungan *sequence* dilakukan repository di dalam transaksi agar konsisten.
 
 ```ts
-export async function generatePoNumber(tx: Tx, date: Date = new Date()): Promise<string> {
-  const yyyymm = format(date, "yyyyMM");
-  const prefix = `PO-${yyyymm}-`;
-  const count = await tx.purchaseOrder.count({ where: { poNumber: { startsWith: prefix } } });
-  return `${prefix}${String(count + 1).padStart(3, "0")}`;
+// src/domain/numbering.ts — logika murni, tanpa DB
+export type DocumentKind = "PO" | "SJ";
+
+export function numberPrefix(kind: DocumentKind, date: Date): string {
+  return `${kind}-${format(date, "yyyyMM")}-`;
 }
 
-export async function generateDnNumber(tx: Tx, date: Date = new Date()): Promise<string> {
-  const yyyymm = format(date, "yyyyMM");
-  const prefix = `SJ-${yyyymm}-`;
-  const count = await tx.deliveryNote.count({ where: { dnNumber: { startsWith: prefix } } });
-  return `${prefix}${String(count + 1).padStart(3, "0")}`;
+export function buildDocumentNumber(kind: DocumentKind, date: Date, existingCount: number): string {
+  return `${numberPrefix(kind, date)}${String(existingCount + 1).padStart(3, "0")}`;
 }
+
+// purchase-orders.service — count lewat repository, dalam transaksi
+const date = new Date();
+const poNumber = buildDocumentNumber(
+  "PO",
+  date,
+  await purchaseOrdersRepo.countByNumberPrefix(numberPrefix("PO", date), tx),
+);
 ```
 
-### A.3 Pipeline RAG — Ingest & Retrieval (`ai-agent/src/rag/`)
+### A.3 Pipeline RAG — Ingest & Retrieval (`ai-agent/src/infrastructure/rag/`)
 
 Ingest (offline) memotong dokumen, menghasilkan embedding, lalu menyimpannya ke tabel `document_chunks` (pgvector). Retrieval (runtime) melakukan pencarian *top-K* secara **read-only**.
 
@@ -445,9 +415,9 @@ export async function searchKnowledge(query: string, topK = env.AGENT_TOP_K): Pr
 }
 ```
 
-### A.4 Definisi Tool AI Agent (`ai-agent/src/agent/tools.ts`)
+### A.4 Definisi Tool AI Agent (`ai-agent/src/application/tools/`)
 
-Setiap tool memiliki skema parameter (Zod) dan memanggil Backend API dengan `x-internal-key`. Berikut tiga tool representatif: baca stok, buat draft PO, dan cari SOP (RAG).
+Setiap tool memiliki skema parameter (Zod) dan memanggil **port** (`BackendGateway`/`KnowledgeBase`) yang diimplementasikan adapter di `infrastructure/` (HTTP ke Backend API dengan `x-internal-key`). Berikut tiga tool representatif: baca stok, buat draft PO, dan cari SOP (RAG).
 
 ```ts
 const checkStock = new DynamicStructuredTool({
@@ -455,8 +425,7 @@ const checkStock = new DynamicStructuredTool({
   description: "Cek sisa stok satu barang berdasarkan nama. ...",
   schema: stockSchema, // z.object({ productName: z.string() })
   func: async (input) => {
-    const { data } = await backend.get(`/reports/stock/${encodeURIComponent(input.productName)}`);
-    const result = data.data as {
+    const result = (await backend.getStockByProductName(input.productName)) as {
       status: "ok" | "ambiguous" | "none";
       product: StockRow | null;
       candidates?: StockRow[];
@@ -481,7 +450,7 @@ const createPoDraft = new DynamicStructuredTool({
   description: "Membuat draft Purchase Order (PO) baru. Status selalu DRAFT ...",
   schema: poSchema, // { partnerName, items[], targetDate? }
   func: async (input) => {
-    const { data } = await backend.post("/po/draft", {
+    const po = await backend.createPoDraft({
       partnerName: input.partnerName,
       items: input.items,
       targetDate: input.targetDate ?? undefined,
@@ -489,7 +458,7 @@ const createPoDraft = new DynamicStructuredTool({
       chatId,
     });
     // Backend juga memicu POST /notify ke ai-agent → notifikasi admin + deep-link.
-    return `Draft PO ${data.data.poNumber} untuk ${data.data.partner.name} berhasil dibuat (status DRAFT).\nSilakan konfirmasi di aplikasi web.\nBuka: ${data.data.webUrl}`;
+    return `Draft PO ${po.poNumber} untuk ${po.partner.name} berhasil dibuat (status DRAFT).\nSilakan konfirmasi di aplikasi web.\nBuka: ${po.webUrl}`;
   },
 });
 
@@ -498,7 +467,7 @@ const searchSop = new DynamicStructuredTool({
   description: "Mencari SOP, kebijakan, panduan internal, atau penjelasan istilah/skema data. ...",
   schema: sopSchema, // { query: z.string() }
   func: async (input) => {
-    const chunks = await searchKnowledge(input.query, env.AGENT_TOP_K);
+    const chunks = await knowledge.search(input.query, env.AGENT_TOP_K);
     if (chunks.length === 0) return "Tidak ada SOP/panduan yang relevan di knowledge base.";
     return chunks.map((c, i) => `[${i + 1}] (${c.source}) ${c.content}`).join("\n\n");
   },
@@ -507,13 +476,16 @@ const searchSop = new DynamicStructuredTool({
 
 > **Notifikasi PO:** backend memanggil `POST /notify` (header `x-internal-key`) ke AI Agent yang menyimpan instance bot, lalu AI Agent mengirim DM ke `telegramId` admin (ringkasan PO + tombol "Buka & Konfirmasi PO") dan ke owner saat status PO berubah. Pengiriman bersifat *best-effort* (timeout 5 detik) sehingga kegagalan notifikasi tidak menggagalkan transaksi.
 
-### A.5 Perakitan Agent (`ai-agent/src/agent/agent.ts`)
+### A.5 Perakitan Agent (`ai-agent/src/application/agent/agent.ts`)
 
-Agent dibangun *per pesan* agar `chatId` dapat diinjeksikan ke endpoint internal (audit) dan tetap memakai `temperature = 0` untuk menekan halusinasi.
+Agent dibangun *per pesan* agar `chatId` dapat diinjeksikan ke endpoint internal (audit), menerima **port** (`ToolDeps`) agar mudah diuji, dan tetap memakai `temperature = 0` untuk menekan halusinasi.
 
 ```ts
-export async function runAgent(input: { chatId: string; message: string; history: BaseMessage[] }) {
-  const tools = buildTools(input.chatId);
+export async function runAgent(
+  input: { chatId: string; message: string; history: BaseMessage[] },
+  deps: ToolDeps = container,
+) {
+  const tools = buildTools(deps, input.chatId);
   const executor = new AgentExecutor({
     agent: createToolCallingAgent({ llm: getLlm(), tools, prompt: buildAgentPrompt() }),
     tools,
@@ -635,12 +607,12 @@ sequenceDiagram
 sequenceDiagram
     actor Owner
     participant AI as AI Agent
-    participant RAG as retriever.ts
+    participant RAG as KnowledgeBase (retriever)
     participant PG as document_chunks (pgvector)
 
     Owner->>AI: "Apa SOP penerimaan barang retur?"
     AI->>AI: Intent routing → cari_sop
-    AI->>RAG: searchKnowledge(query, AGENT_TOP_K)
+    AI->>RAG: knowledge.search(query, AGENT_TOP_K)
     RAG->>PG: SELECT ... ORDER BY embedding <=> query LIMIT top_k
     PG-->>RAG: chunks + score
     RAG-->>AI: konteks SOP

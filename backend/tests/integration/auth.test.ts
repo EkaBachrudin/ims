@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../../src/app";
-import { prisma } from "../../src/lib/prisma";
+import { prisma } from "../../src/infrastructure/prisma/client";
 import { resetDb, seedBaseline } from "../helpers/db";
 
 const app = createApp();

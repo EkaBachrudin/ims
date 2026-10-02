@@ -1,31 +1,47 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { BackendGateway } from "../src/application/ports/backendGateway";
+import type { KnowledgeBase } from "../src/application/ports/knowledgeBase";
+import { buildTools } from "../src/application/tools";
 
-vi.mock("../src/services/backendClient", () => ({
-  backend: { get: vi.fn(), post: vi.fn() },
-}));
-vi.mock("../src/rag/retriever", () => ({ searchKnowledge: vi.fn() }));
+function makeDeps() {
+  const backend = {
+    resolveChatUser: vi.fn(),
+    logConversation: vi.fn(),
+    getStockByProductName: vi.fn(),
+    getShipmentRecap: vi.fn(),
+    listProducts: vi.fn(),
+    listCategories: vi.fn(),
+    listPartners: vi.fn(),
+    listWarehouses: vi.fn(),
+    listInventory: vi.fn(),
+    listTransactions: vi.fn(),
+    listPurchaseOrders: vi.fn(),
+    getPurchaseOrder: vi.fn(),
+    listDeliveryNotes: vi.fn(),
+    getLowStock: vi.fn(),
+    getDashboard: vi.fn(),
+    createPoDraft: vi.fn(),
+    createDnDraft: vi.fn(),
+  } as unknown as BackendGateway;
+  const knowledge = { search: vi.fn() } as unknown as KnowledgeBase;
+  return { backend, knowledge };
+}
 
-import { backend } from "../src/services/backendClient";
-import { searchKnowledge } from "../src/rag/retriever";
-import { buildTools } from "../src/agent/tools";
-
-const mockedGet = vi.mocked(backend.get);
-const mockedPost = vi.mocked(backend.post);
-const mockedSearch = vi.mocked(searchKnowledge);
+let deps: ReturnType<typeof makeDeps>;
 
 function findTool(name: string) {
-  const tool = buildTools("900001").find((t) => t.name === name);
+  const tool = buildTools(deps, "900001").find((t) => t.name === name);
   if (!tool) throw new Error(`tool ${name} tidak ditemukan`);
   return tool;
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  deps = makeDeps();
 });
 
 describe("buildTools", () => {
   it("mendaftarkan seluruh tool baca data (FSD §10.2)", () => {
-    const names = buildTools("900001")
+    const names = buildTools(deps, "900001")
       .map((t) => t.name)
       .sort();
     expect(names).toEqual([
@@ -52,36 +68,28 @@ describe("buildTools", () => {
 
 describe("cek_stok_barang", () => {
   it("mengembalikan info stok dari backend", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: {
-          status: "ok",
-          product: { name: "Dimsum Ayam", sku: "DMS-01", stock: 120, unit: "pack" },
-          candidates: [],
-          suggestions: [],
-        },
-      },
-    } as never);
+    vi.mocked(deps.backend.getStockByProductName).mockResolvedValue({
+      status: "ok",
+      product: { name: "Dimsum Ayam", sku: "DMS-01", stock: 120, unit: "pack" },
+      candidates: [],
+      suggestions: [],
+    });
     const result = await findTool("cek_stok_barang").invoke({ productName: "dimsum" });
     expect(String(result)).toContain("120");
     expect(String(result)).toContain("DMS-01");
-    expect(mockedGet).toHaveBeenCalledWith("/reports/stock/dimsum");
+    expect(deps.backend.getStockByProductName).toHaveBeenCalledWith("dimsum");
   });
 
   it("menampilkan kandidat varian bila nama ambigu", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: {
-          status: "ambiguous",
-          product: null,
-          candidates: [
-            { name: "Bihun Instan Rasa Original", sku: "INS-007", stock: 12, unit: "pack" },
-            { name: "Bihun Instan Rasa Pedas", sku: "INS-009", stock: 8, unit: "pack" },
-          ],
-          suggestions: [],
-        },
-      },
-    } as never);
+    vi.mocked(deps.backend.getStockByProductName).mockResolvedValue({
+      status: "ambiguous",
+      product: null,
+      candidates: [
+        { name: "Bihun Instan Rasa Original", sku: "INS-007", stock: 12, unit: "pack" },
+        { name: "Bihun Instan Rasa Pedas", sku: "INS-009", stock: 8, unit: "pack" },
+      ],
+      suggestions: [],
+    });
     const result = await findTool("cek_stok_barang").invoke({ productName: "bihun" });
     expect(String(result)).toContain("beberapa produk");
     expect(String(result)).toContain("Bihun Instan Rasa Original");
@@ -89,11 +97,12 @@ describe("cek_stok_barang", () => {
   });
 
   it("minta klarifikasi bila produk tidak ditemukan (anti-halusinasi)", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: { status: "none", product: null, candidates: [], suggestions: [] },
-      },
-    } as never);
+    vi.mocked(deps.backend.getStockByProductName).mockResolvedValue({
+      status: "none",
+      product: null,
+      candidates: [],
+      suggestions: [],
+    });
     const result = await findTool("cek_stok_barang").invoke({ productName: "tidak ada" });
     expect(String(result).toLowerCase()).toContain("tidak menemukan");
   });
@@ -101,22 +110,22 @@ describe("cek_stok_barang", () => {
 
 describe("buat_draft_po", () => {
   it("mengirim chatId dan source AI_CHAT ke backend", async () => {
-    mockedPost.mockResolvedValue({
-      data: { data: { poNumber: "PO-202609-001", partner: { name: "CV Sumber Frozen" } } },
-    } as never);
+    vi.mocked(deps.backend.createPoDraft).mockResolvedValue({
+      poNumber: "PO-202609-001",
+      partner: { name: "CV Sumber Frozen" },
+    });
     const result = await findTool("buat_draft_po").invoke({
       partnerName: "CV Sumber Frozen",
       items: [{ productName: "Dimsum", qty: 50 }],
     });
     expect(String(result)).toContain("PO-202609-001");
-    expect(mockedPost).toHaveBeenCalledWith(
-      "/po/draft",
+    expect(deps.backend.createPoDraft).toHaveBeenCalledWith(
       expect.objectContaining({ source: "AI_CHAT", chatId: "900001" }),
     );
   });
 
   it("menangani kegagalan backend dengan pesan ramah", async () => {
-    mockedPost.mockRejectedValue({
+    vi.mocked(deps.backend.createPoDraft).mockRejectedValue({
       response: { data: { error: { message: "Partner tidak ditemukan" } } },
     });
     const result = await findTool("buat_draft_po").invoke({
@@ -130,23 +139,23 @@ describe("buat_draft_po", () => {
 
 describe("buat_draft_surat_jalan", () => {
   it("mengirim chatId ke backend dan mengembalikan nomor DN", async () => {
-    mockedPost.mockResolvedValue({
-      data: { data: { dnNumber: "DN-202609-001", partner: { name: "Agen Bahari" } } },
-    } as never);
+    vi.mocked(deps.backend.createDnDraft).mockResolvedValue({
+      dnNumber: "DN-202609-001",
+      partner: { name: "Agen Bahari" },
+    });
     const result = await findTool("buat_draft_surat_jalan").invoke({
       partnerName: "Agen Bahari",
       items: [{ productName: "Dimsum", qty: 10 }],
     });
     expect(String(result)).toContain("DN-202609-001");
     expect(String(result)).toContain("DRAFT");
-    expect(mockedPost).toHaveBeenCalledWith(
-      "/delivery-notes/draft",
+    expect(deps.backend.createDnDraft).toHaveBeenCalledWith(
       expect.objectContaining({ chatId: "900001" }),
     );
   });
 
   it("menangani kegagalan backend dengan pesan ramah", async () => {
-    mockedPost.mockRejectedValue({
+    vi.mocked(deps.backend.createDnDraft).mockRejectedValue({
       response: { data: { error: { message: "Partner bukan customer" } } },
     });
     const result = await findTool("buat_draft_surat_jalan").invoke({
@@ -158,7 +167,7 @@ describe("buat_draft_surat_jalan", () => {
   });
 
   it("meneruskan pesan ambigu beserta kandidat produk dari backend", async () => {
-    mockedPost.mockRejectedValue({
+    vi.mocked(deps.backend.createDnDraft).mockRejectedValue({
       response: {
         data: {
           error: {
@@ -180,7 +189,7 @@ describe("buat_draft_surat_jalan", () => {
 
 describe("cari_sop", () => {
   it("mengembalikan konteks beserta sumber", async () => {
-    mockedSearch.mockResolvedValue([
+    vi.mocked(deps.knowledge.search).mockResolvedValue([
       { source: "sop-retur-barang.md", content: "Verifikasi maksimal 1x24 jam", score: 0.9 },
     ]);
     const result = await findTool("cari_sop").invoke({ query: "SOP retur" });
@@ -189,7 +198,7 @@ describe("cari_sop", () => {
   });
 
   it("menyatakan tidak ada SOP bila knowledge base kosong", async () => {
-    mockedSearch.mockResolvedValue([]);
+    vi.mocked(deps.knowledge.search).mockResolvedValue([]);
     const result = await findTool("cari_sop").invoke({ query: "topik tidak ada" });
     expect(String(result).toLowerCase()).toContain("tidak ada sop");
   });
@@ -197,49 +206,45 @@ describe("cari_sop", () => {
 
 describe("cari_produk", () => {
   it("menampilkan katalog produk dari backend", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [
-          {
-            sku: "AM-1L",
-            name: "Air Mineral Botol 1 Liter",
-            unit: "dus",
-            stock: 294,
-            category: "Minuman",
-            lowStock: false,
-          },
-        ],
-        meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
-      },
-    } as never);
+    vi.mocked(deps.backend.listProducts).mockResolvedValue({
+      data: [
+        {
+          sku: "AM-1L",
+          name: "Air Mineral Botol 1 Liter",
+          unit: "dus",
+          stock: 294,
+          category: "Minuman",
+          lowStock: false,
+        },
+      ],
+      meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+    });
     const result = await findTool("cari_produk").invoke({ q: "air" });
     expect(String(result)).toContain("Air Mineral Botol 1 Liter");
     expect(String(result)).toContain("294");
-    expect(mockedGet).toHaveBeenCalledWith("/reports/products", { params: { q: "air" } });
+    expect(deps.backend.listProducts).toHaveBeenCalledWith({ q: "air" });
   });
 });
 
 describe("list_transaksi", () => {
   it("memetakan arah 'masuk' ke type IN dan menampilkan transaksi", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [
-          {
-            date: "2026-09-10 08:00",
-            type: "IN",
-            product: "Keripik Singkong",
-            sku: "KRP-01",
-            quantity: 20,
-            unit: "bal",
-            warehouse: "Gudang Utama",
-            partner: "UD Sejahtera",
-            poNumber: null,
-          },
-        ],
-        meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
-        unmatched: [],
-      },
-    } as never);
+    vi.mocked(deps.backend.listTransactions).mockResolvedValue({
+      data: [
+        {
+          date: "2026-09-10 08:00",
+          type: "IN",
+          product: "Keripik Singkong",
+          sku: "KRP-01",
+          quantity: 20,
+          unit: "bal",
+          warehouse: "Gudang Utama",
+          partner: "UD Sejahtera",
+          poNumber: null,
+        },
+      ],
+      meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      unmatched: [],
+    });
     const result = await findTool("list_transaksi").invoke({
       direction: "masuk",
       from: "2026-09-10",
@@ -247,49 +252,45 @@ describe("list_transaksi", () => {
     });
     expect(String(result)).toContain("MASUK");
     expect(String(result)).toContain("Keripik Singkong");
-    expect(mockedGet).toHaveBeenCalledWith("/reports/transactions", {
-      params: { type: "IN", from: "2026-09-10", to: "2026-09-23" },
-    });
+    expect(deps.backend.listTransactions).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "IN", from: "2026-09-10", to: "2026-09-23" }),
+    );
   });
 
   it("melaporkan filter yang tidak ditemukan bila hasil kosong", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [],
-        meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
-        unmatched: ['produk "X"'],
-      },
-    } as never);
+    vi.mocked(deps.backend.listTransactions).mockResolvedValue({
+      data: [],
+      meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
+      unmatched: ['produk "X"'],
+    });
     const result = await findTool("list_transaksi").invoke({ productName: "X" });
     expect(String(result)).toContain("Tidak ada transaksi");
     expect(String(result)).toContain("tidak ditemukan");
   });
 
   it("menyebutkan daftar produk yang cocok dari filter (regresi substring)", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [
-          {
-            date: "2026-09-05 10:00",
-            type: "OUT",
-            product: "Tepung Tapioka Test",
-            sku: "TPG-001",
-            quantity: 5,
-            unit: "sak",
-            warehouse: "Gudang Test",
-            partner: "Agen Nusantara",
-            poNumber: null,
-          },
-        ],
-        meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
-        unmatched: [],
-        matched: {
-          products: ["Tepung Tapioka Test", "Tepung Terigu Test"],
-          warehouses: [],
-          partners: [],
+    vi.mocked(deps.backend.listTransactions).mockResolvedValue({
+      data: [
+        {
+          date: "2026-09-05 10:00",
+          type: "OUT",
+          product: "Tepung Tapioka Test",
+          sku: "TPG-001",
+          quantity: 5,
+          unit: "sak",
+          warehouse: "Gudang Test",
+          partner: "Agen Nusantara",
+          poNumber: null,
         },
+      ],
+      meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      unmatched: [],
+      matched: {
+        products: ["Tepung Tapioka Test", "Tepung Terigu Test"],
+        warehouses: [],
+        partners: [],
       },
-    } as never);
+    });
     const result = await findTool("list_transaksi").invoke({
       direction: "keluar",
       productName: "tepung",
@@ -301,97 +302,87 @@ describe("list_transaksi", () => {
 
 describe("list_po", () => {
   it("selalu menampilkan PO aktif (DRAFT & CONFIRMED) tanpa filter status", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [],
-        meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
-        unmatched: [],
-      },
-    } as never);
-    await findTool("list_po").invoke({ partnerName: "PT Sinar" });
-    expect(mockedGet).toHaveBeenCalledWith("/reports/purchase-orders", {
-      params: { statuses: "DRAFT,CONFIRMED", partnerName: "PT Sinar" },
+    vi.mocked(deps.backend.listPurchaseOrders).mockResolvedValue({
+      data: [],
+      meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
+      unmatched: [],
     });
+    await findTool("list_po").invoke({ partnerName: "PT Sinar" });
+    expect(deps.backend.listPurchaseOrders).toHaveBeenCalledWith(
+      expect.objectContaining({ statuses: "DRAFT,CONFIRMED", partnerName: "PT Sinar" }),
+    );
   });
 
   it("mengabaikan filter status yang keliru (regresi: PO confirmed tidak hilang)", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [
-          {
-            poNumber: "PO-202609-011",
-            status: "CONFIRMED",
-            partner: "UD Amanah",
-            targetDate: null,
-            createdAt: "2026-09-24 05:49",
-            items: [{ product: "Bayam Ikat 250g", quantity: 200, unit: "pack" }],
-          },
-        ],
-        meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
-        unmatched: [],
-      },
-    } as never);
+    vi.mocked(deps.backend.listPurchaseOrders).mockResolvedValue({
+      data: [
+        {
+          poNumber: "PO-202609-011",
+          status: "CONFIRMED",
+          partner: "UD Amanah",
+          targetDate: null,
+          createdAt: "2026-09-24 05:49",
+          items: [{ product: "Bayam Ikat 250g", quantity: 200, unit: "pack" }],
+        },
+      ],
+      meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      unmatched: [],
+    });
     const result = await findTool("list_po").invoke({
       status: "DRAFT",
       partnerName: "UD Amanah",
     } as never);
-    expect(mockedGet).toHaveBeenCalledWith("/reports/purchase-orders", {
-      params: { statuses: "DRAFT,CONFIRMED", partnerName: "UD Amanah" },
-    });
+    expect(deps.backend.listPurchaseOrders).toHaveBeenCalledWith(
+      expect.objectContaining({ statuses: "DRAFT,CONFIRMED", partnerName: "UD Amanah" }),
+    );
     expect(String(result)).toContain("CONFIRMED");
   });
 });
 
 describe("list_po_status", () => {
   it("memfilter PO sesuai status yang disebut eksplisit", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [
-          {
-            poNumber: "PO-202609-001",
-            status: "CONFIRMED",
-            partner: "CV Sumber Frozen",
-            targetDate: null,
-            createdAt: "2026-09-22 10:00",
-            items: [{ product: "Dimsum", quantity: 50, unit: "pack" }],
-          },
-        ],
-        meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
-        unmatched: [],
-      },
-    } as never);
+    vi.mocked(deps.backend.listPurchaseOrders).mockResolvedValue({
+      data: [
+        {
+          poNumber: "PO-202609-001",
+          status: "CONFIRMED",
+          partner: "CV Sumber Frozen",
+          targetDate: null,
+          createdAt: "2026-09-22 10:00",
+          items: [{ product: "Dimsum", quantity: 50, unit: "pack" }],
+        },
+      ],
+      meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      unmatched: [],
+    });
     const result = await findTool("list_po_status").invoke({ statuses: ["CONFIRMED"] });
     expect(String(result)).toContain("PO-202609-001");
     expect(String(result)).toContain("CONFIRMED");
-    expect(mockedGet).toHaveBeenCalledWith("/reports/purchase-orders", {
-      params: { statuses: "CONFIRMED" },
-    });
+    expect(deps.backend.listPurchaseOrders).toHaveBeenCalledWith(
+      expect.objectContaining({ statuses: "CONFIRMED" }),
+    );
   });
 
   it("mendukung beberapa status sekaligus", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [],
-        meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
-        unmatched: [],
-      },
-    } as never);
-    await findTool("list_po_status").invoke({ statuses: ["COMPLETED", "CANCELLED"] });
-    expect(mockedGet).toHaveBeenCalledWith("/reports/purchase-orders", {
-      params: { statuses: "COMPLETED,CANCELLED" },
+    vi.mocked(deps.backend.listPurchaseOrders).mockResolvedValue({
+      data: [],
+      meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
+      unmatched: [],
     });
+    await findTool("list_po_status").invoke({ statuses: ["COMPLETED", "CANCELLED"] });
+    expect(deps.backend.listPurchaseOrders).toHaveBeenCalledWith(
+      expect.objectContaining({ statuses: "COMPLETED,CANCELLED" }),
+    );
   });
 });
 
 describe("stok_tipis", () => {
   it("menampilkan produk dengan stok di bawah minimum", async () => {
-    mockedGet.mockResolvedValue({
-      data: {
-        data: [{ name: "Nugget Ayam", sku: "NGT-01", stock: 3, minStock: 10, unit: "pack" }],
-      },
-    } as never);
+    vi.mocked(deps.backend.getLowStock).mockResolvedValue([
+      { name: "Nugget Ayam", sku: "NGT-01", stock: 3, minStock: 10, unit: "pack" },
+    ]);
     const result = await findTool("stok_tipis").invoke({});
     expect(String(result)).toContain("Nugget Ayam");
-    expect(mockedGet).toHaveBeenCalledWith("/reports/low-stock");
+    expect(deps.backend.getLowStock).toHaveBeenCalled();
   });
 });

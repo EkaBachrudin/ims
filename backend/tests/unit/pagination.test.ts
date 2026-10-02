@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMeta, parsePagination } from "../../src/utils/pagination";
+import { buildMeta, parsePagination } from "../../src/lib/pagination";
 
 describe("parsePagination", () => {
   it("default page 1 limit 20", () => {

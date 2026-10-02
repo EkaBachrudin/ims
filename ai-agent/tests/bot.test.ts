@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { isRateLimited, resetRateLimit } from "../src/bot/rateLimit";
-import { appendHistory, clearHistory, getHistory } from "../src/bot/memory";
-import { buildAgentPrompt } from "../src/agent/prompt";
+import { isRateLimited, resetRateLimit } from "../src/application/chat/rateLimit";
+import { appendHistory, clearHistory, getHistory } from "../src/application/chat/memory";
+import { buildAgentPrompt } from "../src/application/agent/prompt";
 
 describe("rate limit", () => {
   beforeEach(() => resetRateLimit());

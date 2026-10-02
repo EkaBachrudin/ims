@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
-import { clientIp } from "../../utils/audit";
+import { clientIp } from "../../lib/http/clientIp";
 import { Errors } from "../../lib/errors";
+import { created, okList } from "../../presentation/http/respond";
 import * as service from "./transactions.service";
 
 function requireUserId(req: Request): string {
@@ -10,7 +11,7 @@ function requireUserId(req: Request): string {
 
 export async function list(req: Request, res: Response) {
   const { rows, meta } = await service.listTransactions(req.query as never);
-  res.json({ success: true, data: rows, meta });
+  okList(res, rows, meta);
 }
 
 export async function inbound(req: Request, res: Response) {
@@ -20,7 +21,7 @@ export async function inbound(req: Request, res: Response) {
     req.user?.id,
     clientIp(req),
   );
-  res.status(201).json({ success: true, data });
+  created(res, data);
 }
 
 export async function outbound(req: Request, res: Response) {
@@ -30,7 +31,7 @@ export async function outbound(req: Request, res: Response) {
     req.user?.id,
     clientIp(req),
   );
-  res.status(201).json({ success: true, data });
+  created(res, data);
 }
 
 export async function voidTxn(req: Request, res: Response) {
@@ -40,5 +41,5 @@ export async function voidTxn(req: Request, res: Response) {
     req.user?.id,
     clientIp(req),
   );
-  res.status(201).json({ success: true, data });
+  created(res, data);
 }

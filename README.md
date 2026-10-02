@@ -105,6 +105,16 @@ flowchart TB
 
 > **Prinsip:** Backend adalah **satu-satunya penulis data bisnis**. AI Agent hanya mengakses data bisnis lewat Backend API dan diberi akses **read-only** ke tabel vector `document_chunks` (least privilege).
 
+### Arsitektur Kode (Layered)
+
+Kode `backend` dan `ai-agent` disusun dengan **layered architecture**:
+
+- **Presentation** — batas masuk/keluar: `routes` + `controller` (backend), handler Telegram & HTTP `/notify` (ai-agent).
+- **Business** — aturan & workflow: `service` + `domain` (backend), `application/agent`, `application/tools`, `application/chat` (ai-agent).
+- **Persistence** — akses data & adapter outbound: `repository` + Prisma (backend), `infrastructure/backend`, `infrastructure/rag`, `infrastructure/db` (ai-agent).
+
+Dependensi outbound (DB, Backend API, Telegram, embeddings) disembunyikan di balik **port** (`application/ports`) dan diimplementasikan adapter di `infrastructure/`, lalu di-wire lewat `composition/container.ts`. Arah dependensi ditegakkan ESLint agar business tidak bergantung pada HTTP/Prisma. Detail lengkap: [TECHNICAL](./docs/TECHNICAL.md).
+
 ---
 
 ## Tech Stack

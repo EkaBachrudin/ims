@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { notifyUsers, poUrl } from "../../src/utils/notify";
+import { notifyUsers, poUrl } from "../../src/infrastructure/notifier/telegram";
 
 afterEach(() => {
   vi.restoreAllMocks();

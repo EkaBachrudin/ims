@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Context } from "telegraf";
-import { markdownToTelegramHtml, sendFormatted } from "../src/bot/format";
+import { markdownToTelegramHtml } from "../src/lib/telegramFormat";
+import { sendFormatted } from "../src/presentation/telegram/format";
 
 describe("markdownToTelegramHtml", () => {
   it("mengubah tebal, miring, dan kode inline menjadi tag Telegram", () => {

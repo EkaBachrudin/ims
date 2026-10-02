@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Telegraf } from "telegraf";
-import {
-  isBotReady,
-  notifyChats,
-  notifySchema,
-  sendNotification,
-  setBot,
-} from "../src/bot/notifier";
+import { createNotifier } from "../src/infrastructure/telegram/notifier";
+import { notifySchema } from "../src/presentation/http/notify.schema";
 
 describe("notifySchema", () => {
   it("menerima payload valid", () => {
@@ -30,24 +25,26 @@ describe("notifySchema", () => {
   });
 });
 
-describe("sendNotification", () => {
-  it("mengembalikan false bila bot belum siap", async () => {
-    expect(isBotReady()).toBe(false);
-    expect(await sendNotification("123", "Halo")).toBe(false);
+describe("createNotifier tanpa bot", () => {
+  it("isReady false dan tidak mengirim", async () => {
+    const notifier = createNotifier(() => null);
+    expect(notifier.isReady()).toBe(false);
+    expect(await notifier.sendNotification("123", "Halo")).toBe(false);
   });
 });
 
-describe("sendNotification dengan bot", () => {
+describe("createNotifier dengan bot", () => {
   const sendMessage = vi.fn();
+  let notifier: ReturnType<typeof createNotifier>;
 
   beforeEach(() => {
     sendMessage.mockReset();
-    setBot({ telegram: { sendMessage } } as unknown as Telegraf);
+    notifier = createNotifier(() => ({ telegram: { sendMessage } }) as unknown as Telegraf);
   });
 
   it("mengirim HTML beserta tombol inline", async () => {
     sendMessage.mockResolvedValue(undefined);
-    const sent = await sendNotification("123", "Draft **PO-1**", {
+    const sent = await notifier.sendNotification("123", "Draft **PO-1**", {
       label: "Buka & Konfirmasi PO",
       url: "http://localhost:5173/purchase-orders/x",
     });
@@ -61,7 +58,7 @@ describe("sendNotification dengan bot", () => {
 
   it("fallback ke teks polos bila Telegram menolak HTML", async () => {
     sendMessage.mockRejectedValueOnce(new Error("can't parse entities")).mockResolvedValueOnce(undefined);
-    const sent = await sendNotification("123", "Draft **PO-1**");
+    const sent = await notifier.sendNotification("123", "Draft **PO-1**");
 
     expect(sent).toBe(true);
     expect(sendMessage).toHaveBeenLastCalledWith("123", "Draft **PO-1**", {
@@ -71,7 +68,7 @@ describe("sendNotification dengan bot", () => {
 
   it("mengirim ke semua penerima", async () => {
     sendMessage.mockResolvedValue(undefined);
-    const results = await notifyChats({ chatIds: ["1", "2"], text: "Halo" });
+    const results = await notifier.notifyChats({ chatIds: ["1", "2"], text: "Halo" });
     expect(results).toEqual([
       { chatId: "1", sent: true },
       { chatId: "2", sent: true },

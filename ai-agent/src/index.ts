@@ -1,10 +1,12 @@
 import { env } from "./config/env";
 import { createBot } from "./presentation/telegram/bot";
 import { createNotifier } from "./infrastructure/telegram/notifier";
+import { createMessenger } from "./infrastructure/telegram/messenger";
 import { createHttpServer } from "./presentation/http/server";
 
 let bot: ReturnType<typeof createBot> | null = null;
 const notifier = createNotifier(() => bot);
+const messenger = createMessenger(() => bot);
 const server = createHttpServer(notifier);
 
 server.listen(env.PORT, () => {
@@ -17,7 +19,7 @@ async function main() {
     return;
   }
   try {
-    bot = createBot();
+    bot = createBot({ messenger });
     await bot.launch();
     console.log("Asisten WMS bot running (long-polling)...");
 

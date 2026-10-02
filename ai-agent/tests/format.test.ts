@@ -1,7 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import type { Context } from "telegraf";
+import { describe, expect, it } from "vitest";
 import { markdownToTelegramHtml } from "../src/lib/telegramFormat";
-import { sendFormatted } from "../src/presentation/telegram/format";
 
 describe("markdownToTelegramHtml", () => {
   it("mengubah tebal, miring, dan kode inline menjadi tag Telegram", () => {
@@ -29,28 +27,5 @@ describe("markdownToTelegramHtml", () => {
   it("mempertahankan blok kode", () => {
     const html = markdownToTelegramHtml("```\nSELECT * FROM po\n```");
     expect(html).toBe("<pre>SELECT * FROM po</pre>");
-  });
-});
-
-describe("sendFormatted", () => {
-  it("mengirim dengan parse_mode HTML", async () => {
-    const reply = vi.fn().mockResolvedValue(undefined);
-    await sendFormatted({ reply } as unknown as Context, "Halo **Bos**");
-    expect(reply).toHaveBeenCalledWith("Halo <b>Bos</b>", { parse_mode: "HTML" });
-  });
-
-  it("fallback ke teks polos bila Telegram menolak HTML", async () => {
-    const reply = vi
-      .fn()
-      .mockRejectedValueOnce(new Error("can't parse entities"))
-      .mockResolvedValueOnce(undefined);
-    await sendFormatted({ reply } as unknown as Context, "Halo **Bos**");
-    expect(reply).toHaveBeenLastCalledWith("Halo Bos");
-  });
-
-  it("tidak mengirim pesan kosong", async () => {
-    const reply = vi.fn();
-    await sendFormatted({ reply } as unknown as Context, "   ");
-    expect(reply).not.toHaveBeenCalled();
   });
 });

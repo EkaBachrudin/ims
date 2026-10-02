@@ -4,14 +4,20 @@ import { requireTelegramToken } from "../../config/env";
 import { container } from "../../composition/container";
 import { handleMessage } from "../../application/chat/handleMessage";
 import { clearHistory } from "../../application/chat/memory";
-import { sendFormatted } from "./format";
+import type { Messenger } from "../../application/ports/messenger";
 
-export function createBot(): Telegraf {
+export interface BotDeps {
+  messenger: Messenger;
+}
+
+export function createBot({ messenger }: BotDeps): Telegraf {
   const bot = new Telegraf(requireTelegramToken());
 
   bot.start((ctx) => {
-    clearHistory(String(ctx.chat.id));
-    return ctx.reply(
+    const chatId = String(ctx.chat.id);
+    clearHistory(chatId);
+    return messenger.reply(
+      { chatId },
       "Halo Bos! 👋 Saya Asisten Gudang.\n\nCoba tanyakan:\n" +
         '• "Berapa sisa stok dimsum ukuran sedang?"\n' +
         '• "Produk air mineral ada ukuran apa saja?"\n' +
@@ -25,18 +31,19 @@ export function createBot(): Telegraf {
   });
 
   bot.on(message("text"), async (ctx: Context) => {
-    const text = (ctx.message as { text: string }).text;
+    const { text, message_thread_id } = ctx.message as {
+      text: string;
+      message_thread_id?: number;
+    };
     const chatId = String(ctx.chat!.id);
 
     const result = await handleMessage(container, {
       chatId,
       text,
-      onThinking: async () => {
-        await ctx.sendChatAction("typing");
-      },
+      onThinking: () => messenger.sendTyping(chatId, message_thread_id),
     });
 
-    await sendFormatted(ctx, result.reply);
+    await messenger.reply({ chatId, messageThreadId: message_thread_id }, result.reply);
   });
 
   bot.catch((err) => console.error("Telegram error:", err));

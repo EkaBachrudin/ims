@@ -61,9 +61,7 @@ describe("createNotifier dengan bot", () => {
     const sent = await notifier.sendNotification("123", "Draft **PO-1**");
 
     expect(sent).toBe(true);
-    expect(sendMessage).toHaveBeenLastCalledWith("123", "Draft **PO-1**", {
-      reply_markup: undefined,
-    });
+    expect(sendMessage).toHaveBeenLastCalledWith("123", "Draft PO-1", {});
   });
 
   it("mengirim ke semua penerima", async () => {

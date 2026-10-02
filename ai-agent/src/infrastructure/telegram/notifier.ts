@@ -1,6 +1,6 @@
 import { Markup, type Telegraf } from "telegraf";
-import { markdownToTelegramHtml } from "../../lib/telegramFormat";
 import type { Notifier, NotifyRequest, NotifyResult } from "../../application/ports/notifier";
+import { deliverMarkdown } from "./sendMarkdown";
 
 /**
  * Buat notifier Telegram. `getBot` dibaca saat pengiriman agar instance bot
@@ -19,21 +19,7 @@ export function createNotifier(getBot: () => Telegraf | null): Notifier {
       ? Markup.inlineKeyboard([Markup.button.url(button.label, button.url)]).reply_markup
       : undefined;
 
-    try {
-      await bot.telegram.sendMessage(chatId, markdownToTelegramHtml(markdown), {
-        parse_mode: "HTML",
-        reply_markup,
-      });
-      return true;
-    } catch {
-      try {
-        await bot.telegram.sendMessage(chatId, markdown, { reply_markup });
-        return true;
-      } catch (err) {
-        console.error(`Gagal mengirim notifikasi ke chat ${chatId}:`, err);
-        return false;
-      }
-    }
+    return deliverMarkdown(bot.telegram, chatId, markdown, { reply_markup });
   }
 
   async function notifyChats(payload: NotifyRequest): Promise<NotifyResult[]> {

@@ -27,6 +27,34 @@ export async function periodSummary(req: Request, res: Response) {
   ok(res, await service.periodSummaryReport(req.query as never));
 }
 
+export async function stockTrend(req: Request, res: Response) {
+  ok(res, await service.stockTrendReport(req.query as never));
+}
+
+export async function stockSummary(_req: Request, res: Response) {
+  ok(res, await service.stockSummaryReport());
+}
+
+export async function poSummary(req: Request, res: Response) {
+  ok(res, await service.poSummaryReport(req.query as never));
+}
+
+export async function dnSummary(req: Request, res: Response) {
+  ok(res, await service.dnSummaryReport(req.query as never));
+}
+
+export async function stockCard(req: Request, res: Response) {
+  ok(res, await service.stockCardReport(req.query as never));
+}
+
+export async function movementAnalysis(req: Request, res: Response) {
+  ok(res, await service.movementAnalysisReport(req.query as never));
+}
+
+export async function userActivity(req: Request, res: Response) {
+  ok(res, await service.userActivityReport(req.query as never));
+}
+
 export async function products(req: Request, res: Response) {
   const { rows, meta } = await service.productCatalog(req.query as never);
   okList(res, rows, meta);

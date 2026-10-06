@@ -91,7 +91,8 @@ Selain tujuan di atas, proyek menargetkan indikator keberhasilan (KPI) yang dapa
    - Transaksi **barang masuk (inbound)** dan **barang keluar (outbound)** dengan stok dihitung otomatis.
    - Manajemen **Purchase Order (PO)** dengan alur status `DRAFT → CONFIRMED → COMPLETED / CANCELLED` dan penomoran otomatis.
    - Manajemen **Surat Jalan / Delivery Note (DN)** untuk partner `CUSTOMER`, termasuk halaman detail, edit saat `DRAFT`, dan cetak.
-   - *Dashboard* dan laporan operasional (stok, transaksi harian, *low-stock alert*, rekap pengiriman).
+   - *Dashboard* dan **laporan/analitik** operasional — halaman `/reports` dengan **6 tab**: ringkasan & tren, persediaan, pembelian, pengiriman, mutasi/kartu stok, dan analitik gerak stok (top mover/dead stock/ABC).
+   - Halaman **Knowledge Base** (khusus `SUPER_ADMIN`) untuk mengelola dokumen SOP/FAQ/kebijakan, melihat statistik index, dan memicu re-ingest.
    - Autentikasi dan kontrol akses berbasis peran (**RBAC**): `SUPER_ADMIN`, `ADMIN`, `OWNER`.
    - **Audit log** untuk perubahan data penting.
 2. **Asisten AI berbasis chat (untuk Owner/Manager), MVP Telegram:**
@@ -415,6 +416,8 @@ export async function searchKnowledge(query: string, topK = env.AGENT_TOP_K): Pr
 }
 ```
 
+> **Catatan (enhancement):** pipeline ingest kini juga mencatat setiap eksekusi job ke tabel **`ingest_jobs`** (status `running`/`done`/`error`, `startedAt`/`finishedAt`, hasil) sehingga status "ingest terakhir" konsisten antara tab Index dan Ingest serta bertahan setelah AI Agent restart (lihat Lampiran C.8).
+
 ### A.4 Definisi Tool AI Agent (`ai-agent/src/application/tools/`)
 
 Setiap tool memiliki skema parameter (Zod) dan memanggil **port** (`BackendGateway`/`KnowledgeBase`) yang diimplementasikan adapter di `infrastructure/` (HTTP ke Backend API dengan `x-internal-key`). Berikut tiga tool representatif: baca stok, buat draft PO, dan cari SOP (RAG).
@@ -667,6 +670,9 @@ Kolom **Hasil Aktual** dan **Status** diisi saat pengujian dijalankan.
 | AC-17 | AI Agent read-only DB | Coba tulis `document_chunks` dari runtime AI | Ditolak (*permission denied*). | | |
 | AC-18 | Notifikasi admin saat draft PO AI | Owner chat buat PO → cek Telegram admin | Admin menerima pesan bot berisi ringkasan PO + tombol tautan ke `/purchase-orders/<id>`. | | |
 | AC-19 | Notifikasi owner saat status PO berubah | Admin konfirmasi PO lalu catat penerimaan penuh | Owner menerima notifikasi saat `CONFIRMED` dan saat `COMPLETED`. | | |
+| AC-20 | Laporan 6 tab | Buka `/reports` → telusuri Ringkasan/Persediaan/Pembelian/Pengiriman/Mutasi/Analitik | Data & grafik tampil; filter periode berfungsi; export CSV tersedia. | | |
+| AC-21 | Kartu stok saldo berjalan | Mutasi → cari produk → pilih rentang | `saldo akhir = saldo awal + Σ mutasi`; konsisten dengan `Product.stock`. | | |
+| AC-22 | Status ingest persist pasca-restart | Picu re-ingest → restart AI Agent → buka tab Ingest | Status & waktu "Selesai" tetap tampil (dari `ingest_jobs`), tidak reset ke `idle`. | | |
 
 ### C.4 Contoh Skenario Uji Manual (E2E Chat → Web)
 
@@ -861,6 +867,27 @@ Perintah: `make rag-import-docs`, `make rag-ingest` (dan `prod-rag-ingest` untuk
 - Unit test ai-agent: retriever (threshold/filter/error), routing & akses RAG, ingest berbasis DB.
 - Integration test backend: CRUD `/api/knowledge/documents` (RBAC `SUPER_ADMIN`), stats.
 - Verifikasi manual: unggah dokumen → re-ingest dari UI → tanya via chat; SOP non-topik → AI menyatakan tidak ada (anti-halusinasi).
+
+### C.8 Enhancement Reporting & Knowledge UI
+
+**Laporan & analitik (halaman `/reports`, 6 tab).** Halaman laporan diperluas dari "stok + rekap pengiriman harian" menjadi **6 tab** dengan filter periode (preset Hari ini/7/30 hari/Bulan ini) dan export CSV per laporan:
+
+| Tab | Ringkasan isi |
+| :-- | :-- |
+| Ringkasan | KPI masuk/keluar (unit + jumlah transaksi), PO aktif, stok kritis; grafik tren arus stok; top tujuan; perbandingan periode. |
+| Persediaan | Total produk/unit/kritis; stok per gudang & kategori; daftar stok + daftar restock. |
+| Pembelian | KPI & nilai PO (Rp dari `unitPrice`), sebaran status, top supplier, daftar PO. |
+| Pengiriman | KPI & qty kirim, sebaran status, top tujuan/produk, per gudang, daftar DN. |
+| Mutasi | Kartu stok (saldo berjalan per produk) + log mutasi terfilter (tipe/produk/gudang/partner). |
+| Analitik | Top mover, dead stock (tanpa keluar N hari), klasifikasi ABC (80/15/5), aktivitas per pengguna. |
+
+- Grafik memakai pustaka **recharts** (wrapper `TrendAreaChart`/`RankBarChart`).
+- Endpoint agregasi backend baru (guard `authenticateOrInternal`): `GET /reports/stock-trend`, `/reports/stock-summary`, `/reports/po-summary`, `/reports/dn-summary`, `/reports/stock-card`, `/reports/movement-analysis`, `/reports/user-activity`. Endpoint `/reports/purchase-orders` & `/reports/delivery-notes` diperluas (`unitPrice`/`value`/`totalValue`/`totalQuantity`).
+- Nilai Rp hanya untuk pembelian (`PurchaseOrderItem.unitPrice`); item tanpa harga dikecualikan. Saldo kartu stok dihitung dari `stock_transactions` (IN `+qty`, OUT `-qty`, ADJUSTMENT `+qty`).
+
+**UI Knowledge Base & persistensi status ingest.** Halaman Knowledge Base ditata ulang (tab Dokumen/Index/Ingest, chip jenis yang dapat difilter, pencarian berikon, kartu mobile). Setiap job re-ingest dipersist ke tabel **`ingest_jobs`** oleh AI Agent (`ingestJobStore.ts`) dan state di-*hydrate* dari DB saat startup; backend memakai job terbaru sebagai "Ingest terakhir" sehingga tab Index dan tab Ingest konsisten (termasuk setelah restart).
+
+> Diagram arsitektur/ERD pada Lampiran B tidak diubah; perubahan bersifat aditif (tabel `ingest_jobs`, endpoint `/reports/*` baru, dependensi `recharts`).
 
 ---
 

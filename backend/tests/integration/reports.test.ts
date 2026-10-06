@@ -258,6 +258,98 @@ describe("Reports read endpoints (AI Agent)", () => {
     expect(res.body.data.from).toMatch(/-01$/);
   });
 
+  it("mengembalikan tren stok per periode", async () => {
+    const res = await request(app)
+      .get("/api/reports/stock-trend?from=2026-01-01&to=2026-12-31&bucket=month")
+      .set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.bucket).toBe("month");
+    expect(Array.isArray(res.body.data.buckets)).toBe(true);
+    const totalIn = res.body.data.buckets.reduce(
+      (sum: number, b: { inbound: number }) => sum + b.inbound,
+      0,
+    );
+    expect(totalIn).toBeGreaterThanOrEqual(15);
+  });
+
+  it("meringkas persediaan (total, low stock, per kategori & gudang)", async () => {
+    const res = await request(app).get("/api/reports/stock-summary").set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.totalProducts).toBeGreaterThan(0);
+    expect(res.body.data.totalUnits).toBeGreaterThan(0);
+    expect(Array.isArray(res.body.data.byCategory)).toBe(true);
+    expect(Array.isArray(res.body.data.byWarehouse)).toBe(true);
+  });
+
+  it("meringkas pembelian (PO): status, qty, nilai, top supplier", async () => {
+    const res = await request(app)
+      .get("/api/reports/po-summary?from=2026-01-01&to=2026-12-31")
+      .set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.totalPos).toBeGreaterThan(0);
+    expect(res.body.data.totalOrderedQty).toBeGreaterThan(0);
+    expect(Array.isArray(res.body.data.byStatus)).toBe(true);
+    expect(Array.isArray(res.body.data.topSuppliers)).toBe(true);
+  });
+
+  it("meringkas pengiriman (DN): status, qty, top customer/produk/gudang", async () => {
+    const res = await request(app)
+      .get("/api/reports/dn-summary?from=2026-01-01&to=2026-12-31")
+      .set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.totalDns).toBeGreaterThan(0);
+    expect(res.body.data.totalQty).toBeGreaterThan(0);
+    expect(Array.isArray(res.body.data.topCustomers)).toBe(true);
+    expect(Array.isArray(res.body.data.byWarehouse)).toBe(true);
+  });
+
+  it("menyertakan totalQuantity & nilai pada daftar PO/DN", async () => {
+    const po = await request(app)
+      .get("/api/reports/purchase-orders?status=CONFIRMED")
+      .set(internal);
+    expect(po.status).toBe(200);
+    const row = po.body.data.find((p: { poNumber: string }) => p.poNumber === poNumber);
+    expect(row).toHaveProperty("totalQuantity");
+    expect(row).toHaveProperty("totalValue");
+    expect(row.items[0]).toHaveProperty("value");
+
+    const dn = await request(app).get("/api/reports/delivery-notes").set(internal);
+    expect(dn.status).toBe(200);
+    const dnRow = dn.body.data.find((d: { dnNumber: string }) => d.dnNumber === dnNumber);
+    expect(dnRow).toHaveProperty("totalQuantity");
+  });
+
+  it("kartu stok menghitung saldo berjalan produk", async () => {
+    const res = await request(app)
+      .get("/api/reports/stock-card?productName=Dimsum&from=2026-01-01&to=2026-12-31")
+      .set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe("ok");
+    expect(res.body.data.product.sku).toBe("TST-001");
+    expect(typeof res.body.data.opening).toBe("number");
+    expect(typeof res.body.data.closing).toBe("number");
+    expect(Array.isArray(res.body.data.movements)).toBe(true);
+  });
+
+  it("menganalisis gerak stok: top movers, dead stock, ABC", async () => {
+    const res = await request(app)
+      .get("/api/reports/movement-analysis?from=2026-01-01&to=2026-12-31&deadDays=30")
+      .set(internal);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data.topMovers)).toBe(true);
+    expect(Array.isArray(res.body.data.deadStock)).toBe(true);
+    expect(Array.isArray(res.body.data.abc)).toBe(true);
+  });
+
+  it("menampilkan aktivitas per pengguna", async () => {
+    const res = await request(app)
+      .get("/api/reports/user-activity?from=2026-01-01&to=2026-12-31")
+      .set(internal);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data.users)).toBe(true);
+    expect(res.body.data.users.length).toBeGreaterThan(0);
+  });
+
   it("tetap dapat diakses web via Bearer token", async () => {
     const res = await request(app).get("/api/reports/products").set(bearer());
     expect(res.status).toBe(200);

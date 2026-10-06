@@ -19,6 +19,7 @@
 | Version | Date       | Author        | Description                            |
 | :------ | :--------- | :------------ | :------------------------------------- |
 | 1.0.0   | 2026-09-22 | Project Owner | Initial FSD derived from BRD |
+| 1.1.0   | 2026-10-06 | Project Owner | Laporan & analitik 6 tab + endpoint `/reports/*` baru; status ingest dipersist (`ingest_jobs`). |
 
 ### 1.2 Requirement ID Convention
 
@@ -274,6 +275,12 @@ sequenceDiagram
 | FR-09.3  | Laporan stok terkini per gudang/kategori.                                                       | Should   |
 | FR-09.4  | Laporan pengiriman harian (mendukung intent recap AI).                                          | Should   |
 | FR-09.5  | Ekspor laporan ke CSV/Excel.                                                                    | Could    |
+| FR-09.6  | Laporan **pembelian (PO)**: jumlah per status, total qty pesan, nilai (Rp dari `unitPrice`), dan top supplier. | Should |
+| FR-09.7  | Laporan **pengiriman (DN)**: jumlah per status, total qty kirim, top tujuan/produk, dan sebaran per gudang. | Should |
+| FR-09.8  | **Kartu stok** per produk (saldo awal, mutasi, saldo berjalan, saldo akhir) + log mutasi terfilter (tipe/produk/gudang/partner/periode). | Should |
+| FR-09.9  | **Analitik gerak stok**: top mover, *dead stock* (tanpa keluar N hari), dan klasifikasi ABC berdasarkan volume keluar. | Should |
+| FR-09.10 | **Aktivitas per pengguna**: jumlah & qty transaksi masuk/keluar/koreksi per user.               | Should   |
+| FR-09.11 | **Tren pergerakan stok** (masuk/keluar/koreksi per periode) + perbandingan dengan periode sebelumnya. | Should |
 
 ### FR-10 — Audit Log
 
@@ -349,7 +356,7 @@ sequenceDiagram
 | S-11  | Purchase Order Detail  | `/purchase-orders/:id`    | Header + item (dipesan/diterima/sisa); aksi confirm/cancel/terima barang. |
 | S-12  | Delivery Note List     | `/delivery-notes`         | Tabel + CRUD Surat Jalan customer (tanpa PO).            |
 | S-12b | Delivery Note Detail   | `/delivery-notes/:id`     | Header + item; aksi kirim/terkirim/batal, edit saat DRAFT, cetak, transaksi OUT terkait. |
-| S-13  | Reports                | `/reports`                | Filter periode, tabel, export.                           |
+| S-13  | Reports                | `/reports`                | 6 tab (Ringkasan, Persediaan, Pembelian, Pengiriman, Mutasi, Analitik); filter periode/gudang, grafik (recharts), tabel + export CSV. |
 | S-14  | User Management        | `/users`                  | Tabel user + role + mapping chat ID (Super Admin).        |
 | S-15  | Audit Log              | `/audit-logs`             | Tabel + filter (Super Admin).                             |
 
@@ -469,6 +476,16 @@ Seluruh endpoint di bawah menerima **Bearer (web)** atau **`x-internal-key` (AI 
 | GET    | `/reports/purchase-orders?status=&partnerName=&from=&to=` | PO list (AI tool) | Bearer/AI |
 | GET    | `/reports/purchase-orders/:poNumber` | PO detail + receipt status (AI tool) | Bearer/AI |
 | GET    | `/reports/delivery-notes?status=&partnerName=&from=&to=` | Delivery notes list (AI tool) | Bearer/AI |
+| GET    | `/reports/period-summary?from=&to=`  | Ringkasan/tren periode (AI tool `ringkasan_periode`) | Bearer/AI |
+| GET    | `/reports/stock-trend?from=&to=&bucket=day\|week\|month` | Tren arus stok (grafik web) | Bearer/AI |
+| GET    | `/reports/stock-summary`             | Ringkasan persediaan (total + per kategori/gudang) | Bearer/AI |
+| GET    | `/reports/po-summary?from=&to=`      | Ringkasan pembelian (status/qty/nilai/top supplier) | Bearer/AI |
+| GET    | `/reports/dn-summary?from=&to=`      | Ringkasan pengiriman (status/qty/top tujuan/produk/gudang) | Bearer/AI |
+| GET    | `/reports/stock-card?productName=&from=&to=` | Kartu stok per produk (saldo berjalan) | Bearer/AI |
+| GET    | `/reports/movement-analysis?from=&to=&deadDays=&top=` | Analitik gerak stok (top mover/dead stock/ABC) | Bearer/AI |
+| GET    | `/reports/user-activity?from=&to=`   | Aktivitas transaksi per pengguna | Bearer/AI |
+
+> **Perluasan respons:** `/reports/purchase-orders` menyertakan `unitPrice` & `value` per item serta `totalQuantity`/`totalValue` per PO; `/reports/delivery-notes` menyertakan `totalQuantity` per DN. Endpoint ringkasan laporan baru bersifat **web-only** (bukan tool AI).
 
 > Filter berbasis nama (produk/partner/gudang) mencocokkan **semua** substring (mis. `productName=tepung` mengembalikan seluruh produk tepung), bukan hanya yang pertama. Respons menyertakan `matched` (nama entitas yang cocok); bila tidak ada yang cocok, `unmatched` diisi dan `data` kosong (tidak mengembalikan seluruh baris).
 
@@ -546,6 +563,8 @@ Endpoint `/api/knowledge/*` (auth + `requireRole("SUPER_ADMIN")`) mengelola tabe
 | `GET/POST /knowledge/documents`, `GET/PATCH/DELETE /knowledge/documents/:id` | CRUD dokumen (unggah `.md`/`.txt` via multipart) |
 | `GET /knowledge/stats`, `GET /knowledge/chunks` | Statistik & pratinjau chunk terindeks |
 | `POST /knowledge/ingest`, `GET /knowledge/ingest/status` | Picu & pantau re-ingest (proxy ke AI Agent via `x-internal-key`) |
+
+> Setiap job re-ingest dipersist ke tabel **`ingest_jobs`** (status `running`/`done`/`error`, `startedAt`/`finishedAt`, hasil). `GET /knowledge/stats` menampilkan "Ingest terakhir" dari job terbaru, dan AI Agent memuat ulang status job terakhir saat startup, sehingga status tetap konsisten (termasuk setelah restart) antara tab Index dan Ingest.
 
 ### 10.3 System Prompt Guidelines
 
@@ -746,6 +765,10 @@ volumes:
 | AC-19 | Over-receipt ditolak                        | Catat IN qty > sisa PO                                                | 422 `UNPROCESSABLE`; stok tidak berubah.               |
 | AC-20 | PO hanya untuk supplier                     | Buat PO dengan partner `CUSTOMER`                                     | 422 `UNPROCESSABLE`.                                    |
 | AC-21 | Terima barang dari PO                       | Klik "Terima Barang" pada PO `CONFIRMED`                              | Buka Barang Masuk dengan PO terpilih; submit menutup PO.|
+| AC-22 | Laporan 6 tab                               | Buka `/reports` → tiap tab (Ringkasan/Persediaan/Pembelian/Pengiriman/Mutasi/Analitik) | Data & grafik tampil; filter periode berfungsi; export CSV tersedia. |
+| AC-23 | Kartu stok saldo berjalan                   | Mutasi → cari produk → pilih rentang                                   | `saldo akhir = saldo awal + Σ mutasi`; konsisten dengan `Product.stock`. |
+| AC-24 | Analitik gerak stok                         | Analitik → atur `deadDays`                                            | Top mover, dead stock, dan klasifikasi ABC (A/B/C) tampil benar. |
+| AC-25 | Status ingest persist pasca-restart         | Picu re-ingest → restart AI Agent → buka tab Ingest                    | Status & waktu "Selesai" tetap tampil (dari `ingest_jobs`), tidak reset ke `idle`. |
 
 ---
 

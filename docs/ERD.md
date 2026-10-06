@@ -3,10 +3,10 @@
 **Project:** Otomatisasi Warehouse Management System (WMS) dan Tata Kelola Dokumen Berbasis Web dengan Integrasi Asisten AI (RAG) pada Platform Pesan Instan
 
 **Document Type:** ERD & Data Model Specification
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** Draft
 **Author:** Project Owner
-**Date:** 2026-09-22
+**Date:** 2026-10-06
 
 **Related Documents:** [BRD](./BRD.md) · [FSD](./FSD.md) · [TECHNICAL](./TECHNICAL.md)
 
@@ -14,7 +14,9 @@
 
 ## 1. Overview
 
-Dokumen ini mendefinisikan model data sistem WMS + AI RAG. Skema mencakup **skema inti awal** (Category, Product, Partner, StockTransaction, PurchaseOrder) dan **perluasan secukupnya** untuk kebutuhan produksi: autentikasi (User, RefreshToken), multi-gudang (Warehouse, Inventory), Surat Jalan (DeliveryNote), audit (AuditLog), riwayat percakapan AI (AiConversationLog), dan knowledge base RAG (**KnowledgeDocument** sebagai *source of truth* + **DocumentChunk** sebagai index vektor).
+Dokumen ini mendefinisikan model data sistem WMS + AI RAG. Skema mencakup **skema inti awal** (Category, Product, Partner, StockTransaction, PurchaseOrder) dan **perluasan secukupnya** untuk kebutuhan produksi: autentikasi (User, RefreshToken), multi-gudang (Warehouse, Inventory), Surat Jalan (DeliveryNote), audit (AuditLog), riwayat percakapan AI (AiConversationLog), knowledge base RAG (**KnowledgeDocument** sebagai *source of truth* + **DocumentChunk** sebagai index vektor), serta riwayat job re-ingest (**IngestJob**).
+
+> **Laporan & analitik web** (tren, ringkasan persediaan, ringkasan PO/DN, kartu stok, analitik gerak stok/ABC, aktivitas pengguna) dihitung backend dari tabel yang sudah ada (`stock_transactions`, `products`, `inventories`, `purchase_orders`, `delivery_notes`, `users`); tidak menambah tabel baru selain `IngestJob`.
 
 ### 1.1 Notation
 
@@ -463,6 +465,23 @@ Menyimpan potongan dokumen (`KnowledgeDocument`) beserta embedding untuk **RAG r
 
 > **Catatan:** dimensi `vector(1536)` harus sama dengan `EMBEDDING_DIMENSIONS` di env AI Agent (lihat [TECHNICAL §5.4 & §9.7](./TECHNICAL.md)). Mengganti model embedding (mis. dimensi berbeda) memerlukan migrasi kolom + re-ingest. Kolom `content_tsv` bersifat *generated* dan dibuat via migrasi SQL manual (Prisma tidak mendeklarasikannya).
 
+### 3.17 `IngestJob` (Riwayat Job Re-Ingest)
+
+Mencatat setiap eksekusi re-ingest knowledge base (dipicu dari halaman web Knowledge Base atau CLI `rag-ingest`). Ditulis oleh proses ingest AI Agent (kredensial write) dan dibaca backend untuk menampilkan status/"ingest terakhir" yang konsisten di tab Index & Ingest.
+
+| Column       | Type          | Constraint    | Description                                             |
+| :----------- | :------------ | :------------ | :------------------------------------------------------ |
+| `id`         | UUID (String) | PK            | Identitas job.                                          |
+| `status`     | String        | not null      | `running` \| `done` \| `error`.                         |
+| `filter`     | Json?         | nullable      | Filter ingest (`documentId`/`docType`); kosong = semua. |
+| `startedAt`  | DateTime      | default now() | Waktu mulai.                                            |
+| `finishedAt` | DateTime?     | nullable      | Waktu selesai (null saat masih berjalan).               |
+| `error`      | String?       | nullable      | Pesan error bila `status = error`.                      |
+| `results`    | Json?         | nullable      | Hasil per dokumen (jumlah chunk / dilewati).            |
+| `createdAt`  | DateTime      | default now() | Timestamp pembuatan baris.                              |
+
+> **Catatan:** job yang masih `running` saat AI Agent restart ditandai `error` (terputus) ketika state di-*hydrate*. Backend memakai `finishedAt`/`startedAt` job terbaru sebagai "Ingest terakhir" (fallback ke `MAX(document_chunks.createdAt)`), sehingga tab Index dan tab Ingest menampilkan waktu yang sama.
+
 ---
 
 ## 4. Relationship Matrix
@@ -522,6 +541,7 @@ Menyimpan potongan dokumen (`KnowledgeDocument`) beserta embedding untuk **RAG r
 | AuditLog            | `@@index([entity, entityId])`, `@@index([createdAt])`| Penelusuran perubahan.         |
 | KnowledgeDocument   | `@@index([docType])`, `@@index([isActive])`        | Filter & status dokumen.         |
 | DocumentChunk       | `@@index([source])`, `@@index([documentId])` + HNSW on embedding + GIN on `content_tsv` | Vector & hybrid search (pgvector). |
+| IngestJob           | `@@index([startedAt])`                             | Riwayat job re-ingest terbaru.   |
 
 > **Index vector & hybrid:** Prisma tidak mendeklarasikan index HNSW untuk kolom `Unsupported("vector(1536)")` maupun GIN untuk `tsvector`. Buat via raw SQL pada migration, contoh:
 >
@@ -937,6 +957,22 @@ model DocumentChunk {
   @@index([documentId])
   @@map("document_chunks")
 }
+
+/// Riwayat job re-ingest knowledge base. Ditulis proses ingest AI Agent,
+/// dibaca backend untuk status "ingest terakhir".
+model IngestJob {
+  id         String    @id @default(uuid())
+  status     String
+  filter     Json?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  error      String?
+  results    Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([startedAt])
+  @@map("ingest_jobs")
+}
 ```
 
 ---
@@ -967,6 +1003,8 @@ model DocumentChunk {
 | Period summary          | `ringkasan_periode` | Agregasi `stockTransaction` (IN/OUT sum+count) per rentang, top partner OUT (`groupBy`), `product.count`, `purchaseOrder.count`, low-stock. |
 | Create PO draft         | `buat_draft_po`    | Find `partner` + `product` by name, then `purchaseOrder.create({ status: DRAFT, source: AI_CHAT, items: { create: [...] } })`. |
 | Create DN draft         | `buat_draft_surat_jalan` | Find `partner` (wajib CUSTOMER) + `product` + `warehouse` by name, then `deliveryNote.create({ status: DRAFT, items: { create: [...] } })` (stok belum berubah). |
+
+> **Laporan & analitik (web, bukan tool AI):** dihitung backend via endpoint `/reports/*` (lihat [FSD §9.7](./FSD.md)) — tren arus stok (`date_trunc`), ringkasan persediaan, ringkasan PO/DN, kartu stok (saldo berjalan dari `stock_transactions`), analitik gerak stok/ABC, dan aktivitas per pengguna. Tidak menambah tabel selain `IngestJob`.
 
 | Scenario (RAG)          | Tool               | Data Access (langsung, read-only)                                            |
 | :---------------------- | :----------------- | :--------------------------------------------------------------------------- |

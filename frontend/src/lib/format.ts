@@ -60,3 +60,36 @@ export function dateInput(value?: string | null): string {
   const off = d.getTimezoneOffset();
   return new Date(d.getTime() - off * 60_000).toISOString().slice(0, 10);
 }
+
+function toInput(d: Date): string {
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60_000).toISOString().slice(0, 10);
+}
+
+/** Tanggal input (YYYY-MM-DD) N hari dari hari ini. */
+export function dateInputOffset(days: number, base = new Date()): string {
+  const d = new Date(base);
+  d.setDate(d.getDate() + days);
+  return toInput(d);
+}
+
+/** Hari pertama bulan berjalan sebagai tanggal input. */
+export function monthStartInput(base = new Date()): string {
+  return toInput(new Date(base.getFullYear(), base.getMonth(), 1));
+}
+
+/** Geser tanggal input (YYYY-MM-DD) sejumlah hari. */
+export function shiftDateInput(value: string, days: number): string {
+  const d = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return value;
+  d.setDate(d.getDate() + days);
+  return toInput(d);
+}
+
+/** Selisih hari antara dua tanggal input. */
+export function diffDays(from: string, to: string): number {
+  const a = new Date(`${from}T00:00:00`).getTime();
+  const b = new Date(`${to}T00:00:00`).getTime();
+  if (Number.isNaN(a) || Number.isNaN(b)) return 0;
+  return Math.round((b - a) / 86_400_000);
+}

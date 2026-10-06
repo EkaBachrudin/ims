@@ -25,15 +25,18 @@ export function StatCard({
   label,
   value,
   tone = "indigo",
+  hint,
 }: {
   label: string;
   value: number | string;
   tone?: "indigo" | "green" | "red" | "amber";
+  hint?: string;
 }) {
   return (
     <Card className={`stat-card stat-card--${tone}`}>
       <p className="stat-card__label">{label}</p>
       <p className="stat-card__value">{value}</p>
+      {hint && <p className="stat-card__hint">{hint}</p>}
     </Card>
   );
 }

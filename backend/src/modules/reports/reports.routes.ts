@@ -5,16 +5,22 @@ import { authenticateOrInternal } from "../../middlewares/auth";
 import {
   categoryCatalogSchema,
   dnListReportSchema,
+  dnSummarySchema,
   inventoryReportSchema,
+  movementAnalysisSchema,
   partnerCatalogSchema,
   periodSummarySchema,
   poListReportSchema,
   poNumberParamSchema,
+  poSummarySchema,
   productCatalogSchema,
   productNameParamSchema,
   shipmentRecapSchema,
+  stockCardSchema,
   stockReportSchema,
+  stockTrendSchema,
   transactionListReportSchema,
+  userActivitySchema,
   warehouseCatalogSchema,
 } from "./reports.schema";
 import * as controller from "./reports.controller";
@@ -42,6 +48,44 @@ reportsRouter.get(
   "/period-summary",
   validate(periodSummarySchema),
   asyncHandler(controller.periodSummary),
+);
+
+reportsRouter.get(
+  "/stock-trend",
+  validate(stockTrendSchema),
+  asyncHandler(controller.stockTrend),
+);
+
+reportsRouter.get("/stock-summary", asyncHandler(controller.stockSummary));
+
+reportsRouter.get(
+  "/po-summary",
+  validate(poSummarySchema),
+  asyncHandler(controller.poSummary),
+);
+
+reportsRouter.get(
+  "/dn-summary",
+  validate(dnSummarySchema),
+  asyncHandler(controller.dnSummary),
+);
+
+reportsRouter.get(
+  "/stock-card",
+  validate(stockCardSchema),
+  asyncHandler(controller.stockCard),
+);
+
+reportsRouter.get(
+  "/movement-analysis",
+  validate(movementAnalysisSchema),
+  asyncHandler(controller.movementAnalysis),
+);
+
+reportsRouter.get(
+  "/user-activity",
+  validate(userActivitySchema),
+  asyncHandler(controller.userActivity),
 );
 
 // --- Endpoint baca untuk AI Agent (master data & transaksional) ---

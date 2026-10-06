@@ -41,6 +41,10 @@
   @apply mt-2 font-mono text-2xl font-semibold tabular-nums;
 }
 
+.stat-card__hint {
+  @apply mt-1 text-xs text-muted-foreground;
+}
+
 .stat-card--indigo .stat-card__value {
   @apply text-accent;
 }

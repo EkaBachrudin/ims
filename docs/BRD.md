@@ -17,6 +17,7 @@
 | Version | Date       | Author        | Description                        |
 | :------ | :--------- | :------------ | :--------------------------------- |
 | 1.0.0   | 2026-09-22 | Project Owner | Initial BRD derived from project requirements |
+| 1.1.0   | 2026-10-06 | Project Owner | Tambah BR-018 (laporan & analitik lanjutan); perluas cakupan laporan operasional. |
 
 ### 1.2 Related Documents
 
@@ -95,7 +96,7 @@ Kesenjangan antara **kompleksitas sistem** dan **kebiasaan komunikasi alami** pe
    - Transaksi **Inbound** (barang masuk) dan **Outbound** (barang keluar).
    - Manajemen **Purchase Order** (draft → confirmed → completed → cancelled).
    - Manajemen **Surat Jalan / Delivery Note**.
-   - Dashboard stok dan laporan operasional.
+   - Dashboard stok dan laporan operasional (stok terkini, tren arus stok, pembelian, pengiriman, kartu stok, dan analitik gerak stok).
    - Autentikasi & manajemen pengguna berbasis peran.
 2. **AI Chat Assistant** via Telegram (MVP) / WhatsApp (tahap lanjut):
    - Intent baca: cek stok & katalog produk, rekap pengiriman, transaksi barang masuk/keluar, daftar/detail PO, surat jalan, partner, gudang, stok tipis, dan ringkasan dashboard.
@@ -192,6 +193,7 @@ flowchart LR
 | BR-014 | Owner dapat menanyakan seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) melalui chat. | Should | FR-08 |
 | BR-015 | Admin gudang menerima notifikasi Telegram beserta tautan konfirmasi saat draft PO dibuat via chat AI. | Should | FR-08 |
 | BR-016 | Owner menerima notifikasi Telegram saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai (`COMPLETED`). | Should | FR-08 |
+| BR-018 | Sistem menyediakan laporan & analitik operasional lanjutan: pembelian (PO), pengiriman (DN), kartu stok (saldo berjalan), analitik gerak stok (top mover/dead stock/ABC), tren periode, dan aktivitas per pengguna. | Should | FR-09 |
 
 ---
 

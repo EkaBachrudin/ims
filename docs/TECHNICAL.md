@@ -22,6 +22,7 @@
 | :------ | :--------- | :------------ | :------------------------------------------- |
 | 1.0.0   | 2026-09-22 | Project Owner | Initial technical build guide from BRD/FSD/ERD|
 | 1.1.0   | 2026-10-02 | Project Owner | Refactor layered architecture (backend & ai-agent); update Repository Layout, §7, §9 |
+| 1.2.0   | 2026-10-06 | Project Owner | Laporan & analitik web (recharts, §8.6); persistensi job ingest (`ingest_jobs`, §9.7); update §2.2/§3.2/§3.3/§8.3 |
 
 ### 1.2 Convention Reference
 
@@ -65,7 +66,7 @@ flowchart TB
 
 | Service    | Port lokal | Teknologi                         | Tanggung jawab                                     |
 | :--------- | :--------- | :-------------------------------- | :------------------------------------------------- |
-| `frontend` | 5173       | Vite, React, TS, Tailwind, TanStack Query | Dashboard WMS admin                         |
+| `frontend` | 5173       | Vite, React, TS, Tailwind, TanStack Query, recharts | Dashboard WMS admin                  |
 | `backend`  | 3000       | Express, TS, Prisma, Zod          | REST API, logika bisnis, auth, scheduler stok       |
 | `ai-agent` | 8080       | Node, TS, LangChain.js, Telegraf  | Webhook/chat, intent, function calling ke backend, RAG retrieval (pgvector, read-only) |
 | `db`       | 5432       | PostgreSQL + pgvector             | Data relasional + vector store knowledge/SOP        |
@@ -161,13 +162,14 @@ frontend/
 │   ├── hooks/
 │   │   ├── queryKeys.ts      # query key factory
 │   │   └── mutations.ts
-│   ├── features/             # products/, partners/, po/, transactions/, ...
+│   ├── features/             # products/, partners/, po/, transactions/, reports/, knowledge/, ...
 │   │   └── <feature>/
 │   │       ├── components/
 │   │       ├── hooks.ts      # useQuery/useMutation per fitur
 │   │       └── pages.tsx
-│   ├── components/ui/        # Table, Button, Modal, Input
-│   ├── lib/                  # utils, formatters
+│   ├── components/ui/        # Table, Button, Modal, Input, Combobox, Tabs, DateRange
+│   ├── components/charts/    # TrendAreaChart, RankBarChart (wrapper recharts)
+│   ├── lib/                  # utils, formatters, csv
 │   ├── types/                # shared types
 │   └── main.tsx
 ├── .env
@@ -201,8 +203,8 @@ ai-agent/
 │   │   ├── backend/backendGateway.ts  # HTTP client ke Backend API (impl port)
 │   │   ├── telegram/notifier.ts       # push notifikasi Telegram (impl port)
 │   │   ├── rag/              # embeddings.ts, retriever.ts, knowledgeBase.ts,
-│   │   │                     #   ingest.ts, ingestJob.ts, knowledgeDocStore.ts,
-│   │   │                     #   importDocs.ts, generateKamus.ts, generateLaporan.ts
+│   │   │                     #   ingest.ts, ingestJob.ts, ingestJobStore.ts,
+│   │   │                     #   knowledgeDocStore.ts, importDocs.ts
 │   │   └── db.ts             # pg Pool READ-ONLY (document_chunks) + write pool (ingest)
 │   ├── composition/container.ts
 │   └── index.ts              # bootstrap (server + bot)
@@ -877,7 +879,23 @@ export const qk = {
     list: (f: unknown) => ["purchase-orders", "list", f] as const,
     detail: (id: string) => ["purchase-orders", "detail", id] as const,
   },
-  reports: { stock: (f: unknown) => ["reports", "stock", f] as const },
+  reports: {
+    stock: (f: unknown) => ["reports", "stock", f] as const,
+    products: (f: unknown) => ["reports", "products", f] as const,
+    lowStock: ["reports", "low-stock"] as const,
+    shipments: (d: string) => ["reports", "shipments", d] as const,
+    periodSummary: (f: unknown) => ["reports", "period-summary", f] as const,
+    stockTrend: (f: unknown) => ["reports", "stock-trend", f] as const,
+    stockSummary: ["reports", "stock-summary"] as const,
+    poSummary: (f: unknown) => ["reports", "po-summary", f] as const,
+    dnSummary: (f: unknown) => ["reports", "dn-summary", f] as const,
+    purchaseOrders: (f: unknown) => ["reports", "purchase-orders", f] as const,
+    deliveryNotes: (f: unknown) => ["reports", "delivery-notes", f] as const,
+    transactions: (f: unknown) => ["reports", "transactions", f] as const,
+    stockCard: (f: unknown) => ["reports", "stock-card", f] as const,
+    movementAnalysis: (f: unknown) => ["reports", "movement-analysis", f] as const,
+    userActivity: (f: unknown) => ["reports", "user-activity", f] as const,
+  },
 };
 ```
 
@@ -929,6 +947,21 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return token ? <>{children}</> : <Navigate to="/login" replace />;
 }
 ```
+
+### 8.6 Laporan & Analitik (Web)
+
+Halaman `/reports` (rute S-13) terdiri dari **6 tab** dengan filter periode (`from`/`to` + preset) dan export CSV. Grafik memakai **recharts** (`ResponsiveContainer`, animasi dimatikan, label nilai + legend); wrapper komponen ada di `components/charts/`.
+
+| Tab | Isi utama | Endpoint |
+| :-- | :-- | :-- |
+| Ringkasan | KPI masuk/keluar (unit + jumlah transaksi), PO aktif, stok kritis; tren arus stok; top tujuan; perbandingan periode | `period-summary`, `stock-trend`, `shipments` |
+| Persediaan | Total produk/unit/kritis; stok per gudang & kategori; daftar stok + restock | `stock-summary`, `products`, `low-stock` |
+| Pembelian | KPI + nilai PO (Rp), pill status, chart status & top supplier, daftar PO | `po-summary`, `purchase-orders` |
+| Pengiriman | KPI, pill status, chart status/top tujuan/produk/gudang, daftar DN | `dn-summary`, `delivery-notes` |
+| Mutasi | Kartu stok (saldo berjalan) + log mutasi terfilter (tipe/produk/gudang/partner) | `stock-card`, `transactions` |
+| Analitik | Top mover, dead stock, klasifikasi ABC, aktivitas per pengguna | `movement-analysis`, `user-activity` |
+
+> Semua endpoint `/reports/*` diakses via `authenticateOrInternal` (Bearer web / `x-internal-key`). Nilai Rp hanya tersedia untuk pembelian (`PurchaseOrderItem.unitPrice`); item tanpa harga dikecualikan. Saldo kartu stok dihitung dari `stock_transactions` (IN `+qty`, OUT `-qty`, ADJUSTMENT `+qty`).
 
 ---
 
@@ -1284,14 +1317,14 @@ export async function runIngest(pool, filter = {}) {
 }
 ```
 
-**`src/infrastructure/rag/ingestJob.ts`** — runner job in-memory (status `idle|running|done|error`, lock anti-tumpang-tindih) yang dipanggil dari endpoint internal AI Agent:
+**`src/infrastructure/rag/ingestJob.ts`** + **`ingestJobStore.ts`** — runner job re-ingest (status `idle|running|done|error`, lock anti-tumpang-tindih). Setiap run dicatat ke tabel **`ingest_jobs`** (`running` → `done`/`error`, `startedAt`/`finishedAt`, hasil), dan saat startup status job terakhir dimuat ulang dari DB (job `running` yang tertinggal ditandai `error` "terputus"). Dipanggil dari endpoint internal AI Agent:
 
 | Endpoint AI Agent          | Fungsi                                             |
 | :------------------------- | :------------------------------------------------- |
 | `POST /ingest`             | Mulai job re-ingest (body opsional `{documentId,docType}`) |
-| `GET /ingest/status`       | Status job terkini                                 |
+| `GET /ingest/status`       | Status job terkini (state in-memory, di-*hydrate* dari `ingest_jobs`) |
 
-Keduanya dilindungi header `x-internal-key` dan dipanggil backend (bukan browser langsung).
+Keduanya dilindungi header `x-internal-key` dan dipanggil backend (bukan browser langsung). Jalur CLI `make rag-ingest` juga mencatat job ke `ingest_jobs`.
 
 **`src/infrastructure/rag/retriever.ts`** — retrieval (read-only) dengan `embedQuery`, ambang skor, filter `docTypes`, dan opsi hybrid:
 
@@ -1349,7 +1382,7 @@ Backend mengekspos modul `/api/knowledge/*` (auth + `requireRole("SUPER_ADMIN")`
 | `POST /knowledge/ingest`            | Picu re-ingest (proxy ke AI Agent)       |
 | `GET /knowledge/ingest/status`      | Status re-ingest                         |
 
-Skema: `knowledge_documents` (source of truth) + kolom metadata di `document_chunks` (`documentId`, `docType`, `title`, `metadata`, `contentHash`, `embeddingModel`, `dimensions`, `content_tsv`). Kolom generated `content_tsv` + index GIN dibuat via migrasi SQL manual.
+Skema: `knowledge_documents` (source of truth) + kolom metadata di `document_chunks` (`documentId`, `docType`, `title`, `metadata`, `contentHash`, `embeddingModel`, `dimensions`, `content_tsv`). Kolom generated `content_tsv` + index GIN dibuat via migrasi SQL manual. Riwayat job re-ingest disimpan di tabel `ingest_jobs` (migrasi `20261006010000_add_ingest_jobs`); `GET /knowledge/stats` memakai job terbaru sebagai "Ingest terakhir".
 
 ### 9.8 Guardrails Recap
 
@@ -1655,6 +1688,8 @@ Pemetaan timeline 5 minggu (FSD) menjadi task teknis.
 | 3      | Frontend Lanjutan + AI Dasar      | Feature transaksi & PO (form + `useMutation` + invalidation), halaman detail PO, dashboard; setup ai-agent, Telegraf long-polling, endpoint `/internal/ai-log`, mapping chatId→user; LLM + tools `cek_stok_barang`, `rekap_pengiriman`. |
 | 4      | AI Lanjutan + RAG                 | Tool `buat_draft_po` → `POST /po/draft`; RAG: `knowledge_documents` (source of truth) + halaman web Knowledge Base (SUPER_ADMIN), ingest DB + job/CLI (`rag-import-docs`, `rag-ingest`); retriever read-only (hybrid + threshold); tool `cari_sop` + tool data live (`cari_produk`, `ringkasan_periode`); guardrail, rate limit, conversation logging. |
 | 5      | Testing & Finalisasi              | Integration E2E (chat → draft PO → muncul di web); bug fixing & error handling; optimasi prompt & latency; hardening; dokumentasi akhir & demo script. |
+
+> **Pasca-MVP (enhancement):** halaman Laporan **6 tab** + endpoint agregasi (`stock-trend`, `stock-summary`, `po-summary`, `dn-summary`, `stock-card`, `movement-analysis`, `user-activity`) dengan **recharts**; persistensi job ingest (`ingest_jobs`) & status Knowledge Base yang konsisten pasca-restart; penyempurnaan UI Knowledge Base (chip jenis yang dapat difilter, pencarian berikon, kartu mobile).
 
 ---
 

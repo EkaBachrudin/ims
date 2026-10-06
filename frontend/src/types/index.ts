@@ -174,6 +174,179 @@ export interface StockReportRow {
   }[];
 }
 
+export interface PeriodSummary {
+  from: string;
+  to: string;
+  totalProducts: number;
+  activePOs: number;
+  lowStockCount: number;
+  inbound: { quantity: number; count: number };
+  outbound: { quantity: number; count: number };
+  topPartners: { partner: string; quantity: number }[];
+}
+
+export interface StockTrendBucket {
+  period: string;
+  inbound: number;
+  outbound: number;
+  adjustment: number;
+}
+
+export interface StockTrendResponse {
+  from: string;
+  to: string;
+  bucket: "day" | "week" | "month";
+  buckets: StockTrendBucket[];
+}
+
+export interface StockSummary {
+  totalProducts: number;
+  totalUnits: number;
+  lowStockCount: number;
+  byCategory: { category: string; products: number; units: number }[];
+  byWarehouse: { warehouse: string; code: string; units: number }[];
+}
+
+export interface ReportProductRow {
+  sku: string;
+  name: string;
+  unit: string;
+  stock: number;
+  minStock: number;
+  category: string | null;
+  lowStock: boolean;
+}
+
+export interface PoSummary {
+  from: string;
+  to: string;
+  byStatus: { status: PoStatus; count: number }[];
+  totalPos: number;
+  totalOrderedQty: number;
+  totalValue: number;
+  topSuppliers: { supplier: string; qty: number; value: number }[];
+}
+
+export interface DnSummary {
+  from: string;
+  to: string;
+  byStatus: { status: DnStatus; count: number }[];
+  totalDns: number;
+  totalQty: number;
+  topCustomers: { customer: string; qty: number }[];
+  topProducts: { product: string; sku: string; qty: number }[];
+  byWarehouse: { warehouse: string; code: string; qty: number }[];
+}
+
+export interface ReportPoRow {
+  poNumber: string;
+  status: PoStatus;
+  source: PoSource;
+  partner: string;
+  warehouse: string | null;
+  targetDate: string | null;
+  createdAt: string;
+  totalQuantity: number;
+  totalValue: number;
+  items: {
+    product: string;
+    sku: string;
+    quantity: number;
+    unit: string;
+    unitPrice: number | null;
+    value: number | null;
+  }[];
+}
+
+export interface ReportDnRow {
+  dnNumber: string;
+  status: DnStatus;
+  shipDate: string;
+  poNumber: string | null;
+  partner: string;
+  warehouse: string;
+  totalQuantity: number;
+  items: { product: string; sku: string; quantity: number; unit: string }[];
+}
+
+export interface ReportTransactionRow {
+  date: string;
+  type: TransactionType;
+  product: string;
+  sku: string;
+  quantity: number;
+  unit: string;
+  warehouse: string;
+  partner: string | null;
+  poNumber: string | null;
+  dnNumber: string | null;
+  notes: string | null;
+  createdBy: string;
+}
+
+export interface StockCardMovement {
+  date: string;
+  type: TransactionType;
+  quantity: number;
+  signed: number;
+  balance: number;
+  warehouse: string;
+  partner: string | null;
+  referenceNo: string | null;
+  notes: string | null;
+  createdBy: string;
+}
+
+export interface StockCard {
+  status: "ok" | "ambiguous" | "none";
+  from: string;
+  to: string;
+  product: { sku: string; name: string; unit: string; category: string | null } | null;
+  opening: number;
+  closing: number;
+  movements: StockCardMovement[];
+  candidates: { id: string; name: string; sku: string }[];
+  suggestions: { id: string; name: string; sku: string }[];
+}
+
+export interface MovementAnalysis {
+  from: string;
+  to: string;
+  deadDays: number;
+  topMovers: { sku: string; product: string; qty: number }[];
+  deadStock: {
+    sku: string;
+    product: string;
+    unit: string;
+    stock: number;
+    lastOutDate: string | null;
+    daysSinceOut: number | null;
+  }[];
+  abc: {
+    sku: string;
+    product: string;
+    qty: number;
+    share: number;
+    cumulative: number;
+    class: string;
+  }[];
+}
+
+export interface UserActivity {
+  from: string;
+  to: string;
+  users: {
+    user: string;
+    role: Role;
+    inCount: number;
+    inQty: number;
+    outCount: number;
+    outQty: number;
+    adjustmentCount: number;
+    total: number;
+  }[];
+}
+
 export const DOC_TYPES = [
   "sop",
   "faq",

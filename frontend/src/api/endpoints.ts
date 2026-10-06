@@ -12,13 +12,25 @@ import type {
   KnowledgeDocument,
   KnowledgeDocumentDetail,
   KnowledgeStats,
+  DnSummary,
   Meta,
+  MovementAnalysis,
   Partner,
+  PeriodSummary,
+  PoSummary,
   Product,
   PurchaseOrder,
+  ReportDnRow,
+  ReportPoRow,
+  ReportProductRow,
+  ReportTransactionRow,
+  StockCard,
   StockReportRow,
+  StockSummary,
   StockTransaction,
+  StockTrendResponse,
   User,
+  UserActivity,
   Warehouse,
 } from "@/types";
 
@@ -107,6 +119,29 @@ export const dnApi = {
 
 export const reportApi = {
   dashboard: () => unwrap<DashboardSummary>(api.get("/reports/dashboard")),
+  periodSummary: (params?: { from?: string; to?: string }) =>
+    unwrap<PeriodSummary>(api.get("/reports/period-summary", { params })),
+  stockTrend: (params: { from?: string; to?: string; bucket?: "day" | "week" | "month" }) =>
+    unwrap<StockTrendResponse>(api.get("/reports/stock-trend", { params })),
+  stockSummary: () => unwrap<StockSummary>(api.get("/reports/stock-summary")),
+  poSummary: (params?: { from?: string; to?: string }) =>
+    unwrap<PoSummary>(api.get("/reports/po-summary", { params })),
+  dnSummary: (params?: { from?: string; to?: string }) =>
+    unwrap<DnSummary>(api.get("/reports/dn-summary", { params })),
+  purchaseOrders: (params?: Record<string, unknown>) =>
+    unwrapList<ReportPoRow>(api.get("/reports/purchase-orders", { params })),
+  deliveryNotes: (params?: Record<string, unknown>) =>
+    unwrapList<ReportDnRow>(api.get("/reports/delivery-notes", { params })),
+  transactions: (params?: Record<string, unknown>) =>
+    unwrapList<ReportTransactionRow>(api.get("/reports/transactions", { params })),
+  stockCard: (params: { productName: string; from?: string; to?: string }) =>
+    unwrap<StockCard>(api.get("/reports/stock-card", { params })),
+  movementAnalysis: (params?: { from?: string; to?: string; deadDays?: number; top?: number }) =>
+    unwrap<MovementAnalysis>(api.get("/reports/movement-analysis", { params })),
+  userActivity: (params?: { from?: string; to?: string }) =>
+    unwrap<UserActivity>(api.get("/reports/user-activity", { params })),
+  products: (params?: Record<string, unknown>) =>
+    unwrapList<ReportProductRow>(api.get("/reports/products", { params })),
   stock: (params?: Record<string, unknown>) =>
     unwrap<StockReportRow[]>(api.get("/reports/stock", { params })),
   lowStock: () => unwrap<StockReportRow[]>(api.get("/reports/low-stock")),

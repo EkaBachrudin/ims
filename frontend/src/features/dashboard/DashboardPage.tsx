@@ -65,8 +65,18 @@ export function DashboardPage() {
             <>
               <StatCard label="Total Produk" value={data?.totalProducts ?? 0} />
               <StatCard label="PO Aktif" value={data?.activePOs ?? 0} tone="amber" />
-              <StatCard label="Masuk Hari Ini" value={data?.todayInbound ?? 0} tone="green" />
-              <StatCard label="Keluar Hari Ini" value={data?.todayOutbound ?? 0} tone="red" />
+              <StatCard
+                label="Masuk Hari Ini"
+                value={data?.todayInbound ?? 0}
+                tone="green"
+                hint="jumlah transaksi"
+              />
+              <StatCard
+                label="Keluar Hari Ini"
+                value={data?.todayOutbound ?? 0}
+                tone="red"
+                hint="jumlah transaksi"
+              />
             </>
           )}
       </div>

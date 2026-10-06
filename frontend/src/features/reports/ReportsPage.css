@@ -1,27 +1,107 @@
 @reference "../../index.css";
 
-.reports-page__grid {
-  @apply grid gap-4 lg:grid-cols-3;
+.reports-page__toolbar {
+  @apply mb-4 flex flex-wrap items-center gap-2;
 }
 
-.reports-page__main {
+.reports-page__search {
+  @apply relative w-full sm:max-w-xs;
+}
+
+.reports-page__search-icon {
+  @apply pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground;
+}
+
+.reports-page__search-input {
+  @apply pl-9;
+}
+
+.reports-page__search:has(.reports-page__search-clear) .reports-page__search-input {
+  @apply pr-9;
+}
+
+.reports-page__search-clear {
+  @apply absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground;
+}
+
+.reports-page__select {
+  @apply sm:max-w-[210px];
+}
+
+.reports-page__kpis {
+  @apply grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5;
+}
+
+.reports-page__kpis--three {
+  @apply lg:grid-cols-3;
+}
+
+.reports-page__compare {
+  @apply mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground;
+}
+
+.reports-page__compare strong {
+  @apply font-mono tabular-nums;
+}
+
+.reports-page__compare-label {
+  @apply font-medium text-foreground;
+}
+
+.reports-page__compare-hint {
+  @apply text-muted-foreground/80;
+}
+
+.reports-page__delta--up {
+  @apply text-success;
+}
+
+.reports-page__delta--down {
+  @apply text-danger;
+}
+
+.reports-page__panels {
+  @apply mt-4 grid gap-4 lg:grid-cols-2;
+}
+
+.reports-page__panel-wide {
   @apply lg:col-span-2;
 }
 
+.reports-page__table-card {
+  @apply mt-4;
+}
+
+.reports-page__table-head {
+  @apply mb-3 flex flex-wrap items-center justify-between gap-2;
+}
+
+.reports-page__table-head .reports-page__section-title {
+  @apply mb-0;
+}
+
 .reports-page__filters {
-  @apply mb-3 flex flex-wrap items-end gap-2;
+  @apply mb-3 flex flex-wrap items-center gap-2;
 }
 
-.reports-page__field-search {
-  @apply w-56;
+.reports-page__pills {
+  @apply mt-3 flex flex-wrap gap-2;
 }
 
-.reports-page__field-category {
-  @apply w-48;
+.reports-page__inline-field {
+  @apply flex items-center gap-2 text-xs font-medium text-muted-foreground;
+}
+
+.reports-page__inline-field .reports-page__number {
+  @apply w-24;
 }
 
 .reports-page__section-title {
   @apply mb-3 text-sm font-semibold text-foreground;
+}
+
+.reports-page__count {
+  @apply font-mono text-muted-foreground;
 }
 
 .reports-page__date {
@@ -29,7 +109,7 @@
 }
 
 .reports-page__shipments {
-  @apply mt-3 space-y-2 text-sm;
+  @apply mt-3 max-h-72 space-y-2 overflow-y-auto text-sm;
 }
 
 .reports-page__shipment {
@@ -44,8 +124,28 @@
   @apply text-muted-foreground;
 }
 
+.reports-page__restock {
+  @apply space-y-2;
+}
+
+.reports-page__restock-item {
+  @apply flex flex-wrap items-center gap-2 rounded-lg border border-border p-2 text-sm;
+}
+
+.reports-page__restock-name {
+  @apply min-w-0 flex-1 truncate text-foreground;
+}
+
+.reports-page__restock-meta {
+  @apply shrink-0 text-muted-foreground;
+}
+
+.reports-page__restock-hint {
+  @apply shrink-0 text-xs font-medium text-success;
+}
+
 .reports-page__empty {
-  @apply text-muted-foreground;
+  @apply text-sm text-muted-foreground;
 }
 
 .reports-page__stock--low {

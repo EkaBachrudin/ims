@@ -1,11 +1,6 @@
 import { prisma, type Db } from "../../infrastructure/prisma/client";
-import type {
-  DnStatus,
-  PartnerType,
-  PoStatus,
-  Prisma,
-  TransactionType,
-} from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import type { DnStatus, PartnerType, PoStatus, TransactionType } from "@prisma/client";
 
 export const stockProductInclude = { category: { select: { id: true, name: true } } } as const;
 
@@ -358,6 +353,288 @@ export function findPoByNumberReport(poNumber: string, db: Db = prisma) {
     where: { poNumber: { equals: poNumber, mode: "insensitive" } },
     include: poIncludeReport,
   });
+}
+
+// ----------------------------------------------------------------------
+// Agregasi laporan (tren & ringkasan persediaan)
+// ----------------------------------------------------------------------
+
+export interface StockTrendBucket {
+  period: string;
+  inbound: number;
+  outbound: number;
+  adjustment: number;
+}
+
+export function stockTrend(
+  from: Date,
+  to: Date,
+  bucket: "day" | "week" | "month",
+  db: Db = prisma,
+) {
+  return db.$queryRaw<StockTrendBucket[]>(Prisma.sql`
+    SELECT to_char(date_trunc(${bucket}, "createdAt"), 'YYYY-MM-DD') AS "period",
+           COALESCE(SUM(CASE WHEN "type" = 'IN' THEN "quantity" ELSE 0 END), 0)::int AS "inbound",
+           COALESCE(SUM(CASE WHEN "type" = 'OUT' THEN "quantity" ELSE 0 END), 0)::int AS "outbound",
+           COALESCE(SUM(CASE WHEN "type" = 'ADJUSTMENT' THEN "quantity" ELSE 0 END), 0)::int AS "adjustment"
+    FROM "stock_transactions"
+    WHERE "createdAt" >= ${from} AND "createdAt" <= ${to}
+    GROUP BY 1
+    ORDER BY 1
+  `);
+}
+
+export async function countLowStock(db: Db = prisma) {
+  const rows = await db.$queryRaw<{ count: number }[]>(Prisma.sql`
+    SELECT count(*)::int AS "count" FROM "products" WHERE "stock" <= "minStock"
+  `);
+  return rows[0]?.count ?? 0;
+}
+
+export function sumProductStock(db: Db = prisma) {
+  return db.product.aggregate({ _sum: { stock: true }, _count: true });
+}
+
+export function stockByCategory(db: Db = prisma) {
+  return db.$queryRaw<{ category: string; products: number; units: number }[]>(Prisma.sql`
+    SELECT COALESCE(c."name", 'Tanpa kategori') AS "category",
+           count(p."id")::int AS "products",
+           COALESCE(SUM(p."stock"), 0)::int AS "units"
+    FROM "products" p
+    LEFT JOIN "categories" c ON c."id" = p."categoryId"
+    GROUP BY 1
+    ORDER BY "units" DESC
+  `);
+}
+
+export function stockByWarehouse(db: Db = prisma) {
+  return db.$queryRaw<{ warehouse: string; code: string; units: number }[]>(Prisma.sql`
+    SELECT w."name" AS "warehouse",
+           w."code" AS "code",
+           COALESCE(SUM(i."quantity"), 0)::int AS "units"
+    FROM "inventories" i
+    JOIN "warehouses" w ON w."id" = i."warehouseId"
+    GROUP BY w."id", w."name", w."code"
+    ORDER BY "units" DESC
+  `);
+}
+
+// ----------------------------------------------------------------------
+// Ringkasan pembelian (PO) & pengiriman (DN)
+// ----------------------------------------------------------------------
+
+export function poByStatus(from: Date, to: Date, db: Db = prisma) {
+  return db.$queryRaw<{ status: string; count: number }[]>(Prisma.sql`
+    SELECT po."status"::text AS "status", count(*)::int AS "count"
+    FROM "purchase_orders" po
+    WHERE po."createdAt" >= ${from} AND po."createdAt" <= ${to}
+    GROUP BY po."status"
+    ORDER BY po."status"
+  `);
+}
+
+export async function poSummaryTotals(from: Date, to: Date, db: Db = prisma) {
+  const rows = await db.$queryRaw<
+    { totalPos: number; totalOrderedQty: number; totalValue: number }[]
+  >(Prisma.sql`
+    SELECT count(DISTINCT po."id")::int AS "totalPos",
+           COALESCE(SUM(i."quantity"), 0)::int AS "totalOrderedQty",
+           COALESCE(SUM(i."quantity" * i."unitPrice"), 0)::float AS "totalValue"
+    FROM "purchase_orders" po
+    JOIN "purchase_order_items" i ON i."poId" = po."id"
+    WHERE po."createdAt" >= ${from} AND po."createdAt" <= ${to}
+  `);
+  return rows[0] ?? { totalPos: 0, totalOrderedQty: 0, totalValue: 0 };
+}
+
+export function topSuppliers(from: Date, to: Date, take = 5, db: Db = prisma) {
+  return db.$queryRaw<{ supplier: string; qty: number; value: number }[]>(Prisma.sql`
+    SELECT p."name" AS "supplier",
+           COALESCE(SUM(i."quantity"), 0)::int AS "qty",
+           COALESCE(SUM(i."quantity" * i."unitPrice"), 0)::float AS "value"
+    FROM "purchase_orders" po
+    JOIN "partners" p ON p."id" = po."partnerId"
+    JOIN "purchase_order_items" i ON i."poId" = po."id"
+    WHERE po."createdAt" >= ${from} AND po."createdAt" <= ${to}
+    GROUP BY p."id", p."name"
+    ORDER BY "value" DESC, "qty" DESC
+    LIMIT ${take}
+  `);
+}
+
+export function dnByStatus(from: Date, to: Date, db: Db = prisma) {
+  return db.$queryRaw<{ status: string; count: number }[]>(Prisma.sql`
+    SELECT dn."status"::text AS "status", count(*)::int AS "count"
+    FROM "delivery_notes" dn
+    WHERE dn."shipDate" >= ${from} AND dn."shipDate" <= ${to}
+    GROUP BY dn."status"
+    ORDER BY dn."status"
+  `);
+}
+
+export async function dnSummaryTotals(from: Date, to: Date, db: Db = prisma) {
+  const rows = await db.$queryRaw<{ totalDns: number; totalQty: number }[]>(Prisma.sql`
+    SELECT count(DISTINCT dn."id")::int AS "totalDns",
+           COALESCE(SUM(di."quantity"), 0)::int AS "totalQty"
+    FROM "delivery_notes" dn
+    JOIN "delivery_note_items" di ON di."dnId" = dn."id"
+    WHERE dn."shipDate" >= ${from} AND dn."shipDate" <= ${to}
+  `);
+  return rows[0] ?? { totalDns: 0, totalQty: 0 };
+}
+
+export function topCustomers(from: Date, to: Date, take = 5, db: Db = prisma) {
+  return db.$queryRaw<{ customer: string; qty: number }[]>(Prisma.sql`
+    SELECT p."name" AS "customer",
+           COALESCE(SUM(di."quantity"), 0)::int AS "qty"
+    FROM "delivery_notes" dn
+    JOIN "partners" p ON p."id" = dn."partnerId"
+    JOIN "delivery_note_items" di ON di."dnId" = dn."id"
+    WHERE dn."shipDate" >= ${from} AND dn."shipDate" <= ${to}
+    GROUP BY p."id", p."name"
+    ORDER BY "qty" DESC
+    LIMIT ${take}
+  `);
+}
+
+export function topDeliveredProducts(from: Date, to: Date, take = 5, db: Db = prisma) {
+  return db.$queryRaw<{ product: string; sku: string; qty: number }[]>(Prisma.sql`
+    SELECT pr."name" AS "product",
+           pr."sku" AS "sku",
+           COALESCE(SUM(di."quantity"), 0)::int AS "qty"
+    FROM "delivery_notes" dn
+    JOIN "delivery_note_items" di ON di."dnId" = dn."id"
+    JOIN "products" pr ON pr."id" = di."productId"
+    WHERE dn."shipDate" >= ${from} AND dn."shipDate" <= ${to}
+    GROUP BY pr."id", pr."name", pr."sku"
+    ORDER BY "qty" DESC
+    LIMIT ${take}
+  `);
+}
+
+export function dnByWarehouse(from: Date, to: Date, db: Db = prisma) {
+  return db.$queryRaw<{ warehouse: string; code: string; qty: number }[]>(Prisma.sql`
+    SELECT w."name" AS "warehouse",
+           w."code" AS "code",
+           COALESCE(SUM(di."quantity"), 0)::int AS "qty"
+    FROM "delivery_notes" dn
+    JOIN "warehouses" w ON w."id" = dn."warehouseId"
+    JOIN "delivery_note_items" di ON di."dnId" = dn."id"
+    WHERE dn."shipDate" >= ${from} AND dn."shipDate" <= ${to}
+    GROUP BY w."id", w."name", w."code"
+    ORDER BY "qty" DESC
+  `);
+}
+
+// ----------------------------------------------------------------------
+// Kartu stok, analitik gerak stok, aktivitas pengguna
+// ----------------------------------------------------------------------
+
+export function findProductBySku(sku: string, db: Db = prisma) {
+  return db.product.findFirst({
+    where: { sku: { equals: sku, mode: "insensitive" } },
+    include: stockProductInclude,
+  });
+}
+
+export async function signedBalanceBefore(productId: string, before: Date, db: Db = prisma) {
+  const rows = await db.$queryRaw<{ delta: number }[]>(Prisma.sql`
+    SELECT COALESCE(SUM(CASE WHEN "type" = 'OUT' THEN -"quantity" ELSE "quantity" END), 0)::int AS "delta"
+    FROM "stock_transactions"
+    WHERE "productId" = ${productId} AND "createdAt" < ${before}
+  `);
+  return rows[0]?.delta ?? 0;
+}
+
+export function listMovementsForCard(
+  productId: string,
+  from: Date,
+  to: Date,
+  db: Db = prisma,
+) {
+  return db.stockTransaction.findMany({
+    where: { productId, createdAt: { gte: from, lte: to } },
+    orderBy: { createdAt: "asc" },
+    include: {
+      warehouse: { select: { code: true, name: true } },
+      partner: { select: { name: true } },
+      createdBy: { select: { name: true } },
+    },
+  });
+}
+
+export function topOutboundProducts(from: Date, to: Date, take: number, db: Db = prisma) {
+  return db.$queryRaw<{ sku: string; product: string; qty: number }[]>(Prisma.sql`
+    SELECT p."sku" AS "sku",
+           p."name" AS "product",
+           COALESCE(SUM(t."quantity"), 0)::int AS "qty"
+    FROM "stock_transactions" t
+    JOIN "products" p ON p."id" = t."productId"
+    WHERE t."type" = 'OUT' AND t."createdAt" >= ${from} AND t."createdAt" <= ${to}
+    GROUP BY p."id", p."sku", p."name"
+    ORDER BY "qty" DESC
+    LIMIT ${take}
+  `);
+}
+
+export function outboundByProduct(from: Date, to: Date, db: Db = prisma) {
+  return db.$queryRaw<{ sku: string; product: string; qty: number }[]>(Prisma.sql`
+    SELECT p."sku" AS "sku",
+           p."name" AS "product",
+           COALESCE(SUM(t."quantity"), 0)::int AS "qty"
+    FROM "stock_transactions" t
+    JOIN "products" p ON p."id" = t."productId"
+    WHERE t."type" = 'OUT' AND t."createdAt" >= ${from} AND t."createdAt" <= ${to}
+    GROUP BY p."id", p."sku", p."name"
+    ORDER BY "qty" DESC
+  `);
+}
+
+export function deadStockProducts(cutoff: Date, db: Db = prisma) {
+  return db.$queryRaw<
+    { sku: string; product: string; unit: string; stock: number; lastOut: Date | null }[]
+  >(Prisma.sql`
+    SELECT p."sku" AS "sku",
+           p."name" AS "product",
+           p."unit" AS "unit",
+           p."stock" AS "stock",
+           MAX(t."createdAt") AS "lastOut"
+    FROM "products" p
+    LEFT JOIN "stock_transactions" t
+      ON t."productId" = p."id" AND t."type" = 'OUT'
+    GROUP BY p."id", p."sku", p."name", p."unit", p."stock"
+    HAVING MAX(t."createdAt") IS NULL OR MAX(t."createdAt") < ${cutoff}
+    ORDER BY p."stock" DESC
+  `);
+}
+
+export function userActivity(from: Date, to: Date, db: Db = prisma) {
+  return db.$queryRaw<
+    {
+      user: string;
+      role: string;
+      inCount: number;
+      inQty: number;
+      outCount: number;
+      outQty: number;
+      adjustmentCount: number;
+      total: number;
+    }[]
+  >(Prisma.sql`
+    SELECT u."name" AS "user",
+           u."role"::text AS "role",
+           count(*) FILTER (WHERE t."type" = 'IN')::int AS "inCount",
+           COALESCE(SUM(t."quantity") FILTER (WHERE t."type" = 'IN'), 0)::int AS "inQty",
+           count(*) FILTER (WHERE t."type" = 'OUT')::int AS "outCount",
+           COALESCE(SUM(t."quantity") FILTER (WHERE t."type" = 'OUT'), 0)::int AS "outQty",
+           count(*) FILTER (WHERE t."type" = 'ADJUSTMENT')::int AS "adjustmentCount",
+           count(*)::int AS "total"
+    FROM "stock_transactions" t
+    JOIN "users" u ON u."id" = t."createdById"
+    WHERE t."createdAt" >= ${from} AND t."createdAt" <= ${to}
+    GROUP BY u."id", u."name", u."role"
+    ORDER BY "total" DESC
+  `);
 }
 
 export async function listDnsReport(

@@ -73,6 +73,52 @@ export const periodSummarySchema = z.object({
   }),
 });
 
+export const stockTrendSchema = z.object({
+  query: z.object({
+    from: z.string().trim().optional(),
+    to: z.string().trim().optional(),
+    bucket: z.enum(["day", "week", "month"]).optional(),
+  }),
+});
+
+export const poSummarySchema = z.object({
+  query: z.object({
+    from: z.string().trim().optional(),
+    to: z.string().trim().optional(),
+  }),
+});
+
+export const dnSummarySchema = z.object({
+  query: z.object({
+    from: z.string().trim().optional(),
+    to: z.string().trim().optional(),
+  }),
+});
+
+export const stockCardSchema = z.object({
+  query: z.object({
+    productName: z.string().trim().min(1),
+    from: z.string().trim().optional(),
+    to: z.string().trim().optional(),
+  }),
+});
+
+export const movementAnalysisSchema = z.object({
+  query: z.object({
+    from: z.string().trim().optional(),
+    to: z.string().trim().optional(),
+    deadDays: z.coerce.number().int().positive().max(3650).optional(),
+    top: z.coerce.number().int().positive().max(50).optional(),
+  }),
+});
+
+export const userActivitySchema = z.object({
+  query: z.object({
+    from: z.string().trim().optional(),
+    to: z.string().trim().optional(),
+  }),
+});
+
 const poStatuses = z.preprocess(
   (value) =>
     typeof value === "string"

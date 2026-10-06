@@ -1,0 +1,6 @@
+@reference "../../index.css";
+
+.chart {
+  @apply w-full;
+  min-height: 260px;
+}

@@ -1,11 +1,19 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowsClockwise, PencilSimple, Prohibit, UploadSimple } from "@phosphor-icons/react";
+import {
+  ArrowsClockwise,
+  MagnifyingGlass,
+  PencilSimple,
+  Prohibit,
+  UploadSimple,
+  X,
+} from "@phosphor-icons/react";
 import { knowledgeApi } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { qk } from "@/hooks/queryKeys";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Button } from "@/components/ui/Button";
+import { Combobox } from "@/components/ui/Combobox";
 import { ErrorText, Field, Input, Select, Textarea } from "@/components/ui/Input";
 import { DataTable, Pagination, type Column } from "@/components/ui/Table";
 import { Modal, ConfirmModal } from "@/components/ui/Modal";
@@ -279,21 +287,17 @@ function DocumentsTab() {
           }}
           className="filter-bar__search"
         />
-        <Select
+        <Combobox
+          className="filter-bar__select"
           aria-label="Filter jenis"
           value={docType}
-          onChange={(e) => {
-            setDocType(e.target.value);
+          onChange={(next) => {
+            setDocType(next);
             setPage(1);
           }}
-        >
-          <option value="">Semua jenis</option>
-          {DOC_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {docTypeLabel[t]}
-            </option>
-          ))}
-        </Select>
+          placeholder="Semua jenis"
+          options={DOC_TYPES.map((t) => ({ value: t, label: docTypeLabel[t] }))}
+        />
         <Button onClick={openCreate}>
           <UploadSimple size={16} /> Unggah Dokumen
         </Button>
@@ -438,6 +442,11 @@ function IndexTab() {
     queryFn: () => knowledgeApi.chunks(filters),
   });
 
+  const selectType = (value: string) => {
+    setDocType(value);
+    setPage(1);
+  };
+
   const columns: Column<KnowledgeChunkRow>[] = [
     {
       key: "source",
@@ -457,6 +466,8 @@ function IndexTab() {
     { key: "created", header: "Diindeks", render: (r) => formatDateTime(r.createdAt) },
   ];
 
+  const total = data?.meta?.total ?? 0;
+
   return (
     <>
       <div className="knowledge-stats">
@@ -466,43 +477,99 @@ function IndexTab() {
       </div>
 
       {stats && stats.byType.length > 0 && (
-        <div className="knowledge-typestats">
-          {stats.byType.map((t) => (
-            <span key={t.docType ?? "lainnya"} className="knowledge-typestat">
-              <Badge tone="blue">{t.docType ? (docTypeLabel[t.docType] ?? t.docType) : "lainnya"}</Badge>
-              {t.documents} dok · {t.chunks} chunk
+        <section className="knowledge-typestats" aria-label="Sebaran jenis dokumen">
+          <div className="knowledge-typestats__head">
+            <h2 className="knowledge-typestats__title">Sebaran jenis</h2>
+            <span className="knowledge-typestats__total">
+              {stats.totalDocuments} dokumen · {stats.totalChunks} chunk
             </span>
-          ))}
-        </div>
+          </div>
+          <div className="knowledge-chips">
+            <button
+              type="button"
+              className={["knowledge-chip", docType === "" && "is-active"].filter(Boolean).join(" ")}
+              aria-pressed={docType === ""}
+              onClick={() => selectType("")}
+            >
+              <span className="knowledge-chip__label">Semua</span>
+              <span className="knowledge-chip__meta">{stats.totalChunks} chunk</span>
+            </button>
+            {stats.byType.map((t) => {
+              const clickable = Boolean(t.docType);
+              return (
+                <button
+                  key={t.docType ?? "lainnya"}
+                  type="button"
+                  className={[
+                    "knowledge-chip",
+                    clickable && docType === t.docType && "is-active",
+                    !clickable && "is-static",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  aria-pressed={clickable ? docType === t.docType : undefined}
+                  disabled={!clickable}
+                  onClick={() => clickable && selectType(t.docType as string)}
+                >
+                  <span className="knowledge-chip__label">
+                    {t.docType ? (docTypeLabel[t.docType] ?? t.docType) : "Lainnya"}
+                  </span>
+                  <span className="knowledge-chip__meta">
+                    {t.documents} dok · {t.chunks} chunk
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
       )}
 
-      <div className="filter-bar">
-        <Input
-          aria-label="Cari isi chunk"
-          placeholder="Cari isi chunk..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="filter-bar__search"
-        />
-        <Select
+      <div className="knowledge-filters">
+        <div className="knowledge-search">
+          <MagnifyingGlass size={16} className="knowledge-search__icon" aria-hidden="true" />
+          <Input
+            aria-label="Cari isi chunk"
+            placeholder="Cari isi chunk..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="knowledge-search__input"
+          />
+          {search && (
+            <button
+              type="button"
+              className="knowledge-search__clear"
+              aria-label="Bersihkan pencarian"
+              onClick={() => {
+                setSearch("");
+                setPage(1);
+              }}
+            >
+              <X size={14} weight="bold" />
+            </button>
+          )}
+        </div>
+        <Combobox
+          className="knowledge-filters__select"
           aria-label="Filter jenis"
           value={docType}
-          onChange={(e) => {
-            setDocType(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">Semua jenis</option>
-          {DOC_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {docTypeLabel[t]}
-            </option>
-          ))}
-        </Select>
+          onChange={selectType}
+          placeholder="Semua jenis"
+          options={DOC_TYPES.map((t) => ({ value: t, label: docTypeLabel[t] }))}
+        />
       </div>
+
+      <p className="knowledge-filters__summary" aria-live="polite">
+        {isLoading
+          ? "Memuat chunk…"
+          : total === 0
+            ? "Tidak ada chunk yang cocok"
+            : `${total} chunk${debouncedSearch ? ` untuk “${debouncedSearch}”` : ""}${
+                docType ? ` · ${docTypeLabel[docType] ?? docType}` : ""
+              }`}
+      </p>
 
       <DataTable
         columns={columns}
@@ -510,6 +577,20 @@ function IndexTab() {
         loading={isLoading}
         rowKey={(r) => r.id}
         empty="Belum ada chunk terindeks"
+        mobileCard={(r) => (
+          <div>
+            <div className="data-table__card-head">
+              <span className="data-table__card-title">{r.title ?? r.source}</span>
+              {r.docType ? (
+                <Badge tone="indigo">{docTypeLabel[r.docType] ?? r.docType}</Badge>
+              ) : null}
+            </div>
+            <p className="knowledge-chunk-preview knowledge-chunk-preview--card">{r.content}</p>
+            <div className="data-table__card-meta">
+              <span>{formatDateTime(r.createdAt)}</span>
+            </div>
+          </div>
+        )}
       />
       <Pagination meta={data?.meta} onPage={setPage} />
     </>

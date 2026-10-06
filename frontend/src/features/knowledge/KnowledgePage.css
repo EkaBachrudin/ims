@@ -17,11 +17,80 @@
 }
 
 .knowledge-typestats {
-  @apply mt-4 flex flex-wrap gap-x-4 gap-y-2;
+  @apply mt-4 rounded-xl border border-border bg-surface p-4 shadow-card;
 }
 
-.knowledge-typestat {
-  @apply flex items-center gap-2 text-xs text-muted-foreground;
+.knowledge-typestats__head {
+  @apply mb-3 flex flex-wrap items-baseline justify-between gap-2;
+}
+
+.knowledge-typestats__title {
+  @apply text-sm font-semibold text-foreground;
+}
+
+.knowledge-typestats__total {
+  @apply text-xs text-muted-foreground;
+}
+
+.knowledge-chips {
+  @apply flex flex-wrap gap-2;
+}
+
+.knowledge-chip {
+  @apply inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-accent/40 hover:bg-accent-subtle hover:text-accent-subtle-foreground;
+}
+
+.knowledge-chip.is-active {
+  @apply border-accent/40 bg-accent-subtle text-accent-subtle-foreground;
+}
+
+.knowledge-chip.is-static {
+  @apply cursor-default opacity-70 hover:border-border hover:bg-muted hover:text-muted-foreground;
+}
+
+.knowledge-chip__label {
+  @apply font-medium text-foreground;
+}
+
+.knowledge-chip.is-active .knowledge-chip__label,
+.knowledge-chip.is-active .knowledge-chip__meta {
+  @apply text-accent-subtle-foreground;
+}
+
+.knowledge-chip__meta {
+  @apply tabular-nums;
+}
+
+.knowledge-filters {
+  @apply mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center;
+}
+
+.knowledge-search {
+  @apply relative w-full sm:max-w-sm;
+}
+
+.knowledge-search__icon {
+  @apply pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground;
+}
+
+.knowledge-search__input {
+  @apply pl-9;
+}
+
+.knowledge-search:has(.knowledge-search__clear) .knowledge-search__input {
+  @apply pr-9;
+}
+
+.knowledge-search__clear {
+  @apply absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground;
+}
+
+.knowledge-filters__select {
+  @apply sm:max-w-[200px];
+}
+
+.knowledge-filters__summary {
+  @apply mt-2 text-xs text-muted-foreground;
 }
 
 .knowledge-chunk-preview {
@@ -30,6 +99,10 @@
   overflow: hidden;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+
+.knowledge-chunk-preview--card {
+  @apply mt-1 max-w-none;
 }
 
 .knowledge-ingest-bar {

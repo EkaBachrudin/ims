@@ -3,6 +3,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { env } from "../../config/env";
 import { ingestPool } from "../db";
 import { getEmbeddings } from "./embeddings";
+import { runIngestJob } from "./ingestJobStore";
 import type { IngestFilter, IngestResult } from "../../application/ports/ingest";
 
 interface KnowledgeDoc {
@@ -139,7 +140,7 @@ async function main() {
   console.log("Mulai ingest knowledge base (dari tabel knowledge_documents)...");
   const pool = ingestPool();
   try {
-    const results = await runIngest(pool);
+    const results = await runIngestJob(pool);
     const total = results.reduce((sum, r) => sum + r.chunks, 0);
     console.log(`Selesai. Total ${total} chunk dari ${results.length} dokumen.`);
   } finally {

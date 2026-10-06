@@ -395,3 +395,19 @@ model DocumentChunk {
   @@index([documentId])
   @@map("document_chunks")
 }
+
+/// Riwayat job re-ingest knowledge base, ditulis oleh AI Agent (proses ingest).
+/// Menjadi satu sumber kebenaran "ingest terakhir" bagi tab Index & Ingest.
+model IngestJob {
+  id         String    @id @default(uuid())
+  status     String
+  filter     Json?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  error      String?
+  results    Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([startedAt])
+  @@map("ingest_jobs")
+}

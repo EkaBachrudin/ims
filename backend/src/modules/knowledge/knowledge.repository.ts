@@ -75,7 +75,7 @@ export interface ChunkStats {
 }
 
 export async function chunkStats(db: Db = prisma): Promise<ChunkStats> {
-  const [totals, byType] = await Promise.all([
+  const [totals, byType, latestJob] = await Promise.all([
     db.$queryRaw<{ chunks: number; documents: number; lastIngest: Date | null }[]>(Prisma.sql`
       SELECT count(*)::int AS chunks,
              count(DISTINCT "documentId")::int AS documents,
@@ -90,12 +90,21 @@ export async function chunkStats(db: Db = prisma): Promise<ChunkStats> {
       GROUP BY "docType"
       ORDER BY "docType"
     `),
+    db.$queryRaw<{ startedAt: Date; finishedAt: Date | null }[]>(Prisma.sql`
+      SELECT "startedAt", "finishedAt"
+      FROM "ingest_jobs"
+      ORDER BY "startedAt" DESC
+      LIMIT 1
+    `),
   ]);
 
+  const job = latestJob[0];
   return {
     totalChunks: totals[0]?.chunks ?? 0,
     totalDocuments: totals[0]?.documents ?? 0,
-    lastIngest: totals[0]?.lastIngest ?? null,
+    // Prioritaskan waktu job ingest terakhir (sumber yang sama dengan tab Ingest);
+    // fallback ke waktu tulis chunk terbaru untuk data lama/hasil CLI.
+    lastIngest: job ? (job.finishedAt ?? job.startedAt) : (totals[0]?.lastIngest ?? null),
     byType,
   };
 }

@@ -9,6 +9,7 @@ export async function resetDb() {
        "refresh_tokens",
        "ai_conversation_logs",
        "audit_logs",
+       "ingest_jobs",
        "document_chunks",
        "knowledge_documents",
        "stock_transactions",

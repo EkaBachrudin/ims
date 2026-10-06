@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../../src/app";
+import { prisma } from "../../src/infrastructure/prisma/client";
 import { loginAs, resetDb, seedBaseline } from "../helpers/db";
 
 const app = createApp();
@@ -61,5 +62,22 @@ describe("Knowledge Base API", () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveProperty("totalChunks");
     expect(res.body.data).toHaveProperty("byType");
+  });
+
+  it("menampilkan waktu ingest terakhir dari job terbaru", async () => {
+    await prisma.$executeRaw`
+      INSERT INTO "ingest_jobs" ("id", "status", "startedAt", "finishedAt", "createdAt")
+      VALUES (
+        'test-job-1',
+        'done',
+        ${new Date("2026-10-06T08:02:00.000Z")},
+        ${new Date("2026-10-06T08:02:30.000Z")},
+        now()
+      )
+    `;
+
+    const res = await request(app).get("/api/knowledge/stats").set(superBearer());
+    expect(res.status).toBe(200);
+    expect(new Date(res.body.data.lastIngest).toISOString()).toBe("2026-10-06T08:02:30.000Z");
   });
 });

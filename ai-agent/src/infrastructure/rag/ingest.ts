@@ -15,8 +15,31 @@ interface KnowledgeDoc {
   version: number;
 }
 
-function hashContent(content: string): string {
-  return createHash("sha256").update(content).digest("hex");
+function hashDoc(doc: KnowledgeDoc): string {
+  const payload = JSON.stringify({
+    content: doc.content,
+    title: doc.title,
+    docType: doc.docType,
+    metadata: doc.metadata ?? null,
+  });
+  return createHash("sha256").update(payload).digest("hex");
+}
+
+/**
+ * Bersihkan chunk yatim: milik dokumen yang sudah nonaktif (soft delete) atau
+ * sudah tidak ada. Dijalankan setiap ingest agar index RAG selalu selaras
+ * dengan dokumen aktif — termasuk saat re-ingest "semua" maupun per dokumen.
+ */
+export async function pruneOrphanChunks(pool: ReturnType<typeof ingestPool>): Promise<number> {
+  const res = await pool.query(
+    `DELETE FROM "document_chunks" c
+     WHERE c."documentId" IS NOT NULL
+       AND NOT EXISTS (
+         SELECT 1 FROM "knowledge_documents" kd
+         WHERE kd."id" = c."documentId" AND kd."isActive" = true
+       )`,
+  );
+  return res.rowCount ?? 0;
 }
 
 function splitDocument(title: string, content: string): Promise<string[]> {
@@ -38,6 +61,11 @@ export async function runIngest(
   pool: ReturnType<typeof ingestPool>,
   filter: IngestFilter = {},
 ): Promise<IngestResult[]> {
+  const pruned = await pruneOrphanChunks(pool);
+  if (pruned > 0) {
+    console.log(`  ↳ prune: ${pruned} chunk yatim dihapus.`);
+  }
+
   const conditions: string[] = [`"isActive" = true`];
   const params: unknown[] = [];
   if (filter.documentId) {
@@ -59,7 +87,7 @@ export async function runIngest(
   const results: IngestResult[] = [];
 
   for (const doc of rows) {
-    const contentHash = hashContent(doc.content);
+    const contentHash = hashDoc(doc);
     const existing = await pool.query(
       `SELECT 1 FROM "document_chunks" WHERE "documentId" = $1 AND "contentHash" = $2 LIMIT 1`,
       [doc.id, contentHash],

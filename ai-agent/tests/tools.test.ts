@@ -20,6 +20,7 @@ function makeDeps() {
     listDeliveryNotes: vi.fn(),
     getLowStock: vi.fn(),
     getDashboard: vi.fn(),
+    getPeriodSummary: vi.fn(),
     createPoDraft: vi.fn(),
     createDnDraft: vi.fn(),
   } as unknown as BackendGateway;
@@ -47,8 +48,6 @@ describe("buildTools", () => {
     expect(names).toEqual([
       "buat_draft_po",
       "buat_draft_surat_jalan",
-      "cari_laporan",
-      "cari_nama_produk",
       "cari_produk",
       "cari_sop",
       "cek_stok_barang",
@@ -62,6 +61,7 @@ describe("buildTools", () => {
       "list_transaksi",
       "rekap_pengiriman",
       "ringkasan_dashboard",
+      "ringkasan_periode",
       "stok_per_gudang",
       "stok_tipis",
     ]);
@@ -219,24 +219,6 @@ describe("routing & akses RAG", () => {
     return tool;
   }
 
-  it("cari_nama_produk mencari docType kamus-produk", async () => {
-    vi.mocked(deps.knowledge.search).mockResolvedValue([]);
-    await toolFor("cari_nama_produk").invoke({ q: "cumi2 beku" });
-    expect(deps.knowledge.search).toHaveBeenCalledWith(
-      "cumi2 beku",
-      expect.objectContaining({ docTypes: ["kamus-produk"] }),
-    );
-  });
-
-  it("cari_laporan mencari docType laporan", async () => {
-    vi.mocked(deps.knowledge.search).mockResolvedValue([]);
-    await toolFor("cari_laporan").invoke({ query: "tren bulan lalu" });
-    expect(deps.knowledge.search).toHaveBeenCalledWith(
-      "tren bulan lalu",
-      expect.objectContaining({ docTypes: ["laporan"] }),
-    );
-  });
-
   it("ADMIN tidak diberi akses docType sensitif", async () => {
     vi.mocked(deps.knowledge.search).mockResolvedValue([]);
     await toolFor("cari_sop", "ADMIN").invoke({ query: "syarat bayar supplier" });
@@ -278,6 +260,34 @@ describe("cari_produk", () => {
     expect(String(result)).toContain("Air Mineral Botol 1 Liter");
     expect(String(result)).toContain("294");
     expect(deps.backend.listProducts).toHaveBeenCalledWith({ q: "air" });
+  });
+});
+
+describe("ringkasan_periode", () => {
+  it("merangkum barang masuk/keluar & partner terbanyak untuk periode", async () => {
+    vi.mocked(deps.backend.getPeriodSummary).mockResolvedValue({
+      from: "2026-09-01",
+      to: "2026-09-30",
+      totalProducts: 12,
+      activePOs: 3,
+      lowStockCount: 2,
+      inbound: { quantity: 500, count: 8 },
+      outbound: { quantity: 320, count: 5 },
+      topPartners: [{ partner: "Agen Bahari", quantity: 200 }],
+    });
+
+    const result = await findTool("ringkasan_periode").invoke({
+      from: "2026-09-01",
+      to: "2026-09-30",
+    });
+
+    expect(String(result)).toContain("2026-09-01");
+    expect(String(result)).toContain("500");
+    expect(String(result)).toContain("Agen Bahari");
+    expect(deps.backend.getPeriodSummary).toHaveBeenCalledWith({
+      from: "2026-09-01",
+      to: "2026-09-30",
+    });
   });
 });
 

@@ -9,8 +9,6 @@ export const DOC_TYPES = [
   "onboarding",
   "catatan-partner",
   "kontrak",
-  "kamus-produk",
-  "laporan",
 ] as const;
 
 export const docTypeSchema = z.enum(DOC_TYPES);

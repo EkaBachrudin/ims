@@ -13,6 +13,7 @@ import {
   type DnListInput,
   type InventoryInput,
   type PartnerSearchInput,
+  type PeriodSummaryInput,
   type PoDetailInput,
   type PoListInput,
   type PoStatusListInput,
@@ -23,6 +24,7 @@ import {
   dnListSchema,
   inventorySchema,
   partnerSearchSchema,
+  periodSummarySchema,
   poDetailSchema,
   poListSchema,
   poStatusListSchema,
@@ -287,6 +289,29 @@ export function buildReadTools({ backend }: ReadToolDeps) {
     },
   });
 
+  const periodSummary = new DynamicStructuredTool({
+    name: "ringkasan_periode",
+    description:
+      "Menampilkan ringkasan/tren suatu PERIODE (rentang tanggal): total barang masuk & keluar (unit dan jumlah transaksi), partner pengiriman terbanyak, total produk, PO aktif, dan stok tipis. Gunakan untuk pertanyaan seperti 'pengiriman bulan lalu' atau 'kinerja minggu ini'. Kosongkan from/to untuk periode bulan berjalan sampai hari ini.",
+    schema: periodSummarySchema,
+    func: async (input: PeriodSummaryInput): Promise<string> => {
+      const d = await backend.getPeriodSummary({ from: input.from, to: input.to });
+      const partners = d.topPartners.length
+        ? d.topPartners.map((p) => `  – ${p.partner}: ${p.quantity} unit`).join("\n")
+        : "  – Belum ada pengiriman.";
+      return [
+        `Ringkasan periode ${d.from} s/d ${d.to}:`,
+        `• Total produk: ${d.totalProducts}`,
+        `• PO aktif: ${d.activePOs}`,
+        `• Produk stok tipis: ${d.lowStockCount}`,
+        `• Barang masuk: ${d.inbound.quantity} unit (${d.inbound.count} transaksi)`,
+        `• Barang keluar: ${d.outbound.quantity} unit (${d.outbound.count} transaksi)`,
+        "Pengiriman terbanyak:",
+        partners,
+      ].join("\n");
+    },
+  });
+
   return [
     checkStock,
     shipmentRecap,
@@ -302,5 +327,6 @@ export function buildReadTools({ backend }: ReadToolDeps) {
     listDeliveryNotes,
     lowStock,
     dashboardSummary,
+    periodSummary,
   ];
 }

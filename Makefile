@@ -8,7 +8,7 @@ COMPOSE_PROD := $(COMPOSE) -f docker-compose.yml -f docker-compose.prod.yml
 .PHONY: help env setup db-up db-wait db-down db-shell migrate migrate-deploy \
         seed shell-backend db-reset test-db \
         dev dev-down dev-logs dev-backend dev-frontend dev-ai-agent \
-        rag-ingest rag-import-docs rag-generate-kamus rag-generate-laporan \
+        rag-ingest rag-import-docs \
         lint typecheck test build up down logs ps \
         prod prod-down prod-logs prod-seed prod-rag-ingest \
         nuke nuke-global
@@ -113,14 +113,6 @@ rag-ingest: env
 ## rag-import-docs: impor docs/knowledge/*.md ke tabel knowledge_documents (sekali, via Docker)
 rag-import-docs: env
 	$(COMPOSE_DEV) run --rm ai-agent npm run rag:import-docs
-
-## rag-generate-kamus: generate dokumen kamus produk dari katalog & ingest (via Docker)
-rag-generate-kamus: env
-	$(COMPOSE_DEV) run --rm ai-agent npm run rag:generate-kamus
-
-## rag-generate-laporan: generate laporan naratif periode berjalan & ingest (via Docker)
-rag-generate-laporan: env
-	$(COMPOSE_DEV) run --rm ai-agent npm run rag:generate-laporan
 
 # -------------------------------------------------------------- Quality ----
 

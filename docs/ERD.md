@@ -423,12 +423,12 @@ Menyimpan akun pengguna dashboard & pemetaan kanal chat.
 
 ### 3.15 `KnowledgeDocument` (Knowledge Base — Source of Truth)
 
-Menyimpan dokumen knowledge base (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak, kamus produk, laporan). Dikelola dari halaman web **Knowledge Base** oleh `SUPER_ADMIN`; dokumen ini menjadi **sumber** yang kemudian di-*ingest* ke `DocumentChunk`.
+Menyimpan dokumen knowledge base (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak). Dikelola dari halaman web **Knowledge Base** oleh `SUPER_ADMIN`; dokumen ini menjadi **sumber** yang kemudian di-*ingest* ke `DocumentChunk`.
 
 | Column         | Type          | Constraint        | Description                                             |
 | :------------- | :------------ | :---------------- | :------------------------------------------------------ |
 | `id`           | UUID (String) | PK                | Identitas dokumen.                                      |
-| `filename`     | String        | not null          | Nama berkas (mis. `sop-retur-barang.md`, `kamus-produk.md`). |
+| `filename`     | String        | not null          | Nama berkas (mis. `sop-retur-barang.md`).               |
 | `title`        | String        | not null          | Judul dokumen.                                          |
 | `docType`      | String        | not null, default `sop` | Jenis dokumen (lihat daftar di catatan).          |
 | `content`      | String        | not null          | Isi lengkap dokumen.                                    |
@@ -439,7 +439,7 @@ Menyimpan dokumen knowledge base (SOP, kebijakan, runbook, panduan, onboarding, 
 | `createdAt`    | DateTime      | default now()     | Timestamp dibuat.                                       |
 | `updatedAt`    | DateTime      | updatedAt         | Timestamp diperbarui.                                   |
 
-> **`docType`** berupa string (bukan enum) dengan nilai yang dipakai: `sop`, `faq`, `kebijakan`, `runbook`, `panduan-produk`, `onboarding`, `catatan-partner`, `kontrak`, `kamus-produk`, `laporan`. Jenis `catatan-partner` dan `kontrak` dibatasi aksesnya (hanya `OWNER`/`SUPER_ADMIN`).
+> **`docType`** berupa string (bukan enum) dengan nilai yang dipakai: `sop`, `faq`, `kebijakan`, `runbook`, `panduan-produk`, `onboarding`, `catatan-partner`, `kontrak`. Jenis `catatan-partner` dan `kontrak` dibatasi aksesnya (hanya `OWNER`/`SUPER_ADMIN`).
 
 ### 3.16 `DocumentChunk` (Knowledge Base Index — pgvector)
 
@@ -964,14 +964,13 @@ model DocumentChunk {
 | Delivery notes list     | `list_surat_jalan` | `deliveryNote.findMany({ where: { status, partnerId, shipDate range }, include: { po, partner, warehouse, items.product } })`. |
 | Low stock               | `stok_tipis`       | `product.findMany()` lalu filter `stock <= minStock`.                        |
 | Dashboard summary       | `ringkasan_dashboard` | Agregasi `product.count`, `purchaseOrder.count`, `stockTransaction.count` + transaksi terbaru. |
+| Period summary          | `ringkasan_periode` | Agregasi `stockTransaction` (IN/OUT sum+count) per rentang, top partner OUT (`groupBy`), `product.count`, `purchaseOrder.count`, low-stock. |
 | Create PO draft         | `buat_draft_po`    | Find `partner` + `product` by name, then `purchaseOrder.create({ status: DRAFT, source: AI_CHAT, items: { create: [...] } })`. |
 | Create DN draft         | `buat_draft_surat_jalan` | Find `partner` (wajib CUSTOMER) + `product` + `warehouse` by name, then `deliveryNote.create({ status: DRAFT, items: { create: [...] } })` (stok belum berubah). |
 
 | Scenario (RAG)          | Tool               | Data Access (langsung, read-only)                                            |
 | :---------------------- | :----------------- | :--------------------------------------------------------------------------- |
 | Tanya SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak | `cari_sop` (`docType?`) | Hybrid: ranking vektor (`embedding <=> :query`) + full-text (`content_tsv @@ plainto_tsquery`) dengan ambang skor, filter `docType`, `LIMIT :topK` (role read-only). |
-| Nama produk dari kamus/sinonim | `cari_nama_produk` | Retrieval `document_chunks` dengan `docType = 'kamus-produk'`. |
-| Laporan naratif historis | `cari_laporan`   | Retrieval `document_chunks` dengan `docType = 'laporan'`.                    |
 
 > AI **tidak** menulis SQL langsung untuk data bisnis. Akses data bisnis melalui backend API/tools yang divalidasi (BR-RULE-007, FSD §10). Akses langsung DB hanya untuk retrieval vector, tanpa hak tulis.
 

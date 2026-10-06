@@ -47,8 +47,6 @@ export const KNOWLEDGE_DOC_TYPES = [
   "onboarding",
   "catatan-partner",
   "kontrak",
-  "kamus-produk",
-  "laporan",
 ] as const;
 
 export const sopSchema = z.object({
@@ -62,20 +60,6 @@ export const sopSchema = z.object({
     ),
 });
 export type SopInput = z.infer<typeof sopSchema>;
-
-export const kamusSchema = z.object({
-  q: z
-    .string()
-    .describe("Nama produk informal/typo dari user, mis. 'cumi2 beku 1 kilo', 'bubur pedas'"),
-});
-export type KamusInput = z.infer<typeof kamusSchema>;
-
-export const laporanSchema = z.object({
-  query: z
-    .string()
-    .describe("Topik/periode laporan, mis. 'pengiriman bulan lalu', 'kinerja minggu ini'"),
-});
-export type LaporanInput = z.infer<typeof laporanSchema>;
 
 export const productSearchSchema = z.object({
   q: z
@@ -111,6 +95,20 @@ export const transactionSchema = z.object({
   partnerName: z.string().optional().nullable().describe("Nama partner/supplier/customer (opsional)"),
 });
 export type TransactionInput = z.infer<typeof transactionSchema>;
+
+export const periodSummarySchema = z.object({
+  from: z
+    .string()
+    .optional()
+    .nullable()
+    .describe("Tanggal awal periode format YYYY-MM-DD. Kosongkan untuk awal bulan berjalan."),
+  to: z
+    .string()
+    .optional()
+    .nullable()
+    .describe("Tanggal akhir periode format YYYY-MM-DD. Kosongkan untuk hari ini."),
+});
+export type PeriodSummaryInput = z.infer<typeof periodSummarySchema>;
 
 export const poListSchema = z.object({
   partnerName: z.string().optional().nullable().describe("Nama supplier (opsional)"),

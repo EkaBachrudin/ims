@@ -14,6 +14,11 @@ const envSchema = z.object({
   // Kosong = notifikasi Telegram ke admin/owner dinonaktifkan.
   AI_AGENT_URL: z.string().default(""),
   WEB_APP_URL: z.string().default("http://localhost:5173"),
+  // Re-ingest otomatis knowledge base saat dokumen dibuat/diubah/dinonaktifkan.
+  RAG_AUTO_INGEST: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((v) => v === "true"),
 });
 
 const parsed = envSchema.safeParse(process.env);

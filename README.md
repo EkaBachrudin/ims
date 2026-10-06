@@ -78,7 +78,7 @@ Proyek ini menghadirkan **WMS berbasis web** untuk staf admin gudang, yang dihub
 - **Intent-to-action** — perintah chat dapat memicu pembuatan draft PO di sistem.
 - **Notifikasi Telegram** — saat owner membuat draft PO via chat, admin gudang menerima pesan bot berisi ringkasan PO + tombol tautan langsung ke halaman detail untuk konfirmasi & terima barang; owner dikabari saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai (`COMPLETED`).
 
-> **Catatan:** seluruh pembacaan data bisnis (produk, kategori, partner, gudang, transaksi, PO, surat jalan, laporan) dilakukan lewat Backend API (`/reports/*`) dengan **internal key**. Data transaksional **tidak** di-embed ke vector store; yang di-RAG adalah dokumen `knowledge_documents` (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak, kamus produk, laporan) yang dikelola dari halaman Knowledge Base.
+> **Catatan:** seluruh pembacaan data bisnis (produk, kategori, partner, gudang, transaksi, PO, surat jalan, laporan) dilakukan lewat Backend API (`/reports/*`) dengan **internal key**. Data transaksional **tidak** di-embed ke vector store; yang di-RAG adalah dokumen `knowledge_documents` statis (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak) yang dikelola dari halaman Knowledge Base. Kamus produk & laporan/tren periode diambil live via tool data (`cari_produk`, `ringkasan_periode`), bukan RAG.
 
 ---
 
@@ -216,16 +216,22 @@ dan siapkan knowledge base lewat container:
 make seed
 make rag-import-docs      # impor dokumen statis docs/knowledge → knowledge_documents
 make rag-ingest           # embed knowledge_documents → document_chunks
-# opsional: generate dari Backend API lalu ingest otomatis
-make rag-generate-kamus
-make rag-generate-laporan
 ```
+
+Kamus produk & laporan periode tidak lagi di-ingest: diambil live oleh tool
+`cari_produk` dan `ringkasan_periode`. RAG hanya untuk dokumen statis (SOP,
+kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak).
 
 Target lain yang sering dipakai: `make dev-logs`, `make shell-backend`,
 `make ps`.
 
+Di halaman **Knowledge Base** (SUPER_ADMIN), menyimpan/mengubah/menonaktifkan
+dokumen otomatis memicu re-ingest (best-effort, `RAG_AUTO_INGEST`, default
+`true`). Ingest juga memangkas *chunk* dokumen yang sudah nonaktif/hilang.
+
 > **Produksi / tanpa hot reload:** `make up` (build & jalankan detached) dan
-> `make down`.
+> `make down`. Untuk knowledge base: `make prod-rag-ingest` (migrate + impor
+> docs + ingest).
 
 ---
 

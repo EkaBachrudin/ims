@@ -603,7 +603,7 @@ sequenceDiagram
 
 ### B.5 Alur Jawab SOP via RAG (Read-Only)
 
-> *Catatan pembaruan implementasi:* retrieval kini hybrid (vector + full-text) dengan ambang skor dan filter `docType`, serta tool `cari_nama_produk`/`cari_laporan`. Lihat **Lampiran C**.
+> *Catatan pembaruan implementasi:* retrieval kini hybrid (vector + full-text) dengan ambang skor dan filter `docType`. Kamus produk & laporan/tren periode diambil live via tool data (`cari_produk`, `ringkasan_periode`), bukan RAG. Lihat **Lampiran C**.
 
 ```mermaid
 sequenceDiagram
@@ -826,9 +826,11 @@ Dokumen knowledge kini disimpan pada tabel **`knowledge_documents`** (*source of
 ### C.3 Pipeline ingest
 
 - `runIngest` membaca `knowledge_documents` (aktif), memotong teks (markdown-aware, judul disisipkan), meng-embed, lalu menulis `document_chunks` **dalam transaksi**.
-- **Idempoten** via `contentHash` (SHA-256): dokumen yang isinya tak berubah dilewati.
+- **Idempoten** via `contentHash` (SHA-256 atas `content + title + docType + metadata`): dokumen yang tak berubah dilewati.
+- **Prune** chunk yatim (dokumen nonaktif/hilang) dijalankan setiap ingest agar index tetap selaras; menghapus dokumen juga membersihkan chunk-nya.
 - Dijalankan lewat **job runner** + endpoint internal AI Agent `POST /ingest` dan `GET /ingest/status` (dipanggil backend, header `x-internal-key`).
-- CLI/target: `rag-import-docs` (impor dokumen statis), `rag-ingest` (bangun index), `rag-generate-kamus` & `rag-generate-laporan` (generate dari Backend API lalu ingest otomatis). Re-ingest juga dapat dipicu dari UI.
+- Backend memicu re-ingest **otomatis (best-effort)** saat dokumen dibuat/diubah/dinonaktifkan dari UI (`RAG_AUTO_INGEST`, default `true`), selain tombol re-ingest manual.
+- CLI/target: `rag-import-docs` (impor dokumen statis), `rag-ingest` (bangun index). Re-ingest juga dapat dipicu dari UI.
 
 ### C.4 Retrieval
 
@@ -840,7 +842,7 @@ Dokumen knowledge kini disimpan pada tabel **`knowledge_documents`** (*source of
 ### C.5 Tools & kontrol akses
 
 - `cari_sop` dengan parameter `docType` (sop, faq, kebijakan, runbook, panduan-produk, onboarding, catatan-partner, kontrak).
-- `cari_nama_produk` (kamus produk) dan `cari_laporan` (laporan naratif).
+- Kamus produk & laporan/tren periode diambil live (bukan RAG): `cari_produk` (resolver nama) dan `ringkasan_periode` (`GET /reports/period-summary`).
 - Dokumen sensitif (`catatan-partner`, `kontrak`) hanya dapat diakses `OWNER`/`SUPER_ADMIN`; role diteruskan dari `handleMessage` → `runAgent` → `buildTools`.
 
 ### C.6 Variabel environment & perintah tambahan
@@ -850,8 +852,9 @@ Dokumen knowledge kini disimpan pada tabel **`knowledge_documents`** (*source of
 | `AGENT_TOP_K` | `5` | Jumlah chunk konteks per kueri. |
 | `RAG_MIN_SCORE` | `0.3` | Ambang skor cosine minimal. |
 | `RAG_HYBRID` | `true` | Hybrid vector + full-text. |
+| `RAG_AUTO_INGEST` | `true` | Re-ingest otomatis saat dokumen dibuat/diubah/dinonaktifkan dari UI. |
 
-Perintah: `make rag-import-docs`, `make rag-ingest`, `make rag-generate-kamus`, `make rag-generate-laporan` (dan `prod-rag-ingest` untuk produksi).
+Perintah: `make rag-import-docs`, `make rag-ingest` (dan `prod-rag-ingest` untuk produksi).
 
 ### C.7 Verifikasi tambahan
 

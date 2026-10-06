@@ -14,6 +14,7 @@ import type {
   LowStockRow,
   PartnerListFilter,
   PartnerRow,
+  PeriodSummary,
   PoDetail,
   PoListFilter,
   PoListRow,
@@ -158,6 +159,13 @@ export const backendGateway: BackendGateway = {
   async getDashboard() {
     const { data } = await backend.get("/reports/dashboard");
     return data.data as Dashboard;
+  },
+
+  async getPeriodSummary(filter) {
+    const { data } = await backend.get("/reports/period-summary", {
+      params: cleanParams({ from: filter.from, to: filter.to }),
+    });
+    return data.data as PeriodSummary;
   },
 
   async createPoDraft(input) {

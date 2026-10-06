@@ -239,6 +239,25 @@ describe("Reports read endpoints (AI Agent)", () => {
     expect(dash.body.data.totalProducts).toBeGreaterThan(0);
   });
 
+  it("meringkas periode (barang masuk/keluar) untuk rentang tanggal", async () => {
+    const res = await request(app)
+      .get("/api/reports/period-summary?from=2026-01-01&to=2026-12-31")
+      .set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.from).toBe("2026-01-01");
+    expect(res.body.data.to).toBe("2026-12-31");
+    expect(res.body.data.inbound.quantity).toBeGreaterThanOrEqual(15);
+    expect(res.body.data.outbound.quantity).toBeGreaterThanOrEqual(12);
+    expect(res.body.data.totalProducts).toBeGreaterThan(0);
+    expect(Array.isArray(res.body.data.topPartners)).toBe(true);
+  });
+
+  it("memakai periode bulan berjalan bila from/to kosong", async () => {
+    const res = await request(app).get("/api/reports/period-summary").set(internal);
+    expect(res.status).toBe(200);
+    expect(res.body.data.from).toMatch(/-01$/);
+  });
+
   it("tetap dapat diakses web via Bearer token", async () => {
     const res = await request(app).get("/api/reports/products").set(bearer());
     expect(res.status).toBe(200);

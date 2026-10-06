@@ -110,6 +110,46 @@ export function countTransactions(type: TransactionType, from: Date, to: Date, d
   return db.stockTransaction.count({ where: { type, createdAt: { gte: from, lte: to } } });
 }
 
+function dateRangeFilter(from?: Date, to?: Date): Prisma.DateTimeFilter | undefined {
+  if (!from && !to) return undefined;
+  return { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) };
+}
+
+export function sumTransactions(type: TransactionType, from?: Date, to?: Date, db: Db = prisma) {
+  const createdAt = dateRangeFilter(from, to);
+  return db.stockTransaction.aggregate({
+    where: { type, ...(createdAt ? { createdAt } : {}) },
+    _sum: { quantity: true },
+    _count: true,
+  });
+}
+
+export async function topOutboundPartners(from?: Date, to?: Date, take = 5, db: Db = prisma) {
+  const createdAt = dateRangeFilter(from, to);
+  const grouped = await db.stockTransaction.groupBy({
+    by: ["partnerId"],
+    where: { type: "OUT", partnerId: { not: null }, ...(createdAt ? { createdAt } : {}) },
+    _sum: { quantity: true },
+    orderBy: { _sum: { quantity: "desc" } },
+    take,
+  });
+  const partnerIds = grouped
+    .map((g) => g.partnerId)
+    .filter((id): id is string => Boolean(id));
+  if (partnerIds.length === 0) return [];
+  const partners = await db.partner.findMany({
+    where: { id: { in: partnerIds } },
+    select: { id: true, name: true },
+  });
+  const nameById = new Map(partners.map((p) => [p.id, p.name]));
+  return grouped
+    .filter((g): g is typeof g & { partnerId: string } => Boolean(g.partnerId))
+    .map((g) => ({
+      partner: nameById.get(g.partnerId) ?? "-",
+      quantity: g._sum.quantity ?? 0,
+    }));
+}
+
 export function findRecentTransactions(take: number, db: Db = prisma) {
   return db.stockTransaction.findMany({
     orderBy: { createdAt: "desc" },

@@ -7,6 +7,7 @@ import {
   dnListReportSchema,
   inventoryReportSchema,
   partnerCatalogSchema,
+  periodSummarySchema,
   poListReportSchema,
   poNumberParamSchema,
   productCatalogSchema,
@@ -36,6 +37,12 @@ reportsRouter.get("/stock", validate(stockReportSchema), asyncHandler(controller
 reportsRouter.get("/low-stock", asyncHandler(controller.lowStock));
 
 reportsRouter.get("/dashboard", asyncHandler(controller.dashboard));
+
+reportsRouter.get(
+  "/period-summary",
+  validate(periodSummarySchema),
+  asyncHandler(controller.periodSummary),
+);
 
 // --- Endpoint baca untuk AI Agent (master data & transaksional) ---
 reportsRouter.get("/products", validate(productCatalogSchema), asyncHandler(controller.products));

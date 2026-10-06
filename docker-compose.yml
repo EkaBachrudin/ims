@@ -29,6 +29,7 @@ services:
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
       - AI_AGENT_URL=http://ai-agent:8080
       - WEB_APP_URL=${WEB_APP_URL:-http://localhost:5173}
+      - RAG_AUTO_INGEST=${RAG_AUTO_INGEST:-true}
     ports:
       - "${BACKEND_HOST_PORT:-3000}:3000"
     depends_on:

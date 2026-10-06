@@ -10,8 +10,6 @@
     "start": "node dist/index.js",
     "rag:ingest": "tsx src/infrastructure/rag/ingest.ts",
     "rag:import-docs": "tsx src/infrastructure/rag/importDocs.ts",
-    "rag:generate-kamus": "tsx src/infrastructure/rag/generateKamus.ts",
-    "rag:generate-laporan": "tsx src/infrastructure/rag/generateLaporan.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit",

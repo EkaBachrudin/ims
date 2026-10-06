@@ -11,7 +11,7 @@ export interface KnowledgeSearchOptions {
   topK?: number;
   /** Ambang skor cosine minimal (0-1). Default `RAG_MIN_SCORE`. */
   minScore?: number;
-  /** Batasi ke `docType` tertentu (mis. "kebijakan", "kamus-produk"). */
+  /** Batasi ke `docType` tertentu (mis. "kebijakan", "runbook"). */
   docTypes?: string[];
 }
 

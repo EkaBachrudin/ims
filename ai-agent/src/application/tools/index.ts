@@ -1,7 +1,7 @@
 import type { BackendGateway } from "../ports/backendGateway";
 import type { KnowledgeBase } from "../ports/knowledgeBase";
 import { buildReadTools } from "./read";
-import { buildKamusTool, buildLaporanTool, buildSopTool } from "./rag";
+import { buildSopTool } from "./rag";
 import { buildWriteTools } from "./write";
 
 export interface ToolDeps {
@@ -18,8 +18,6 @@ export function buildTools(deps: ToolDeps, chatId: string, role?: string | null)
     ...buildReadTools(deps),
     ...buildWriteTools(deps, chatId),
     buildSopTool(deps, role),
-    buildKamusTool(deps),
-    buildLaporanTool(deps),
   ];
 }
 

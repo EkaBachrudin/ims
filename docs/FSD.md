@@ -239,7 +239,7 @@ sequenceDiagram
 | FR-08.15 | AI membedakan barang masuk (IN) dan barang keluar (OUT), serta menyampaikan hasil kosong apa adanya (tidak mengarang, tidak menyerah selama masih ada tool relevan). | Must |
 | FR-08.16 | AI dapat membuat draft Surat Jalan (Delivery Note) dari instruksi bahasa natural untuk partner CUSTOMER; status selalu DRAFT (stok belum berubah). | Should |
 | FR-08.17 | Halaman web **Knowledge Base** (khusus `SUPER_ADMIN`) dapat menampilkan statistik index, mengelola (unggah/edit/nonaktifkan) dokumen `knowledge_documents`, dan memicu re-ingest (per dokumen atau semua). | Should |
-| FR-08.18 | AI dapat mencari nama produk katalog resmi dari kamus/sinonim (`cari_nama_produk`) dan laporan naratif historis (`cari_laporan`). | Should |
+| FR-08.18 | AI dapat mencari nama produk katalog resmi via `cari_produk` (resolver nama) dan ringkasan/tren periode via `ringkasan_periode` (agregasi transaksi live). | Should |
 
 **Intent → Tool Mapping**
 
@@ -262,8 +262,8 @@ sequenceDiagram
 | Create PO draft      | "Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum"    | `buat_draft_po`     | POST draft PO (partner supplier)|
 | Create DN draft      | "Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum"            | `buat_draft_surat_jalan` | POST draft DN (partner customer) |
 | SOP / knowledge       | "Apa SOP penerimaan barang retur?"                                 | `cari_sop` (`docType?`) | Hybrid retrieval `document_chunks` (read-only, threshold) |
-| Nama produk (kamus)   | "Buat PO cumi2 beku 1 kilo"                                        | `cari_nama_produk`  | Retrieval `document_chunks` docType `kamus-produk` |
-| Laporan naratif       | "Bagaimana tren pengiriman bulan lalu?"                            | `cari_laporan`      | Retrieval `document_chunks` docType `laporan` |
+| Nama produk (informal) | "Buat PO cumi2 beku 1 kilo"                                       | `cari_produk`       | GET katalog produk by kata kunci (resolver nama) |
+| Ringkasan periode     | "Bagaimana tren pengiriman bulan lalu?"                            | `ringkasan_periode` | GET `/reports/period-summary` (agregasi transaksi) |
 
 ### FR-09 — Dashboard & Reporting
 
@@ -533,8 +533,7 @@ flowchart LR
 | `buat_draft_po`       | Membuat draft Purchase Order (partner supplier) | `partnerName: string`, `items: {productName, qty}[]` | `POST /po/draft`                |
 | `buat_draft_surat_jalan` | Membuat draft Surat Jalan (partner customer) | `partnerName: string`, `items: {productName, qty}[]`, `shipDate?`, `warehouseCode?` | `POST /delivery-notes/draft` |
 | `cari_sop`            | Cari SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak (RAG) | `query: string`, `docType?: "sop"\|"faq"\|"kebijakan"\|"runbook"\|"panduan-produk"\|"onboarding"\|"catatan-partner"\|"kontrak"` | `document_chunks` (read-only, hybrid top-K + threshold) |
-| `cari_nama_produk`    | Cari nama produk katalog resmi dari kamus/sinonim (RAG) | `q: string`                            | `document_chunks` (docType `kamus-produk`) |
-| `cari_laporan`        | Cari laporan/ringkasan naratif historis (RAG) | `query: string`                                    | `document_chunks` (docType `laporan`) |
+| `ringkasan_periode`   | Ringkasan/tren periode (barang masuk/keluar, partner terbanyak, stok tipis) | `from?: string`, `to?: string` (YYYY-MM-DD) | `GET /reports/period-summary` |
 
 > Semua endpoint `/reports/*` menerima **Bearer token (web)** atau **`x-internal-key` (AI Agent)** via middleware `authenticateOrInternal`.
 

@@ -100,7 +100,7 @@ Kesenjangan antara **kompleksitas sistem** dan **kebiasaan komunikasi alami** pe
 2. **AI Chat Assistant** via Telegram (MVP) / WhatsApp (tahap lanjut):
    - Intent baca: cek stok & katalog produk, rekap pengiriman, transaksi barang masuk/keluar, daftar/detail PO, surat jalan, partner, gudang, stok tipis, dan ringkasan dashboard.
    - Intent tulis: buat draft PO, buat draft Surat Jalan.
-   - Tanya SOP/knowledge (kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak, kamus produk, laporan).
+   - Tanya SOP/knowledge (kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak).
    - Data bisnis diakses via *function/tool calling* ke backend API (bukan Text-to-SQL langsung).
    - Knowledge/SOP dijawab via **RAG retrieval** *read-only* dari vector store (`document_chunks`) dengan hybrid (vector + full-text) & ambang skor.
    - Knowledge base dikelola dari halaman web (khusus `SUPER_ADMIN`) dengan sumber dokumen pada tabel `knowledge_documents` dan re-ingest terpicu dari UI.

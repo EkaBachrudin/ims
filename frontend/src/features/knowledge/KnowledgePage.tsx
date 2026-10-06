@@ -22,9 +22,7 @@ const docTypeLabel: Record<string, string> = {
   "panduan-produk": "Panduan Produk",
   onboarding: "Onboarding",
   "catatan-partner": "Catatan Partner",
-  kontrak: "Kontrak",
-  "kamus-produk": "Kamus Produk",
-  laporan: "Laporan",
+  "kontrak": "Kontrak",
 };
 
 type Tab = "documents" | "index" | "ingest";
@@ -101,6 +99,7 @@ function DocumentsTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deactivating, setDeactivating] = useState<KnowledgeDocument | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const filters = {
     page,
@@ -139,6 +138,7 @@ function DocumentsTab() {
     onSuccess: () => {
       invalidate();
       closeForm();
+      setNotice("Dokumen disimpan — re-ingest dijadwalkan otomatis.");
     },
     onError: (e) => setError(errorMessage(e)),
   });
@@ -147,6 +147,7 @@ function DocumentsTab() {
     onSuccess: () => {
       invalidate();
       closeForm();
+      setNotice("Dokumen diperbarui — re-ingest dijadwalkan otomatis.");
     },
     onError: (e) => setError(errorMessage(e)),
   });
@@ -155,6 +156,7 @@ function DocumentsTab() {
     onSuccess: () => {
       invalidate();
       setDeactivating(null);
+      setNotice("Dokumen dinonaktifkan — chunk-nya dibersihkan dari index.");
     },
     onError: (e) => setError(errorMessage(e)),
   });
@@ -168,11 +170,13 @@ function DocumentsTab() {
     setForm(emptyForm);
     setFile(null);
     setError("");
+    setNotice("");
     setCreating(true);
   }
   function openEdit(doc: KnowledgeDocument) {
     setForm(emptyForm);
     setError("");
+    setNotice("");
     setEditingId(doc.id);
   }
   function closeForm() {
@@ -297,6 +301,8 @@ function DocumentsTab() {
 
       <ErrorText>{error && !creating && !editingId ? error : ""}</ErrorText>
 
+      {notice && <p className="knowledge-ingest-hint">{notice}</p>}
+
       <DataTable
         columns={columns}
         rows={data?.data ?? []}
@@ -409,7 +415,7 @@ function DocumentsTab() {
       <ConfirmModal
         open={Boolean(deactivating)}
         title="Nonaktifkan Dokumen"
-        message={`Nonaktifkan "${deactivating?.title}"? Dokumen tidak akan di-ingest pada re-ingest berikutnya.`}
+        message={`Nonaktifkan "${deactivating?.title}"? Dokumen akan dinonaktifkan dan chunk-nya dihapus dari index RAG.`}
         loading={removeMut.isPending}
         onClose={() => setDeactivating(null)}
         onConfirm={() => deactivating && removeMut.mutate(deactivating.id)}

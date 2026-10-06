@@ -1,15 +1,7 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { env } from "../../config/env";
 import type { KnowledgeBase, KnowledgeChunk } from "../ports/knowledgeBase";
-import {
-  KNOWLEDGE_DOC_TYPES,
-  type KamusInput,
-  type LaporanInput,
-  type SopInput,
-  kamusSchema,
-  laporanSchema,
-  sopSchema,
-} from "./schemas";
+import { KNOWLEDGE_DOC_TYPES, type SopInput, sopSchema } from "./schemas";
 
 export interface RagToolDeps {
   knowledge: KnowledgeBase;
@@ -53,35 +45,6 @@ export function buildSopTool({ knowledge }: RagToolDeps, role?: string | null) {
       const docTypes = input.docType ? [input.docType] : allowed;
       const chunks = await search(knowledge, input.query, docTypes);
       return formatChunks(chunks, "Tidak ada SOP/panduan yang relevan di knowledge base.");
-    },
-  });
-}
-
-export function buildKamusTool({ knowledge }: RagToolDeps) {
-  return new DynamicStructuredTool({
-    name: "cari_nama_produk",
-    description:
-      "Mencari nama produk KATALOG RESMI dari kamus/sinonim. Gunakan saat nama produk dari user informal/typo (mis. 'cumi2 beku 1 kilo', 'bubur pedas') untuk mendapatkan nama persis sebelum cek stok atau membuat PO/Surat Jalan.",
-    schema: kamusSchema,
-    func: async (input: KamusInput): Promise<string> => {
-      const chunks = await search(knowledge, input.q, ["kamus-produk"]);
-      return formatChunks(
-        chunks,
-        "Tidak ada padanan nama produk di kamus. Gunakan cari_produk dengan kata kunci pendek.",
-      );
-    },
-  });
-}
-
-export function buildLaporanTool({ knowledge }: RagToolDeps) {
-  return new DynamicStructuredTool({
-    name: "cari_laporan",
-    description:
-      "Mencari laporan/ringkasan naratif historis (tren, kinerja periode). Gunakan untuk pertanyaan 'bagaimana tren/kondisi periode lalu', bukan untuk angka stok/transaksi terkini (pakai tool transaksional).",
-    schema: laporanSchema,
-    func: async (input: LaporanInput): Promise<string> => {
-      const chunks = await search(knowledge, input.query, ["laporan"]);
-      return formatChunks(chunks, "Belum ada laporan naratif yang relevan di knowledge base.");
     },
   });
 }

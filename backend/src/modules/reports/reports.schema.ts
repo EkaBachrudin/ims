@@ -66,6 +66,13 @@ export const transactionListReportSchema = z.object({
   }),
 });
 
+export const periodSummarySchema = z.object({
+  query: z.object({
+    from: z.string().trim().optional(),
+    to: z.string().trim().optional(),
+  }),
+});
+
 const poStatuses = z.preprocess(
   (value) =>
     typeof value === "string"

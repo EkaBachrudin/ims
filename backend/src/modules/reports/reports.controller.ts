@@ -23,6 +23,10 @@ export async function dashboard(_req: Request, res: Response) {
   ok(res, await service.dashboard());
 }
 
+export async function periodSummary(req: Request, res: Response) {
+  ok(res, await service.periodSummaryReport(req.query as never));
+}
+
 export async function products(req: Request, res: Response) {
   const { rows, meta } = await service.productCatalog(req.query as never);
   okList(res, rows, meta);

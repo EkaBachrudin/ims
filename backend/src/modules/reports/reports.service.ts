@@ -156,6 +156,34 @@ export async function dashboard() {
   };
 }
 
+export async function periodSummaryReport(query: { from?: string; to?: string }) {
+  const now = new Date();
+  const fromDate = query.from
+    ? startOfDay(parseLocalDate(query.from))
+    : startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+  const toDate = query.to ? endOfDay(parseLocalDate(query.to)) : endOfDay(now);
+
+  const [inbound, outbound, topPartners, totalProducts, activePOs, lowStockRows] = await Promise.all([
+    repo.sumTransactions("IN", fromDate, toDate),
+    repo.sumTransactions("OUT", fromDate, toDate),
+    repo.topOutboundPartners(fromDate, toDate),
+    repo.countProducts(),
+    repo.countActivePos(),
+    repo.findAllProductsWithCategory(),
+  ]);
+
+  return {
+    from: format(fromDate, "yyyy-MM-dd"),
+    to: format(toDate, "yyyy-MM-dd"),
+    totalProducts,
+    activePOs,
+    lowStockCount: lowStockRows.filter((p) => p.stock <= p.minStock).length,
+    inbound: { quantity: inbound._sum.quantity ?? 0, count: inbound._count },
+    outbound: { quantity: outbound._sum.quantity ?? 0, count: outbound._count },
+    topPartners,
+  };
+}
+
 // ----------------------------------------------------------------------
 // Endpoint baca untuk AI Agent (pencarian berbasis nama, output ramah AI)
 // ----------------------------------------------------------------------

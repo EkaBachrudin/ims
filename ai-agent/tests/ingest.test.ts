@@ -32,12 +32,22 @@ const docs = [
 function primePool(documents = docs, existingChunk = false) {
   fakePool.query.mockImplementation(async (sql: string) => {
     const text = String(sql);
+    if (text.includes('DELETE FROM "document_chunks"') && text.includes("NOT EXISTS")) {
+      return { rows: [], rowCount: 0 };
+    }
     if (text.includes('FROM "knowledge_documents"')) return { rows: documents, rowCount: documents.length };
     if (text.includes('FROM "document_chunks"') && text.includes("contentHash")) {
       return { rows: [], rowCount: existingChunk ? 1 : 0 };
     }
     return { rows: [], rowCount: 0 };
   });
+}
+
+function lastHashParam(): unknown {
+  const call = [...fakePool.query.mock.calls]
+    .reverse()
+    .find((c) => String(c[0]).includes("contentHash"));
+  return (call?.[1] as unknown[] | undefined)?.[1];
 }
 
 beforeEach(() => {
@@ -70,9 +80,38 @@ describe("RAG ingestion (DB source)", () => {
     expect(sqls.some((s) => s.includes('INSERT INTO "document_chunks"'))).toBe(false);
   });
 
+  it("memangkas chunk yatim (dokumen nonaktif/hilang) setiap ingest", async () => {
+    primePool();
+    await runIngest(fakePool as never);
+
+    const sqls = fakePool.query.mock.calls.map((c) => String(c[0]));
+    const prune = sqls.find(
+      (s) => s.includes('DELETE FROM "document_chunks"') && s.includes("NOT EXISTS"),
+    );
+    expect(prune).toBeTruthy();
+    expect(prune).toContain('"isActive" = true');
+  });
+
+  it("menghasilkan content hash berbeda saat judul berubah (konten sama)", async () => {
+    primePool(docs, true);
+    await runIngest(fakePool as never);
+    const hashBefore = lastHashParam();
+
+    fakePool.query.mockReset();
+    primePool([{ ...docs[0], title: "SOP Retur (revisi)" }], true);
+    await runIngest(fakePool as never);
+    const hashAfter = lastHashParam();
+
+    expect(hashBefore).toBeTruthy();
+    expect(hashAfter).not.toBe(hashBefore);
+  });
+
   it("rollback bila terjadi error saat menulis chunk", async () => {
     fakePool.query.mockImplementation(async (sql: string) => {
       const text = String(sql);
+      if (text.includes('DELETE FROM "document_chunks"') && text.includes("NOT EXISTS")) {
+        return { rows: [], rowCount: 0 };
+      }
       if (text.includes('FROM "knowledge_documents"')) return { rows: docs, rowCount: 1 };
       if (text.includes('FROM "document_chunks"') && text.includes("contentHash")) {
         return { rows: [], rowCount: 0 };

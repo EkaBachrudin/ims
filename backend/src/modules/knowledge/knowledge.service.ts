@@ -1,6 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { Errors } from "../../lib/errors";
 import { container } from "../../composition/container";
+import { env } from "../../config/env";
+import type { IngestFilter } from "../../application/ports/knowledgeIndexer";
 import { buildMeta, parsePagination } from "../../lib/pagination";
 import * as repo from "./knowledge.repository";
 import type { z } from "zod";
@@ -14,6 +16,17 @@ import type {
 export interface UploadedFile {
   filename: string;
   content: string;
+}
+
+/**
+ * Picu re-ingest knowledge base secara best-effort: tidak memblokir respons CRUD
+ * dan tidak menggagalkan operasi bila AI Agent sedang sibuk/tidak tersedia.
+ */
+function scheduleIngest(filter: IngestFilter): void {
+  if (!env.RAG_AUTO_INGEST) return;
+  void container.indexer.triggerIngest(filter).catch((err) => {
+    console.warn("Auto-ingest dilewati:", err instanceof Error ? err.message : err);
+  });
 }
 
 export async function listDocuments(query: z.infer<typeof listDocumentSchema>["query"]) {
@@ -62,6 +75,7 @@ export async function createDocument(
     after: doc,
     ipAddress: ip,
   });
+  scheduleIngest({ documentId: doc.id });
   return doc;
 }
 
@@ -95,6 +109,15 @@ export async function updateDocument(
     after: doc,
     ipAddress: ip,
   });
+
+  const shouldIngest =
+    contentChanged ||
+    input.title !== undefined ||
+    input.docType !== undefined ||
+    input.metadata !== undefined ||
+    input.isActive !== undefined;
+  if (shouldIngest) scheduleIngest({ documentId: id });
+
   return doc;
 }
 
@@ -116,6 +139,7 @@ export async function deleteDocument(
     after: doc,
     ipAddress: ip,
   });
+  scheduleIngest({ documentId: id });
 }
 
 export function getStats() {

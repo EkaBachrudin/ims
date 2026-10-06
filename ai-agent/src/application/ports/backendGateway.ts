@@ -146,6 +146,17 @@ export interface Dashboard {
   }[];
 }
 
+export interface PeriodSummary {
+  from: string;
+  to: string;
+  totalProducts: number;
+  activePOs: number;
+  lowStockCount: number;
+  inbound: { quantity: number; count: number };
+  outbound: { quantity: number; count: number };
+  topPartners: { partner: string; quantity: number }[];
+}
+
 export interface DraftItem {
   quantity: number;
   product: { name: string; unit: string };
@@ -256,6 +267,7 @@ export interface BackendGateway {
   listDeliveryNotes(filter: DnListFilter): Promise<ListResult<DnRow>>;
   getLowStock(): Promise<LowStockRow[]>;
   getDashboard(): Promise<Dashboard>;
+  getPeriodSummary(filter: { from?: string | null; to?: string | null }): Promise<PeriodSummary>;
 
   createPoDraft(input: PoDraftInput & { chatId: string; source: "AI_CHAT" }): Promise<PoDraftResult>;
   createDnDraft(input: DnDraftInput & { chatId: string }): Promise<DnDraftResult>;

@@ -380,7 +380,8 @@ Migrasi dijalankan otomatis oleh container backend saat start. URL service:
 
 **Alternatif per service:** `make dev-backend`, `make dev-frontend`,
 `make dev-ai-agent`. Untuk mode produksi/tanpa hot reload: `make up` dan
-`make down`.
+`make down`. Penyiapan knowledge base di produksi memakai `make prod-rag-ingest`
+(migrate + impor docs + ingest).
 
 ### 6.1 `docker-compose.yml` (Local)
 
@@ -933,7 +934,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 ## 9. AI Agent Technical Specification
 
-AI Agent memiliki **dua sumber data**: (1) **data bisnis** melalui Backend REST API (function calling), dan (2) **knowledge** (SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak/kamus produk/laporan) melalui retrieval vector **read-only** dari `document_chunks`. Riwayat percakapan dibatasi `MAX_HISTORY_TURNS` agar konteks LLM tetap efisien.
+AI Agent memiliki **dua sumber data**: (1) **data bisnis** melalui Backend REST API (function calling), dan (2) **knowledge** (SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak) melalui retrieval vector **read-only** dari `document_chunks`. Kamus produk & laporan/tren periode diambil live via tool data, bukan RAG. Riwayat percakapan dibatasi `MAX_HISTORY_TURNS` agar konteks LLM tetap efisien.
 
 ### 9.0 Layered Architecture (AI Agent)
 
@@ -1063,7 +1064,7 @@ export function buildSopTool({ knowledge }: { knowledge: KnowledgeBase }, role?:
 
 > Perhatikan: parameter `items` berbentuk array — berbeda dari rancangan awal (single item) — agar mendukung multi-item PO sekaligus konsisten dengan `PurchaseOrderItem` di ERD.
 
-**Set lengkap tool baca data (pasca-MVP):** selain `cek_stok_barang`, `rekap_pengiriman`, `buat_draft_po`, `buat_draft_surat_jalan`, dan `cari_sop`, tersedia `cari_produk`, `list_kategori`, `list_partner`, `list_gudang`, `stok_per_gudang`, `list_transaksi`, `list_po`, `list_po_status`, `detail_po`, `list_surat_jalan`, `stok_tipis`, dan `ringkasan_dashboard`. Tool RAG: `cari_sop` (dengan `docType`), `cari_nama_produk` (kamus produk), dan `cari_laporan` (laporan naratif). Tool tulis hanya `buat_draft_po` (`POST /po/draft`, SUPPLIER) dan `buat_draft_surat_jalan` (`POST /delivery-notes/draft`, CUSTOMER), keduanya membuat DRAFT. Semua memanggil endpoint backend dengan `x-internal-key` (lihat FSD §9.6/§9.7 & §10.2). Data transaksional **tidak** di-embed; yang di-RAG adalah dokumen `knowledge_documents` (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak, kamus produk, laporan).
+**Set lengkap tool baca data (pasca-MVP):** selain `cek_stok_barang`, `rekap_pengiriman`, `buat_draft_po`, `buat_draft_surat_jalan`, dan `cari_sop`, tersedia `cari_produk`, `list_kategori`, `list_partner`, `list_gudang`, `stok_per_gudang`, `list_transaksi`, `list_po`, `list_po_status`, `detail_po`, `list_surat_jalan`, `stok_tipis`, `ringkasan_dashboard`, dan `ringkasan_periode`. Tool RAG hanya `cari_sop` (dengan `docType`). Tool tulis hanya `buat_draft_po` (`POST /po/draft`, SUPPLIER) dan `buat_draft_surat_jalan` (`POST /delivery-notes/draft`, CUSTOMER), keduanya membuat DRAFT. Semua memanggil endpoint backend dengan `x-internal-key` (lihat FSD §9.6/§9.7 & §10.2). Data transaksional **tidak** di-embed; yang di-RAG adalah dokumen `knowledge_documents` statis (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak).
 
 ### 9.3 System Prompt
 
@@ -1214,7 +1215,7 @@ Backend memicu endpoint ini secara **best-effort** (timeout 5 detik, gagal hanya
 
 ### 9.7 RAG Pipeline (Vector Store Read-Only)
 
-AI Agent menggunakan dua jalur data: **(1)** data bisnis via Backend API (function calling), dan **(2)** knowledge (SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak/kamus produk/laporan) via retrieval vector **read-only** dari tabel `document_chunks`.
+AI Agent menggunakan dua jalur data: **(1)** data bisnis via Backend API (function calling), dan **(2)** knowledge (SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak) via retrieval vector **read-only** dari tabel `document_chunks`.
 
 Dokumen sumber (source of truth) kini disimpan di tabel **`knowledge_documents`** dan dikelola dari halaman web **Knowledge Base** (khusus `SUPER_ADMIN`). Proses ingest membaca tabel itu — bukan lagi file `docs/knowledge/*.md` secara langsung.
 
@@ -1511,8 +1512,6 @@ Tidak ada `npm`/`tsx` di host.
     "build": "NODE_OPTIONS=--max-old-space-size=6144 tsc -p tsconfig.build.json",
     "rag:ingest": "tsx src/infrastructure/rag/ingest.ts",
     "rag:import-docs": "tsx src/infrastructure/rag/importDocs.ts",
-    "rag:generate-kamus": "tsx src/infrastructure/rag/generateKamus.ts",
-    "rag:generate-laporan": "tsx src/infrastructure/rag/generateLaporan.ts",
     "lint": "eslint .",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit",
     "test": "vitest run"
@@ -1554,12 +1553,17 @@ make rag-import-docs
 # 2) Bangun/refresh index dari knowledge_documents → document_chunks
 make rag-ingest
 
-# 3) Opsional: generate dokumen dari Backend API lalu ingest otomatis
-make rag-generate-kamus     # kamus produk dari katalog
-make rag-generate-laporan   # laporan naratif periode berjalan
+# Mode production (image built, NODE_ENV=production):
+make prod-rag-ingest   # migrate + impor docs + ingest
 ```
 
-Setelah itu, dokumen juga dapat dikelola dari halaman web **Knowledge Base** (`SUPER_ADMIN`) dengan tombol re-ingest (per dokumen atau semua).
+Kamus produk & laporan periode **bukan** dokumen RAG. Keduanya diambil langsung (live) oleh tool: kamus via `cari_produk` (resolver nama di backend), laporan/tren periode via `ringkasan_periode` (`GET /reports/period-summary`). RAG hanya untuk dokumen statis (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak).
+
+Setelah itu, dokumen juga dapat dikelola dari halaman web **Knowledge Base** (`SUPER_ADMIN`).
+
+**Auto re-ingest (default aktif).** Menyimpan dokumen baru, mengubah, atau menonaktifkan lewat web otomatis memicu re-ingest ke AI Agent secara *best-effort* (tidak memblokir respons dan tetap sukses bila AI Agent sedang sibuk/tidak tersedia). Perilaku ini bisa dimatikan lewat `RAG_AUTO_INGEST=false` (root `.env` / environment backend) dan digantikan tombol re-ingest manual.
+
+**Pembersihan index.** Setiap proses ingest (termasuk `make rag-ingest`, auto re-ingest, dan tombol "Re-ingest Semua") memangkas *chunk* yatim — milik dokumen yang sudah nonaktif (soft delete) atau sudah tidak ada — sehingga jawaban asisten tidak lagi mengutip dokumen yang dihapus. Idempotensi memakai hash atas `content + title + docType + metadata`, jadi perubahan judul/tipe/metadata pun ikut di-embed ulang.
 
 Verifikasi isi tabel:
 
@@ -1649,7 +1653,7 @@ Pemetaan timeline 5 minggu (FSD) menjadi task teknis.
 | 1      | Backend & DB                      | Init monorepo; `docker-compose.yml`; setup Backend + Prisma; migrate `init`; `seed.ts`; Auth (login/refresh/logout) + middleware auth/RBAC/validate/errorHandler; CRUD master data. |
 | 2      | Backend Transaksi + Frontend Dasar | Endpoint transaksi (atomic stock), generator `poNumber`, PO lifecycle, audit helper; setup Vite + Tailwind + Router + `Providers` (QueryClient); layout; feature master data (`useQuery`). |
 | 3      | Frontend Lanjutan + AI Dasar      | Feature transaksi & PO (form + `useMutation` + invalidation), halaman detail PO, dashboard; setup ai-agent, Telegraf long-polling, endpoint `/internal/ai-log`, mapping chatId→user; LLM + tools `cek_stok_barang`, `rekap_pengiriman`. |
-| 4      | AI Lanjutan + RAG                 | Tool `buat_draft_po` → `POST /po/draft`; RAG: `knowledge_documents` (source of truth) + halaman web Knowledge Base (SUPER_ADMIN), ingest DB + job/CLI (`rag-import-docs`, `rag-generate-*`); retriever read-only (hybrid + threshold); tool `cari_sop`/`cari_nama_produk`/`cari_laporan`; guardrail, rate limit, conversation logging. |
+| 4      | AI Lanjutan + RAG                 | Tool `buat_draft_po` → `POST /po/draft`; RAG: `knowledge_documents` (source of truth) + halaman web Knowledge Base (SUPER_ADMIN), ingest DB + job/CLI (`rag-import-docs`, `rag-ingest`); retriever read-only (hybrid + threshold); tool `cari_sop` + tool data live (`cari_produk`, `ringkasan_periode`); guardrail, rate limit, conversation logging. |
 | 5      | Testing & Finalisasi              | Integration E2E (chat → draft PO → muncul di web); bug fixing & error handling; optimasi prompt & latency; hardening; dokumentasi akhir & demo script. |
 
 ---

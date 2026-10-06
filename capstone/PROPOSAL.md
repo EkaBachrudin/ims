@@ -379,6 +379,8 @@ const poNumber = buildDocumentNumber(
 
 Ingest (offline) memotong dokumen, menghasilkan embedding, lalu menyimpannya ke tabel `document_chunks` (pgvector). Retrieval (runtime) melakukan pencarian *top-K* secara **read-only**.
 
+> *Catatan pembaruan implementasi:* pipeline ini telah dikembangkan (source of truth `knowledge_documents`, hybrid retrieval, threshold, tool tambahan). Lihat **Lampiran C** untuk detail; cuplikan kode di bawah menggambarkan rancangan awal.
+
 ```ts
 // ingest.ts — chunking + embedding + upsert (proses offline)
 const splitter = new RecursiveCharacterTextSplitter({
@@ -601,6 +603,8 @@ sequenceDiagram
 
 ### B.5 Alur Jawab SOP via RAG (Read-Only)
 
+> *Catatan pembaruan implementasi:* retrieval kini hybrid (vector + full-text) dengan ambang skor dan filter `docType`, serta tool `cari_nama_produk`/`cari_laporan`. Lihat **Lampiran C**.
+
 ```mermaid
 sequenceDiagram
     actor Owner
@@ -804,6 +808,56 @@ make rag-ingest     # opsional: embed dokumen SOP
 | Lint / Typecheck / Test | `make lint` · `make typecheck` · `make test` |
 | Build produksi | `make prod` / `make prod-down` |
 | Log produksi | `make prod-logs` |
+
+---
+
+## Lampiran C — Pembaruan Implementasi (Enhancement RAG)
+
+> Lampiran ini mencatat pengembangan yang dilakukan **setelah** proposal disusun. Isi proposal asli (termasuk Lampiran A.3, B.5, dan F) **tidak diubah**; bagian ini melengkapinya agar dokumen tetap selaras dengan implementasi akhir.
+
+### C.1 Knowledge base sebagai sumber terkelola
+
+Dokumen knowledge kini disimpan pada tabel **`knowledge_documents`** (*source of truth*) dan dikelola dari halaman web **Knowledge Base** khusus `SUPER_ADMIN` (unggah/edit/nonaktifkan + re-ingest). Tabel ini menampung `filename`, `title`, `docType`, `content`, `metadata`, `version`, `isActive`, `uploadedById`. Endpoint backend: `/api/knowledge/*` (auth + `requireRole("SUPER_ADMIN")`).
+
+### C.2 Skema & index
+
+`document_chunks` diperluas dengan `documentId` (FK), `docType`, `title`, `metadata`, `contentHash`, `embeddingModel`, `dimensions`, dan kolom *generated* `content_tsv` (`to_tsvector`). Index: HNSW pada `embedding` dan **GIN** pada `content_tsv` (hybrid search). Dimensi `vector(1536)` tetap sama dengan `EMBEDDING_DIMENSIONS`.
+
+### C.3 Pipeline ingest
+
+- `runIngest` membaca `knowledge_documents` (aktif), memotong teks (markdown-aware, judul disisipkan), meng-embed, lalu menulis `document_chunks` **dalam transaksi**.
+- **Idempoten** via `contentHash` (SHA-256): dokumen yang isinya tak berubah dilewati.
+- Dijalankan lewat **job runner** + endpoint internal AI Agent `POST /ingest` dan `GET /ingest/status` (dipanggil backend, header `x-internal-key`).
+- CLI/target: `rag-import-docs` (impor dokumen statis), `rag-ingest` (bangun index), `rag-generate-kamus` & `rag-generate-laporan` (generate dari Backend API lalu ingest otomatis). Re-ingest juga dapat dipicu dari UI.
+
+### C.4 Retrieval
+
+- Menggunakan `embedQuery` (bukan `embedDocuments`).
+- **Hybrid**: ranking vektor (`embedding <=> query`) digabung dengan full-text (`content_tsv @@ plainto_tsquery`) via Reciprocal Rank Fusion.
+- **Ambang skor** `RAG_MIN_SCORE` membuang chunk tak relevan; `AGENT_TOP_K` diturunkan ke `5`.
+- Filter `docType` dan hasil retrieval menyertakan `title`/`docType`; kegagalan DB/embedding ditangani (degradasi anggun).
+
+### C.5 Tools & kontrol akses
+
+- `cari_sop` dengan parameter `docType` (sop, faq, kebijakan, runbook, panduan-produk, onboarding, catatan-partner, kontrak).
+- `cari_nama_produk` (kamus produk) dan `cari_laporan` (laporan naratif).
+- Dokumen sensitif (`catatan-partner`, `kontrak`) hanya dapat diakses `OWNER`/`SUPER_ADMIN`; role diteruskan dari `handleMessage` → `runAgent` → `buildTools`.
+
+### C.6 Variabel environment & perintah tambahan
+
+| Variabel | Nilai default | Fungsi |
+| :--- | :--- | :--- |
+| `AGENT_TOP_K` | `5` | Jumlah chunk konteks per kueri. |
+| `RAG_MIN_SCORE` | `0.3` | Ambang skor cosine minimal. |
+| `RAG_HYBRID` | `true` | Hybrid vector + full-text. |
+
+Perintah: `make rag-import-docs`, `make rag-ingest`, `make rag-generate-kamus`, `make rag-generate-laporan` (dan `prod-rag-ingest` untuk produksi).
+
+### C.7 Verifikasi tambahan
+
+- Unit test ai-agent: retriever (threshold/filter/error), routing & akses RAG, ingest berbasis DB.
+- Integration test backend: CRUD `/api/knowledge/documents` (RBAC `SUPER_ADMIN`), stats.
+- Verifikasi manual: unggah dokumen → re-ingest dari UI → tanya via chat; SOP non-topik → AI menyatakan tidak ada (anti-halusinasi).
 
 ---
 

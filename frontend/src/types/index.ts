@@ -173,3 +173,61 @@ export interface StockReportRow {
     warehouse: { id: string; code: string; name: string };
   }[];
 }
+
+export const DOC_TYPES = [
+  "sop",
+  "faq",
+  "kebijakan",
+  "runbook",
+  "panduan-produk",
+  "onboarding",
+  "catatan-partner",
+  "kontrak",
+  "kamus-produk",
+  "laporan",
+] as const;
+
+export type DocType = (typeof DOC_TYPES)[number];
+
+export interface KnowledgeDocument {
+  id: string;
+  filename: string;
+  title: string;
+  docType: DocType;
+  version: number;
+  isActive: boolean;
+  metadata: unknown;
+  createdAt: string;
+  updatedAt: string;
+  uploadedBy: { id: string; name: string } | null;
+  _count?: { chunks: number };
+}
+
+export interface KnowledgeDocumentDetail extends KnowledgeDocument {
+  content: string;
+}
+
+export interface KnowledgeStats {
+  totalChunks: number;
+  totalDocuments: number;
+  lastIngest: string | null;
+  byType: { docType: string | null; documents: number; chunks: number }[];
+}
+
+export interface KnowledgeChunkRow {
+  id: string;
+  source: string;
+  title: string | null;
+  docType: string | null;
+  documentId: string | null;
+  content: string;
+  createdAt: string;
+}
+
+export interface IngestJobState {
+  status: "idle" | "running" | "done" | "error";
+  startedAt: string | null;
+  finishedAt: string | null;
+  results: { documentId: string; source: string; chunks: number; skipped: boolean }[];
+  error: string | null;
+}

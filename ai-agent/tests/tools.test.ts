@@ -47,6 +47,8 @@ describe("buildTools", () => {
     expect(names).toEqual([
       "buat_draft_po",
       "buat_draft_surat_jalan",
+      "cari_laporan",
+      "cari_nama_produk",
       "cari_produk",
       "cari_sop",
       "cek_stok_barang",
@@ -190,7 +192,13 @@ describe("buat_draft_surat_jalan", () => {
 describe("cari_sop", () => {
   it("mengembalikan konteks beserta sumber", async () => {
     vi.mocked(deps.knowledge.search).mockResolvedValue([
-      { source: "sop-retur-barang.md", content: "Verifikasi maksimal 1x24 jam", score: 0.9 },
+      {
+        source: "sop-retur-barang.md",
+        title: "SOP Retur",
+        docType: "sop",
+        content: "Verifikasi maksimal 1x24 jam",
+        score: 0.9,
+      },
     ]);
     const result = await findTool("cari_sop").invoke({ query: "SOP retur" });
     expect(String(result)).toContain("sop-retur-barang.md");
@@ -201,6 +209,53 @@ describe("cari_sop", () => {
     vi.mocked(deps.knowledge.search).mockResolvedValue([]);
     const result = await findTool("cari_sop").invoke({ query: "topik tidak ada" });
     expect(String(result).toLowerCase()).toContain("tidak ada sop");
+  });
+});
+
+describe("routing & akses RAG", () => {
+  function toolFor(name: string, role?: string) {
+    const tool = buildTools(deps, "900001", role).find((t) => t.name === name);
+    if (!tool) throw new Error(`tool ${name} tidak ditemukan`);
+    return tool;
+  }
+
+  it("cari_nama_produk mencari docType kamus-produk", async () => {
+    vi.mocked(deps.knowledge.search).mockResolvedValue([]);
+    await toolFor("cari_nama_produk").invoke({ q: "cumi2 beku" });
+    expect(deps.knowledge.search).toHaveBeenCalledWith(
+      "cumi2 beku",
+      expect.objectContaining({ docTypes: ["kamus-produk"] }),
+    );
+  });
+
+  it("cari_laporan mencari docType laporan", async () => {
+    vi.mocked(deps.knowledge.search).mockResolvedValue([]);
+    await toolFor("cari_laporan").invoke({ query: "tren bulan lalu" });
+    expect(deps.knowledge.search).toHaveBeenCalledWith(
+      "tren bulan lalu",
+      expect.objectContaining({ docTypes: ["laporan"] }),
+    );
+  });
+
+  it("ADMIN tidak diberi akses docType sensitif", async () => {
+    vi.mocked(deps.knowledge.search).mockResolvedValue([]);
+    await toolFor("cari_sop", "ADMIN").invoke({ query: "syarat bayar supplier" });
+    const opts = vi.mocked(deps.knowledge.search).mock.calls.at(-1)?.[1] as { docTypes: string[] };
+    expect(opts.docTypes).not.toContain("catatan-partner");
+    expect(opts.docTypes).not.toContain("kontrak");
+  });
+
+  it("OWNER boleh akses docType sensitif", async () => {
+    vi.mocked(deps.knowledge.search).mockResolvedValue([]);
+    await toolFor("cari_sop", "OWNER").invoke({ query: "isi kontrak supplier" });
+    const opts = vi.mocked(deps.knowledge.search).mock.calls.at(-1)?.[1] as { docTypes: string[] };
+    expect(opts.docTypes).toContain("kontrak");
+  });
+
+  it("menolak docType sensitif bila diminta eksplisit oleh ADMIN", async () => {
+    const result = await toolFor("cari_sop", "ADMIN").invoke({ query: "x", docType: "kontrak" });
+    expect(String(result).toLowerCase()).toContain("tidak memiliki akses");
+    expect(deps.knowledge.search).not.toHaveBeenCalled();
   });
 });
 

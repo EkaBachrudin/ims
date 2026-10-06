@@ -44,4 +44,12 @@ export const qk = {
     all: ["audit-logs"] as const,
     list: (filters: unknown) => ["audit-logs", "list", filters] as const,
   },
+  knowledge: {
+    all: ["knowledge"] as const,
+    documents: (filters: unknown) => ["knowledge", "documents", filters] as const,
+    detail: (id: string) => ["knowledge", "detail", id] as const,
+    stats: ["knowledge", "stats"] as const,
+    chunks: (filters: unknown) => ["knowledge", "chunks", filters] as const,
+    ingest: ["knowledge", "ingest"] as const,
+  },
 };

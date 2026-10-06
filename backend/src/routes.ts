@@ -11,6 +11,7 @@ import { deliveryNotesRouter } from "./modules/delivery-notes/delivery-notes.rou
 import { reportsRouter } from "./modules/reports/reports.routes";
 import { internalRouter } from "./modules/internal/internal.routes";
 import { auditLogsRouter } from "./modules/audit-logs/audit-logs.routes";
+import { knowledgeRouter } from "./modules/knowledge/knowledge.routes";
 
 export const router = Router();
 
@@ -29,4 +30,5 @@ router.use("/po", purchaseOrdersRouter);
 router.use("/delivery-notes", deliveryNotesRouter);
 router.use("/reports", reportsRouter);
 router.use("/audit-logs", auditLogsRouter);
+router.use("/knowledge", knowledgeRouter);
 router.use("/internal", internalRouter);

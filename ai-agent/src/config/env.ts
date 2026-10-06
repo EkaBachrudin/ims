@@ -17,10 +17,16 @@ const envSchema = z.object({
   EMBEDDING_DIMENSIONS: z.coerce.number().default(1536),
   LLM_TEMPERATURE: z.coerce.number().default(0),
 
-  AGENT_TOP_K: z.coerce.number().default(12),
+  AGENT_TOP_K: z.coerce.number().default(5),
   MAX_HISTORY_TURNS: z.coerce.number().default(20),
   CHUNK_SIZE: z.coerce.number().default(1000),
   CHUNK_OVERLAP: z.coerce.number().default(200),
+  // Retrieval RAG: ambang skor minimal & hybrid (vector + full-text).
+  RAG_MIN_SCORE: z.coerce.number().min(0).max(1).default(0.3),
+  RAG_HYBRID: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((v) => v === "true"),
 
   DB_HOST: z.string().default("localhost"),
   DB_PORT: z.coerce.number().default(5432),

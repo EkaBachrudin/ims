@@ -1,6 +1,6 @@
 import type { Db } from "../../infrastructure/prisma/client";
 
-export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "LOGIN" | "VOID";
+export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "LOGIN" | "VOID" | "INGEST";
 
 export interface AuditParams {
   actorId?: string | null;

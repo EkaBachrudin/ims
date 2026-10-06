@@ -7,6 +7,11 @@ import type {
   DashboardSummary,
   DeliveryNote,
   DnStatus,
+  IngestJobState,
+  KnowledgeChunkRow,
+  KnowledgeDocument,
+  KnowledgeDocumentDetail,
+  KnowledgeStats,
   Meta,
   Partner,
   Product,
@@ -128,4 +133,21 @@ export const userApi = {
 export const auditApi = {
   list: (params?: Record<string, unknown>) =>
     unwrapList<AuditLog>(api.get("/audit-logs", { params })),
+};
+
+export const knowledgeApi = {
+  listDocuments: (params?: Record<string, unknown>) =>
+    unwrapList<KnowledgeDocument>(api.get("/knowledge/documents", { params })),
+  getDocument: (id: string) =>
+    unwrap<KnowledgeDocumentDetail>(api.get(`/knowledge/documents/${id}`)),
+  createDocument: (body: FormData) => unwrap<KnowledgeDocument>(api.post("/knowledge/documents", body)),
+  updateDocument: (id: string, body: unknown) =>
+    unwrap<KnowledgeDocument>(api.patch(`/knowledge/documents/${id}`, body)),
+  removeDocument: (id: string) => api.delete(`/knowledge/documents/${id}`),
+  stats: () => unwrap<KnowledgeStats>(api.get("/knowledge/stats")),
+  chunks: (params?: Record<string, unknown>) =>
+    unwrapList<KnowledgeChunkRow>(api.get("/knowledge/chunks", { params })),
+  ingest: (body?: { documentId?: string; docType?: string }) =>
+    unwrap<IngestJobState>(api.post("/knowledge/ingest", body ?? {})),
+  ingestStatus: () => unwrap<IngestJobState>(api.get("/knowledge/ingest/status")),
 };

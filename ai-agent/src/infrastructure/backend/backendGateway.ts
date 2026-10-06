@@ -85,7 +85,11 @@ export const backendGateway: BackendGateway = {
   },
 
   listProducts(filter: ProductListFilter) {
-    return fetchList<ProductRow>("/reports/products", { q: filter.q });
+    return fetchList<ProductRow>("/reports/products", {
+      q: filter.q,
+      page: filter.page,
+      limit: filter.limit,
+    });
   },
 
   async listCategories() {
@@ -117,6 +121,7 @@ export const backendGateway: BackendGateway = {
       productName: filter.productName,
       warehouseCode: filter.warehouseCode,
       partnerName: filter.partnerName,
+      limit: filter.limit,
     });
   },
 

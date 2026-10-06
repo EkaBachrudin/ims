@@ -230,14 +230,16 @@ sequenceDiagram
 | FR-08.8  | AI hanya melayani user yang terautentikasi (mapping chat ID → user).                            | Must     |
 | FR-08.9  | AI memberikan feedback "typing" saat memproses.                                                 | Should   |
 | FR-08.10 | Sistem menangani error LLM/downstream dengan pesan ramah ke user.                               | Must     |
-| FR-08.11 | AI menjawab pertanyaan SOP/kebijakan dari knowledge base via retrieval vector (RAG), read-only ke `document_chunks`. | Should |
+| FR-08.11 | AI menjawab pertanyaan SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak dari knowledge base via retrieval vector (RAG), read-only ke `document_chunks`, dengan hybrid (vector + full-text) & ambang skor. | Should |
 | FR-08.12 | Jawaban SOP hanya bersumber dari konteks retrieval (grounded), menyebutkan sumber bila tersedia. | Must   |
-| FR-08.13 | Knowledge base dapat di-*ingest* dari dokumen SOP (chunking + embeddings) via proses terpisah.   | Should   |
+| FR-08.13 | Knowledge base disimpan di `knowledge_documents` (source of truth) dan di-*ingest* (chunking + embeddings) ke `document_chunks` via job/proses terpisah. | Should   |
 | FR-08.14 | AI dapat membaca seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) via tool read-only ke Backend API. | Should |
 | FR-08.15 | Saat draft PO dibuat via chat (source `AI_CHAT`), backend mengirim notifikasi Telegram ke seluruh user aktif ber-role `ADMIN`/`SUPER_ADMIN` yang punya `telegramId`, berisi ringkasan PO dan deep-link ke halaman detail PO untuk konfirmasi. | Must |
 | FR-08.16 | Owner (pembuat PO) menerima notifikasi Telegram saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai (`COMPLETED`). | Should |
 | FR-08.15 | AI membedakan barang masuk (IN) dan barang keluar (OUT), serta menyampaikan hasil kosong apa adanya (tidak mengarang, tidak menyerah selama masih ada tool relevan). | Must |
 | FR-08.16 | AI dapat membuat draft Surat Jalan (Delivery Note) dari instruksi bahasa natural untuk partner CUSTOMER; status selalu DRAFT (stok belum berubah). | Should |
+| FR-08.17 | Halaman web **Knowledge Base** (khusus `SUPER_ADMIN`) dapat menampilkan statistik index, mengelola (unggah/edit/nonaktifkan) dokumen `knowledge_documents`, dan memicu re-ingest (per dokumen atau semua). | Should |
+| FR-08.18 | AI dapat mencari nama produk katalog resmi dari kamus/sinonim (`cari_nama_produk`) dan laporan naratif historis (`cari_laporan`). | Should |
 
 **Intent → Tool Mapping**
 
@@ -259,7 +261,9 @@ sequenceDiagram
 | Dashboard summary    | "Ringkasan operasional hari ini"                                    | `ringkasan_dashboard` | GET ringkasan dashboard       |
 | Create PO draft      | "Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum"    | `buat_draft_po`     | POST draft PO (partner supplier)|
 | Create DN draft      | "Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum"            | `buat_draft_surat_jalan` | POST draft DN (partner customer) |
-| SOP / knowledge       | "Apa SOP penerimaan barang retur?"                                 | `cari_sop`          | Retrieval top-K `document_chunks` (read-only) |
+| SOP / knowledge       | "Apa SOP penerimaan barang retur?"                                 | `cari_sop` (`docType?`) | Hybrid retrieval `document_chunks` (read-only, threshold) |
+| Nama produk (kamus)   | "Buat PO cumi2 beku 1 kilo"                                        | `cari_nama_produk`  | Retrieval `document_chunks` docType `kamus-produk` |
+| Laporan naratif       | "Bagaimana tren pengiriman bulan lalu?"                            | `cari_laporan`      | Retrieval `document_chunks` docType `laporan` |
 
 ### FR-09 — Dashboard & Reporting
 
@@ -497,7 +501,7 @@ Seluruh endpoint di bawah menerima **Bearer (web)** atau **`x-internal-key` (AI 
 AI Agent memiliki **dua jalur data**:
 
 1. **Data bisnis** — pola **Function/Tool Calling**. AI **tidak** menulis SQL langsung; Backend mengekspos endpoint aman, AI memilih tool dan mengisi parameter tervalidasi (Zod). Backend satu-satunya penulis data bisnis.
-2. **Knowledge/SOP** — **RAG retrieval** *read-only* ke tabel `document_chunks` (pgvector). Dokumen SOP di-*ingest* (chunking + embeddings) oleh proses offline terpisah, lalu diambil top-K saat runtime.
+2. **Knowledge/SOP** — **RAG retrieval** *read-only* ke tabel `document_chunks` (pgvector). Dokumen sumber disimpan di tabel **`knowledge_documents`** (source of truth) yang dikelola dari halaman web **Knowledge Base** khusus `SUPER_ADMIN`; re-ingest (chunking + embeddings) dipicu dari UI atau proses offline, lalu diambil top-K saat runtime.
 
 ```mermaid
 flowchart LR
@@ -528,9 +532,21 @@ flowchart LR
 | `ringkasan_dashboard` | Ringkasan operasional                    | —                                                    | `GET /reports/dashboard`        |
 | `buat_draft_po`       | Membuat draft Purchase Order (partner supplier) | `partnerName: string`, `items: {productName, qty}[]` | `POST /po/draft`                |
 | `buat_draft_surat_jalan` | Membuat draft Surat Jalan (partner customer) | `partnerName: string`, `items: {productName, qty}[]`, `shipDate?`, `warehouseCode?` | `POST /delivery-notes/draft` |
-| `cari_sop`            | Cari SOP/kebijakan/istilah internal (RAG)| `query: string`                                      | `document_chunks` (read-only, top-K) |
+| `cari_sop`            | Cari SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak (RAG) | `query: string`, `docType?: "sop"\|"faq"\|"kebijakan"\|"runbook"\|"panduan-produk"\|"onboarding"\|"catatan-partner"\|"kontrak"` | `document_chunks` (read-only, hybrid top-K + threshold) |
+| `cari_nama_produk`    | Cari nama produk katalog resmi dari kamus/sinonim (RAG) | `q: string`                            | `document_chunks` (docType `kamus-produk`) |
+| `cari_laporan`        | Cari laporan/ringkasan naratif historis (RAG) | `query: string`                                    | `document_chunks` (docType `laporan`) |
 
 > Semua endpoint `/reports/*` menerima **Bearer token (web)** atau **`x-internal-key` (AI Agent)** via middleware `authenticateOrInternal`.
+
+#### Manajemen Knowledge Base (Web)
+
+Endpoint `/api/knowledge/*` (auth + `requireRole("SUPER_ADMIN")`) mengelola tabel `knowledge_documents` dan memicu re-ingest:
+
+| Endpoint | Fungsi |
+| :-- | :-- |
+| `GET/POST /knowledge/documents`, `GET/PATCH/DELETE /knowledge/documents/:id` | CRUD dokumen (unggah `.md`/`.txt` via multipart) |
+| `GET /knowledge/stats`, `GET /knowledge/chunks` | Statistik & pratinjau chunk terindeks |
+| `POST /knowledge/ingest`, `GET /knowledge/ingest/status` | Picu & pantau re-ingest (proxy ke AI Agent via `x-internal-key`) |
 
 ### 10.3 System Prompt Guidelines
 
@@ -668,7 +684,9 @@ services:
       - OPENAI_EMBEDDING_MODEL=text-embedding-3-small
       - EMBEDDING_DIMENSIONS=1536
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - AGENT_TOP_K=12
+      - AGENT_TOP_K=5
+      - RAG_MIN_SCORE=${RAG_MIN_SCORE:-0.3}
+      - RAG_HYBRID=${RAG_HYBRID:-true}
       - CHUNK_SIZE=1000
       - CHUNK_OVERLAP=200
       - DB_HOST=db

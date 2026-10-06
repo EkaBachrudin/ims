@@ -5,10 +5,12 @@ import { createApp } from "../../src/app";
 
 export async function resetDb() {
   await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE
+     `TRUNCATE TABLE
        "refresh_tokens",
        "ai_conversation_logs",
        "audit_logs",
+       "document_chunks",
+       "knowledge_documents",
        "stock_transactions",
        "delivery_note_items",
        "delivery_notes",

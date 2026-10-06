@@ -1,0 +1,61 @@
+@reference "../../index.css";
+
+.knowledge-tabs {
+  @apply mb-4 flex gap-1 border-b border-border;
+}
+
+.knowledge-tab {
+  @apply -mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors;
+}
+
+.knowledge-tab.is-active {
+  @apply border-accent text-foreground;
+}
+
+.knowledge-stats {
+  @apply grid grid-cols-1 gap-3 sm:grid-cols-3;
+}
+
+.knowledge-typestats {
+  @apply mt-4 flex flex-wrap gap-x-4 gap-y-2;
+}
+
+.knowledge-typestat {
+  @apply flex items-center gap-2 text-xs text-muted-foreground;
+}
+
+.knowledge-chunk-preview {
+  @apply max-w-md text-xs text-muted-foreground;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.knowledge-ingest-bar {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+.knowledge-ingest-status {
+  @apply flex flex-wrap items-center gap-2 text-sm text-muted-foreground;
+}
+
+.knowledge-ingest-time {
+  @apply text-xs;
+}
+
+.knowledge-ingest-hint {
+  @apply mt-4 max-w-2xl text-sm text-muted-foreground;
+}
+
+.knowledge-ingest-results {
+  @apply mt-4 space-y-1;
+}
+
+.knowledge-ingest-results li {
+  @apply flex items-center gap-2 text-sm;
+}
+
+.knowledge-page__check {
+  @apply flex items-center gap-2 text-sm text-foreground;
+}

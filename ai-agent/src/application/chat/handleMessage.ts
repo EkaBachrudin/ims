@@ -52,7 +52,7 @@ export async function handleMessage(
 
   try {
     const result = await runAgent(
-      { chatId, message: text, history: getHistory(chatId) },
+      { chatId, message: text, history: getHistory(chatId), role: user.role },
       deps,
     );
     appendHistory(chatId, text, result.output);

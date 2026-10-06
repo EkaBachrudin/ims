@@ -2,12 +2,13 @@ import { env } from "./config/env";
 import { createBot } from "./presentation/telegram/bot";
 import { createNotifier } from "./infrastructure/telegram/notifier";
 import { createMessenger } from "./infrastructure/telegram/messenger";
+import { ingestJob } from "./infrastructure/rag/ingestJob";
 import { createHttpServer } from "./presentation/http/server";
 
 let bot: ReturnType<typeof createBot> | null = null;
 const notifier = createNotifier(() => bot);
 const messenger = createMessenger(() => bot);
-const server = createHttpServer(notifier);
+const server = createHttpServer(notifier, ingestJob);
 
 server.listen(env.PORT, () => {
   console.log(`AI agent health server di http://localhost:${env.PORT}`);

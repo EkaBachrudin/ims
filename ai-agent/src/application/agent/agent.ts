@@ -43,10 +43,11 @@ export async function runAgent(
     chatId: string;
     message: string;
     history: BaseMessage[];
+    role?: string | null;
   },
   deps: ToolDeps = container,
 ): Promise<AgentRunResult> {
-  const tools = buildTools(deps, input.chatId);
+  const tools = buildTools(deps, input.chatId, input.role);
   const executor = new AgentExecutor({
     agent: createToolCallingAgent({
       llm: getLlm(),

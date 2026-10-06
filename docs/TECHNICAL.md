@@ -177,7 +177,7 @@ frontend/
 
 ### 3.3 AI Agent
 
-AI Agent juga menerapkan **3 layer** dengan entry point event-driven (Telegram + HTTP) dan CLI ingest:
+AI Agent juga menerapkan **3 layer** dengan entry point event-driven (Telegram + HTTP), serta job/CLI ingest (impor & generate dokumen):
 
 ```text
 ai-agent/
@@ -187,7 +187,7 @@ ai-agent/
 │   │   └── telegramFormat.ts # renderer murni Markdown→HTML Telegram (shared)
 │   ├── presentation/         # PRESENTATION: batas inbound/outbound channel
 │   │   ├── http/
-│   │   │   ├── server.ts     # health + POST /notify
+│   │   │   ├── server.ts     # health + POST /notify + POST /ingest + GET /ingest/status
 │   │   │   └── notify.schema.ts
 │   │   └── telegram/
 │   │       ├── bot.ts        # handler pesan Telegram (entry point)
@@ -200,11 +200,13 @@ ai-agent/
 │   ├── infrastructure/       # PERSISTENCE / adapter outbound
 │   │   ├── backend/backendGateway.ts  # HTTP client ke Backend API (impl port)
 │   │   ├── telegram/notifier.ts       # push notifikasi Telegram (impl port)
-│   │   ├── rag/              # embeddings.ts, retriever.ts, ingest.ts, knowledgeBase.ts
-│   │   └── db.ts             # pg Pool READ-ONLY (document_chunks)
+│   │   ├── rag/              # embeddings.ts, retriever.ts, knowledgeBase.ts,
+│   │   │                     #   ingest.ts, ingestJob.ts, knowledgeDocStore.ts,
+│   │   │                     #   importDocs.ts, generateKamus.ts, generateLaporan.ts
+│   │   └── db.ts             # pg Pool READ-ONLY (document_chunks) + write pool (ingest)
 │   ├── composition/container.ts
 │   └── index.ts              # bootstrap (server + bot)
-├── docs/knowledge/           # sumber dokumen SOP (markdown/txt) untuk ingest
+├── docs/knowledge/           # seed dokumen statis (markdown/txt) → knowledge_documents
 ├── .env
 └── package.json
 ```
@@ -305,7 +307,9 @@ LLM_TEMPERATURE=0
 # --------------------------------------------
 # RAG / agent tuning
 # --------------------------------------------
-AGENT_TOP_K=12
+AGENT_TOP_K=5
+RAG_MIN_SCORE=0.3
+RAG_HYBRID=true
 MAX_HISTORY_TURNS=20
 CHUNK_SIZE=1000
 CHUNK_OVERLAP=200
@@ -325,8 +329,10 @@ DB_PASSWORD=postgres
 
 | Variabel                | Service | Fungsi                                                                 |
 | :---------------------- | :------ | :--------------------------------------------------------------------- |
-| `EMBEDDING_DIMENSIONS`  | ai-agent | Harus sama dengan `vector(1536)` pada `DocumentChunk` (ERD §3.15).    |
-| `AGENT_TOP_K`           | ai-agent | Jumlah chunk teratas yang diambil saat retrieval RAG.                  |
+| `EMBEDDING_DIMENSIONS`  | ai-agent | Harus sama dengan `vector(1536)` pada `DocumentChunk` (ERD §3.16).    |
+| `AGENT_TOP_K`           | ai-agent | Jumlah chunk teratas yang diambil saat retrieval RAG (default 5).       |
+| `RAG_MIN_SCORE`         | ai-agent | Ambang skor cosine minimal (0-1) agar chunk tak relevan dibuang.        |
+| `RAG_HYBRID`            | ai-agent | `true` = gabungan vector + full-text (RRF); `false` = vector saja.      |
 | `MAX_HISTORY_TURNS`     | ai-agent | Batas giliran riwayat percakapan yang dikirim ke LLM.                    |
 | `CHUNK_SIZE`/`CHUNK_OVERLAP` | ai-agent | Ukuran & tumpang tindih potongan saat ingest dokumen.              |
 | `DB_*`                  | ai-agent | Koneksi **read-only** runtime ke `document_chunks`; di compose `DB_HOST=db`. |
@@ -357,9 +363,10 @@ cp ai-agent/.env.example ai-agent/.env
 # 3. Nyalakan semua service (db + backend + frontend + ai-agent, hot reload)
 make dev            # Ctrl+C untuk berhenti; `make dev-down` dari terminal lain
 
-# 4. (terminal lain) isi data awal & embed dokumen SOP
+# 4. (terminal lain) isi data awal & siapkan knowledge base
 make seed
-make rag-ingest     # opsional: embed dokumen SOP ke document_chunks
+make rag-import-docs   # impor dokumen statis docs/knowledge → knowledge_documents
+make rag-ingest        # embed knowledge_documents → document_chunks
 ```
 
 Migrasi dijalankan otomatis oleh container backend saat start. URL service:
@@ -421,7 +428,9 @@ services:
       - OPENAI_EMBEDDING_MODEL=${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-1536}
       - LLM_TEMPERATURE=0
-      - AGENT_TOP_K=12
+      - AGENT_TOP_K=5
+      - RAG_MIN_SCORE=${RAG_MIN_SCORE:-0.3}
+      - RAG_HYBRID=${RAG_HYBRID:-true}
       - MAX_HISTORY_TURNS=20
       - CHUNK_SIZE=1000
       - CHUNK_OVERLAP=200
@@ -924,7 +933,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 ## 9. AI Agent Technical Specification
 
-AI Agent memiliki **dua sumber data**: (1) **data bisnis** melalui Backend REST API (function calling), dan (2) **knowledge/SOP** melalui retrieval vector **read-only** dari `document_chunks`. Riwayat percakapan dibatasi `MAX_HISTORY_TURNS` agar konteks LLM tetap efisien.
+AI Agent memiliki **dua sumber data**: (1) **data bisnis** melalui Backend REST API (function calling), dan (2) **knowledge** (SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak/kamus produk/laporan) melalui retrieval vector **read-only** dari `document_chunks`. Riwayat percakapan dibatasi `MAX_HISTORY_TURNS` agar konteks LLM tetap efisien.
 
 ### 9.0 Layered Architecture (AI Agent)
 
@@ -1032,15 +1041,21 @@ export function buildWriteTools({ backend }: { backend: BackendGateway }, chatId
 
 ```ts
 // src/application/tools/rag.ts (contoh)
-export function buildSopTool({ knowledge }: { knowledge: KnowledgeBase }) {
+export function buildSopTool({ knowledge }: { knowledge: KnowledgeBase }, role?: string | null) {
+  const allowed = allowedDocTypes(role); // catatan-partner & kontrak hanya OWNER/SUPER_ADMIN
   return new DynamicStructuredTool({
     name: "cari_sop",
-    description: "Mencari SOP, kebijakan, atau panduan internal (RAG).",
-    schema: sopSchema,
-    func: async ({ query }) => {
-      const chunks = await knowledge.search(query, env.AGENT_TOP_K);
+    description: "Mencari SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, atau kontrak (RAG).",
+    schema: sopSchema, // { query, docType? }
+    func: async ({ query, docType }) => {
+      const docTypes = docType ? [docType] : allowed;
+      const chunks = await knowledge.search(query, {
+        topK: env.AGENT_TOP_K,
+        minScore: env.RAG_MIN_SCORE,
+        docTypes,
+      });
       if (!chunks.length) return "Tidak ada SOP/panduan yang relevan di knowledge base.";
-      return chunks.map((c, i) => `[${i + 1}] (${c.source}) ${c.content}`).join("\n\n");
+      return chunks.map((c, i) => `[${i + 1}] (${c.title ?? c.source}) ${c.content}`).join("\n\n");
     },
   });
 }
@@ -1048,7 +1063,7 @@ export function buildSopTool({ knowledge }: { knowledge: KnowledgeBase }) {
 
 > Perhatikan: parameter `items` berbentuk array — berbeda dari rancangan awal (single item) — agar mendukung multi-item PO sekaligus konsisten dengan `PurchaseOrderItem` di ERD.
 
-**Set lengkap tool baca data (pasca-MVP):** selain `cek_stok_barang`, `rekap_pengiriman`, `buat_draft_po`, `buat_draft_surat_jalan`, dan `cari_sop`, tersedia `cari_produk`, `list_kategori`, `list_partner`, `list_gudang`, `stok_per_gudang`, `list_transaksi`, `list_po`, `list_po_status`, `detail_po`, `list_surat_jalan`, `stok_tipis`, dan `ringkasan_dashboard`. Tool tulis hanya `buat_draft_po` (`POST /po/draft`, SUPPLIER) dan `buat_draft_surat_jalan` (`POST /delivery-notes/draft`, CUSTOMER), keduanya membuat DRAFT. Semua memanggil endpoint backend dengan `x-internal-key` (lihat FSD §9.6/§9.7 & §10.2). Data transaksional **tidak** di-embed; hanya SOP + glossary skema (`docs/knowledge/`) yang di-RAG.
+**Set lengkap tool baca data (pasca-MVP):** selain `cek_stok_barang`, `rekap_pengiriman`, `buat_draft_po`, `buat_draft_surat_jalan`, dan `cari_sop`, tersedia `cari_produk`, `list_kategori`, `list_partner`, `list_gudang`, `stok_per_gudang`, `list_transaksi`, `list_po`, `list_po_status`, `detail_po`, `list_surat_jalan`, `stok_tipis`, dan `ringkasan_dashboard`. Tool RAG: `cari_sop` (dengan `docType`), `cari_nama_produk` (kamus produk), dan `cari_laporan` (laporan naratif). Tool tulis hanya `buat_draft_po` (`POST /po/draft`, SUPPLIER) dan `buat_draft_surat_jalan` (`POST /delivery-notes/draft`, CUSTOMER), keduanya membuat DRAFT. Semua memanggil endpoint backend dengan `x-internal-key` (lihat FSD §9.6/§9.7 & §10.2). Data transaksional **tidak** di-embed; yang di-RAG adalah dokumen `knowledge_documents` (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak, kamus produk, laporan).
 
 ### 9.3 System Prompt
 
@@ -1199,13 +1214,20 @@ Backend memicu endpoint ini secara **best-effort** (timeout 5 detik, gagal hanya
 
 ### 9.7 RAG Pipeline (Vector Store Read-Only)
 
-AI Agent menggunakan dua jalur data: **(1)** data bisnis via Backend API (function calling), dan **(2)** knowledge/SOP via retrieval vector **read-only** dari tabel `document_chunks`.
+AI Agent menggunakan dua jalur data: **(1)** data bisnis via Backend API (function calling), dan **(2)** knowledge (SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak/kamus produk/laporan) via retrieval vector **read-only** dari tabel `document_chunks`.
+
+Dokumen sumber (source of truth) kini disimpan di tabel **`knowledge_documents`** dan dikelola dari halaman web **Knowledge Base** (khusus `SUPER_ADMIN`). Proses ingest membaca tabel itu — bukan lagi file `docs/knowledge/*.md` secara langsung.
 
 ```mermaid
 flowchart LR
-    subgraph Offline["Ingestion (offline, admin)"]
-        DOC[Dokumen SOP/FAQ<br/>docs/knowledge/*.md] --> ING[infrastructure/rag/ingest.ts]
-        ING --> CH[chunk<br/>CHUNK_SIZE / CHUNK_OVERLAP]
+    subgraph Admin["Admin (web, SUPER_ADMIN)"]
+        UI[Halaman /knowledge] -->|upload/edit/hapus| KD[(knowledge_documents)]
+        UI -->|POST /knowledge/ingest| BE[Backend API]
+    end
+    subgraph Offline["Ingestion (AI Agent, kredensial write)"]
+        BE -->|x-internal-key /ingest| ING[infrastructure/rag/ingestJob.ts]
+        KD --> ING
+        ING --> CH[chunk + contentHash<br/>CHUNK_SIZE / CHUNK_OVERLAP]
         CH --> EMB[embed<br/>OPENAI_EMBEDDING_MODEL]
         EMB --> VDB[(document_chunks<br/>pgvector)]
     end
@@ -1245,66 +1267,88 @@ export const embeddings = new OpenAIEmbeddings({
 });
 ```
 
-**`src/infrastructure/rag/ingest.ts`** — chunk + embed + upsert (dijalankan manual, boleh pakai kredensial write):
+**`src/infrastructure/rag/ingest.ts`** — baca `knowledge_documents` → chunk + embed → tulis `document_chunks` (kredensial write). Idempoten: `contentHash` (SHA-256) membuat dokumen yang isinya tak berubah dilewati; tulis per-dokumen dalam transaksi.
 
 ```ts
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { readFile } from "node:fs/promises";
-import { db } from "../db";
-import { embeddings } from "./embeddings";
-
-export async function ingestFile(source: string, path: string) {
-  const raw = await readFile(path, "utf8");
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: Number(process.env.CHUNK_SIZE ?? 1000),
-    chunkOverlap: Number(process.env.CHUNK_OVERLAP ?? 200),
-  });
-  const chunks = await splitter.createDocuments([raw], [{ source }]);
-  const vectors = await embeddings.embedDocuments(chunks.map((c) => c.pageContent));
-
-  for (let i = 0; i < chunks.length; i++) {
-    await db.query(
-      `INSERT INTO document_chunks (id, source, content, embedding, "createdAt")
-       VALUES (gen_random_uuid(), $1, $2, $3, now())`,
-      [source, chunks[i].pageContent, JSON.stringify(vectors[i])],
-    );
+export async function runIngest(pool, filter = {}) {
+  const { rows } = await pool.query(
+    `SELECT "id","filename","title","docType","content","metadata"
+     FROM "knowledge_documents" WHERE "isActive" = true`,
+  );
+  for (const doc of rows) {
+    const contentHash = sha256(doc.content);
+    // lewati bila chunk dengan hash sama sudah ada
+    // split + embed, lalu dalam transaksi: DELETE by documentId, INSERT chunk
   }
-  return chunks.length;
 }
 ```
 
-**`src/infrastructure/rag/retriever.ts`** — retrieval top-K (read-only):
+**`src/infrastructure/rag/ingestJob.ts`** — runner job in-memory (status `idle|running|done|error`, lock anti-tumpang-tindih) yang dipanggil dari endpoint internal AI Agent:
+
+| Endpoint AI Agent          | Fungsi                                             |
+| :------------------------- | :------------------------------------------------- |
+| `POST /ingest`             | Mulai job re-ingest (body opsional `{documentId,docType}`) |
+| `GET /ingest/status`       | Status job terkini                                 |
+
+Keduanya dilindungi header `x-internal-key` dan dipanggil backend (bukan browser langsung).
+
+**`src/infrastructure/rag/retriever.ts`** — retrieval (read-only) dengan `embedQuery`, ambang skor, filter `docTypes`, dan opsi hybrid:
 
 ```ts
-import { db } from "../db";
-import { embeddings } from "./embeddings";
+export async function searchKnowledge(query: string, options: KnowledgeSearchOptions = {}) {
+  const topK = options.topK ?? env.AGENT_TOP_K;
+  const minScore = options.minScore ?? env.RAG_MIN_SCORE;
+  const docTypes = options.docTypes?.length ? options.docTypes : null;
 
-export async function searchKnowledge(query: string, topK = 12) {
-  const [vector] = await embeddings.embedDocuments([query]);
-  const { rows } = await db.query(
-    `SELECT source, content, 1 - (embedding <=> $1::vector) AS score
-     FROM document_chunks
-     ORDER BY embedding <=> $1::vector
-     LIMIT $2`,
-    [JSON.stringify(vector), topK],
-  );
-  return rows as { source: string; content: string; score: number }[];
+  try {
+    const vector = await getEmbeddings().embedQuery(query); // embedQuery, bukan embedDocuments
+    const rows = env.RAG_HYBRID
+      ? await hybridSearch(JSON.stringify(vector), query, topK, docTypes) // vector + full-text (RRF)
+      : await vectorSearch(JSON.stringify(vector), topK, docTypes);
+    return rows.filter(/* buang skor < minScore, kecuali cocok full-text */);
+  } catch (err) {
+    console.error("Retrieval knowledge base gagal:", err);
+    return []; // degradasi anggun
+  }
 }
 ```
 
 | Parameter                   | Nilai default | Efek                                                                 |
 | :-------------------------- | :------------ | :------------------------------------------------------------------- |
 | `OPENAI_EMBEDDING_MODEL`    | `text-embedding-3-small` | Model embedding; harus konsisten antara ingest & retrieval. |
-| `EMBEDDING_DIMENSIONS`      | `1536`        | Harus sama dengan `vector(1536)` di skema (ERD §3.15).               |
+| `EMBEDDING_DIMENSIONS`      | `1536`        | Harus sama dengan `vector(1536)` di skema (ERD §3.16).               |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | `1000` / `200` | Granularitas potongan; makin kecil makin presisi, makin banyak chunk. |
-| `AGENT_TOP_K`               | `12`          | Jumlah chunk konteks yang diambil per query.                          |
+| `AGENT_TOP_K`               | `5`           | Jumlah chunk konteks yang diambil per query.                          |
+| `RAG_MIN_SCORE`             | `0.3`         | Ambang skor cosine minimal agar chunk tak relevan dibuang.            |
+| `RAG_HYBRID`                | `true`        | Gabungan vector + full-text (RRF); `false` = vector saja.             |
 
 ```bash
-# Jalankan ingestion dokumen SOP (via Docker)
-make rag-ingest   # membaca ai-agent/docs/knowledge/*.md
+# Impor sekali: docs/knowledge/*.md → tabel knowledge_documents (source of truth)
+make rag-import-docs
+
+# Jalankan ingestion dari tabel knowledge_documents (via Docker)
+make rag-ingest   # membaca knowledge_documents, menulis document_chunks
 ```
 
-> **Penting:** AI Agent di runtime **hanya membaca** `document_chunks`. Proses ingest dapat memakai kredensial write terpisah; jangan memberi hak tulis ke proses runtime (least privilege).
+> **Penting:** AI Agent di runtime **hanya membaca** `document_chunks` untuk retrieval. Proses ingest memakai kredensial write terpisah; jangan memberi hak tulis ke proses runtime (least privilege).
+
+#### 9.7.1 Manajemen Knowledge Base (Web, SUPER_ADMIN)
+
+Backend mengekspos modul `/api/knowledge/*` (auth + `requireRole("SUPER_ADMIN")`), memakai multer untuk unggah `.md`/`.txt`:
+
+| Endpoint                            | Fungsi                                   |
+| :---------------------------------- | :--------------------------------------- |
+| `GET /knowledge/documents`          | Daftar dokumen (paginasi, filter `docType`) |
+| `POST /knowledge/documents`         | Unggah/tambah dokumen (multipart/JSON)   |
+| `GET /knowledge/documents/:id`      | Detail (termasuk isi)                    |
+| `PATCH /knowledge/documents/:id`    | Ubah (naikkan `version` bila isi berubah) |
+| `DELETE /knowledge/documents/:id`   | Nonaktifkan (soft delete)                |
+| `GET /knowledge/stats`              | Statistik dokumen & chunk per `docType`  |
+| `GET /knowledge/chunks`             | Pratinjau/pencarian chunk terindeks      |
+| `POST /knowledge/ingest`            | Picu re-ingest (proxy ke AI Agent)       |
+| `GET /knowledge/ingest/status`      | Status re-ingest                         |
+
+Skema: `knowledge_documents` (source of truth) + kolom metadata di `document_chunks` (`documentId`, `docType`, `title`, `metadata`, `contentHash`, `embeddingModel`, `dimensions`, `content_tsv`). Kolom generated `content_tsv` + index GIN dibuat via migrasi SQL manual.
 
 ### 9.8 Guardrails Recap
 
@@ -1398,11 +1442,11 @@ sequenceDiagram
     participant PG as document_chunks (pgvector)
 
     Owner->>AI: "Apa SOP penerimaan barang retur?"
-    AI->>AI: intent → cari_sop
-    AI->>RAG: searchKnowledge(query, AGENT_TOP_K)
-    RAG->>PG: SELECT ... ORDER BY embedding <=> query LIMIT top_k (read-only)
-    PG-->>RAG: chunks + score
-    RAG-->>AI: konteks SOP
+    AI->>AI: intent → cari_sop (docType opsional)
+    AI->>RAG: searchKnowledge(query, { topK, minScore, docTypes })
+    RAG->>PG: hybrid (vector <=> + full-text @@) + threshold + LIMIT top_k (read-only)
+    PG-->>RAG: chunks + score + docType
+    RAG-->>AI: konteks SOP (judul + sumber)
     AI-->>Owner: jawaban berdasarkan konteks + sumber
 ```
 
@@ -1466,6 +1510,9 @@ Tidak ada `npm`/`tsx` di host.
     "dev": "tsx watch src/index.ts",
     "build": "NODE_OPTIONS=--max-old-space-size=6144 tsc -p tsconfig.build.json",
     "rag:ingest": "tsx src/infrastructure/rag/ingest.ts",
+    "rag:import-docs": "tsx src/infrastructure/rag/importDocs.ts",
+    "rag:generate-kamus": "tsx src/infrastructure/rag/generateKamus.ts",
+    "rag:generate-laporan": "tsx src/infrastructure/rag/generateLaporan.ts",
     "lint": "eslint .",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit",
     "test": "vitest run"
@@ -1501,14 +1548,23 @@ make db-reset
 ### 12.4 Ingest Knowledge Base (RAG)
 
 ```bash
-# taruh dokumen SOP di ai-agent/docs/knowledge/*.md, lalu:
+# 1) Sekali: impor dokumen statis docs/knowledge/*.md → tabel knowledge_documents
+make rag-import-docs
+
+# 2) Bangun/refresh index dari knowledge_documents → document_chunks
 make rag-ingest
+
+# 3) Opsional: generate dokumen dari Backend API lalu ingest otomatis
+make rag-generate-kamus     # kamus produk dari katalog
+make rag-generate-laporan   # laporan naratif periode berjalan
 ```
+
+Setelah itu, dokumen juga dapat dikelola dari halaman web **Knowledge Base** (`SUPER_ADMIN`) dengan tombol re-ingest (per dokumen atau semua).
 
 Verifikasi isi tabel:
 
 ```sql
-SELECT source, count(*) FROM document_chunks GROUP BY source;
+SELECT "docType", count(*) FROM document_chunks GROUP BY "docType";
 ```
 
 Jalankan lewat container DB: `make db-shell`.
@@ -1575,7 +1631,8 @@ Type: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`.
 | `401` berulang di frontend                         | Access token expired, refresh gagal        | Cek interceptor & `JWT_REFRESH_SECRET`.                           |
 | `403 FORBIDDEN` pada AI `POST /po/draft`           | `INTERNAL_API_KEY` tidak cocok             | Samakan key di backend & ai-agent.                                |
 | Jawaban AI mengarang                               | Temperature > 0 / tools tak dipanggil      | Set `LLM_TEMPERATURE=0`, periksa deskripsi tool.                  |
-| Jawaban SOP tidak relevan / kosong                 | `document_chunks` belum di-ingest          | Jalankan `make rag-ingest`, cek `AGENT_TOP_K`.                    |
+| Jawaban SOP tidak relevan / kosong                 | `document_chunks` belum di-ingest          | Jalankan `make rag-ingest` (atau re-ingest dari UI), cek `AGENT_TOP_K`/`RAG_MIN_SCORE`. |
+| Dokumen baru dari UI belum bisa dijawab            | Belum di-re-ingest setelah upload          | Klik re-ingest (per dokumen atau semua) di halaman Knowledge Base. |
 | Error `expected 1536 dimensions`                   | Dimensi embedding tak cocok dengan kolom   | Samakan `EMBEDDING_DIMENSIONS` dgn `vector(1536)`; re-ingest.     |
 | AI `permission denied for table document_chunks`   | User DB read-only kurang `GRANT SELECT`    | Beri `GRANT SELECT` pada `document_chunks` (lihat §2.3 rule 5).   |
 | Outbound selalu ditolak                            | Stok belum di-seed / salah gudang          | Cek `Inventory` per `warehouseId`; jalankan `make seed`.          |
@@ -1592,7 +1649,7 @@ Pemetaan timeline 5 minggu (FSD) menjadi task teknis.
 | 1      | Backend & DB                      | Init monorepo; `docker-compose.yml`; setup Backend + Prisma; migrate `init`; `seed.ts`; Auth (login/refresh/logout) + middleware auth/RBAC/validate/errorHandler; CRUD master data. |
 | 2      | Backend Transaksi + Frontend Dasar | Endpoint transaksi (atomic stock), generator `poNumber`, PO lifecycle, audit helper; setup Vite + Tailwind + Router + `Providers` (QueryClient); layout; feature master data (`useQuery`). |
 | 3      | Frontend Lanjutan + AI Dasar      | Feature transaksi & PO (form + `useMutation` + invalidation), halaman detail PO, dashboard; setup ai-agent, Telegraf long-polling, endpoint `/internal/ai-log`, mapping chatId→user; LLM + tools `cek_stok_barang`, `rekap_pengiriman`. |
-| 4      | AI Lanjutan + RAG                 | Tool `buat_draft_po` → `POST /po/draft`; setup RAG ingestion (`rag:ingest`) + retriever read-only; tool `cari_sop`; guardrail, rate limit, conversation logging. |
+| 4      | AI Lanjutan + RAG                 | Tool `buat_draft_po` → `POST /po/draft`; RAG: `knowledge_documents` (source of truth) + halaman web Knowledge Base (SUPER_ADMIN), ingest DB + job/CLI (`rag-import-docs`, `rag-generate-*`); retriever read-only (hybrid + threshold); tool `cari_sop`/`cari_nama_produk`/`cari_laporan`; guardrail, rate limit, conversation logging. |
 | 5      | Testing & Finalisasi              | Integration E2E (chat → draft PO → muncul di web); bug fixing & error handling; optimasi prompt & latency; hardening; dokumentasi akhir & demo script. |
 
 ---

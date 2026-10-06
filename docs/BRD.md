@@ -100,9 +100,10 @@ Kesenjangan antara **kompleksitas sistem** dan **kebiasaan komunikasi alami** pe
 2. **AI Chat Assistant** via Telegram (MVP) / WhatsApp (tahap lanjut):
    - Intent baca: cek stok & katalog produk, rekap pengiriman, transaksi barang masuk/keluar, daftar/detail PO, surat jalan, partner, gudang, stok tipis, dan ringkasan dashboard.
    - Intent tulis: buat draft PO, buat draft Surat Jalan.
-   - Tanya SOP/knowledge.
+   - Tanya SOP/knowledge (kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak, kamus produk, laporan).
    - Data bisnis diakses via *function/tool calling* ke backend API (bukan Text-to-SQL langsung).
-   - Knowledge/SOP dijawab via **RAG retrieval** *read-only* dari vector store (`document_chunks`).
+   - Knowledge/SOP dijawab via **RAG retrieval** *read-only* dari vector store (`document_chunks`) dengan hybrid (vector + full-text) & ambang skor.
+   - Knowledge base dikelola dari halaman web (khusus `SUPER_ADMIN`) dengan sumber dokumen pada tabel `knowledge_documents` dan re-ingest terpicu dari UI.
    - Guardrail anti-halusinasi & audit percakapan.
    - **Notifikasi proaktif (Telegram):** admin gudang menerima notifikasi berisi ringkasan PO + tautan konfirmasi saat draft PO dibuat dari chat; owner menerima notifikasi saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai.
 3. **Backend REST API** terpusat sebagai sumber logika bisnis.
@@ -186,7 +187,8 @@ flowchart LR
 | BR-010 | Sistem harus membatasi akses berdasarkan peran pengguna.                       | Must     | FR-02          |
 | BR-011 | Setiap perubahan data penting harus tercatat pada audit log.                    | Should   | FR-10          |
 | BR-012 | Sistem harus berjalan pada arsitektur container yang dapat di-deploy ulang.    | Should   | NFR-10         |
-| BR-013 | Owner dapat menanyakan SOP/kebijakan internal melalui chat, dijawab dari knowledge base (RAG). | Should | FR-08 |
+| BR-013 | Owner dapat menanyakan SOP/kebijakan/runbook/panduan/FAQ internal melalui chat, dijawab dari knowledge base (RAG). | Should | FR-08 |
+| BR-017 | Super Admin dapat mengelola knowledge base (unggah/edit/nonaktifkan dokumen dan memicu re-ingest) melalui web. | Should | FR-08 |
 | BR-014 | Owner dapat menanyakan seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) melalui chat. | Should | FR-08 |
 | BR-015 | Admin gudang menerima notifikasi Telegram beserta tautan konfirmasi saat draft PO dibuat via chat AI. | Should | FR-08 |
 | BR-016 | Owner menerima notifikasi Telegram saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai (`COMPLETED`). | Should | FR-08 |

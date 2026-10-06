@@ -59,6 +59,7 @@ Proyek ini menghadirkan **WMS berbasis web** untuk staf admin gudang, yang dihub
 - **Dashboard & Laporan**: Ringkasan stok, transaksi harian, low-stock alert, rekap pengiriman.
 - **Autentikasi & RBAC**: Peran `SUPER_ADMIN`, `ADMIN`, `OWNER`.
 - **Audit Log**: Jejak perubahan data penting.
+- **Knowledge Base** (khusus `SUPER_ADMIN`): kelola dokumen knowledge (unggah/edit/nonaktifkan), lihat statistik & pratinjau index, dan memicu re-ingest ke vector store.
 
 ### 2. Asisten AI (Chat) — untuk Owner/Manager
 
@@ -71,12 +72,13 @@ Proyek ini menghadirkan **WMS berbasis web** untuk staf admin gudang, yang dihub
 - **Stok tipis & ringkasan** — _"Produk apa yang stoknya menipis?"_
 - **Buat draft PO** — _"Besok siapkan PO untuk CV Sumber Frozen isinya 50 pack Dimsum."_
 - **Buat draft Surat Jalan** — _"Buat surat jalan untuk Agen Bahari isi 10 pack Dimsum."_
-- **Tanya SOP/knowledge** (RAG) — _"Apa SOP penerimaan barang retur?"_
-- **Anti-halusinasi** — jawaban hanya dari data perusahaan/konteks RAG, bukan pengetahuan umum.
+- **Tanya SOP/knowledge** (RAG) — _"Apa SOP penerimaan barang retur?"_, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak.
+- **Kamus produk & laporan** — resolusi nama produk informal via kamus; tanya tren/ringkasan periode historis.
+- **Anti-halusinasi** — jawaban hanya dari data perusahaan/konteks RAG (hybrid retrieval + ambang skor), bukan pengetahuan umum.
 - **Intent-to-action** — perintah chat dapat memicu pembuatan draft PO di sistem.
 - **Notifikasi Telegram** — saat owner membuat draft PO via chat, admin gudang menerima pesan bot berisi ringkasan PO + tombol tautan langsung ke halaman detail untuk konfirmasi & terima barang; owner dikabari saat PO dikonfirmasi/dibatalkan dan saat penerimaan selesai (`COMPLETED`).
 
-> **Catatan:** seluruh pembacaan data bisnis (produk, kategori, partner, gudang, transaksi, PO, surat jalan, laporan) dilakukan lewat Backend API (`/reports/*`) dengan **internal key**. Data transaksional **tidak** di-embed ke vector store; hanya SOP/kebijakan yang di-RAG.
+> **Catatan:** seluruh pembacaan data bisnis (produk, kategori, partner, gudang, transaksi, PO, surat jalan, laporan) dilakukan lewat Backend API (`/reports/*`) dengan **internal key**. Data transaksional **tidak** di-embed ke vector store; yang di-RAG adalah dokumen `knowledge_documents` (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak, kamus produk, laporan) yang dikelola dari halaman Knowledge Base.
 
 ---
 
@@ -208,11 +210,15 @@ atau `make dev-down` dari terminal lain.
 | Database | localhost:5433 (psql)   |
 
 Migrasi dijalankan otomatis oleh container backend saat start. Isi data awal
-dan embed dokumen SOP (opsional) lewat container:
+dan siapkan knowledge base lewat container:
 
 ```bash
 make seed
-make rag-ingest   # opsional: embed dokumen SOP
+make rag-import-docs      # impor dokumen statis docs/knowledge → knowledge_documents
+make rag-ingest           # embed knowledge_documents → document_chunks
+# opsional: generate dari Backend API lalu ingest otomatis
+make rag-generate-kamus
+make rag-generate-laporan
 ```
 
 Target lain yang sering dipakai: `make dev-logs`, `make shell-backend`,
@@ -277,7 +283,7 @@ Bot   : (dari knowledge base) Barang retur diverifikasi maksimal 1x24 jam...
 | **1**  | Backend & DB                      | ERD final, init repo, Docker Compose, Prisma migrate + seed, Auth/RBAC, CRUD master data  |
 | **2**  | Backend Transaksi + Frontend Dasar | Transaksi atomic stok, PO lifecycle, audit; setup Vite + Tailwind + TanStack Query, layout, UI master data |
 | **3**  | Frontend Lanjutan + AI Dasar      | UI transaksi & PO + dashboard; setup ai-agent, Telegraf, tools cek stok & rekap pengiriman |
-| **4**  | AI Lanjutan + RAG                 | Tool buat draft PO, RAG ingestion + retriever, tool cari SOP, sinkronisasi chat → web      |
+| **4**  | AI Lanjutan + RAG                 | Tool buat draft PO, knowledge base (`knowledge_documents` + halaman web) & ingest, retriever hybrid + threshold, tool cari SOP/kamus/laporan, sinkronisasi chat → web |
 | **5**  | Testing & Finalisasi              | E2E chat → PO → web, bug fixing, optimasi prompt, dokumentasi & demo                       |
 
 > **Perluasan pasca-MVP:** Asisten AI dapat membaca seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) melalui endpoint baca `/reports/*` dengan internal key.

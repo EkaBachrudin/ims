@@ -200,6 +200,8 @@ export interface AiLogInput {
 
 export interface ProductListFilter {
   q?: string | null;
+  page?: number;
+  limit?: number;
 }
 
 export interface PartnerListFilter {
@@ -219,6 +221,7 @@ export interface TransactionFilter {
   productName?: string | null;
   warehouseCode?: string | null;
   partnerName?: string | null;
+  limit?: number;
 }
 
 export interface PoListFilter {

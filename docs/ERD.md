@@ -14,7 +14,7 @@
 
 ## 1. Overview
 
-Dokumen ini mendefinisikan model data sistem WMS + AI RAG. Skema mencakup **skema inti awal** (Category, Product, Partner, StockTransaction, PurchaseOrder) dan **perluasan secukupnya** untuk kebutuhan produksi: autentikasi (User, RefreshToken), multi-gudang (Warehouse, Inventory), Surat Jalan (DeliveryNote), audit (AuditLog), riwayat percakapan AI (AiConversationLog), dan knowledge base RAG (DocumentChunk).
+Dokumen ini mendefinisikan model data sistem WMS + AI RAG. Skema mencakup **skema inti awal** (Category, Product, Partner, StockTransaction, PurchaseOrder) dan **perluasan secukupnya** untuk kebutuhan produksi: autentikasi (User, RefreshToken), multi-gudang (Warehouse, Inventory), Surat Jalan (DeliveryNote), audit (AuditLog), riwayat percakapan AI (AiConversationLog), dan knowledge base RAG (**KnowledgeDocument** sebagai *source of truth* + **DocumentChunk** sebagai index vektor).
 
 ### 1.1 Notation
 
@@ -421,19 +421,47 @@ Menyimpan akun pengguna dashboard & pemetaan kanal chat.
 | `latencyMs`  | Int?          | nullable         | Latensi pemrosesan (ms).             |
 | `createdAt`  | DateTime      | default now()    | Timestamp.                           |
 
-### 3.15 `DocumentChunk` (Knowledge Base — pgvector)
+### 3.15 `KnowledgeDocument` (Knowledge Base — Source of Truth)
 
-Menyimpan potongan dokumen SOP/FAQ beserta embedding untuk **RAG retrieval** oleh AI Agent. Proses *ingest* (chunking + embedding) dijalankan offline; AI Agent mengakses tabel ini **read-only**.
+Menyimpan dokumen knowledge base (SOP, kebijakan, runbook, panduan, onboarding, FAQ, catatan partner, kontrak, kamus produk, laporan). Dikelola dari halaman web **Knowledge Base** oleh `SUPER_ADMIN`; dokumen ini menjadi **sumber** yang kemudian di-*ingest* ke `DocumentChunk`.
 
-| Column      | Type          | Constraint        | Description                          |
-| :---------- | :------------ | :---------------- | :----------------------------------- |
-| `id`        | UUID (String) | PK                | Identitas chunk.                     |
-| `source`    | String        | not null          | Sumber dokumen (SOP/panduan).        |
-| `content`   | String        | not null          | Potongan teks.                       |
-| `embedding` | vector(1536)  | not null          | Embedding (pgvector); `text-embedding-3-small`, 1536 dim. |
-| `createdAt` | DateTime      | default now()     | Timestamp.                           |
+| Column         | Type          | Constraint        | Description                                             |
+| :------------- | :------------ | :---------------- | :------------------------------------------------------ |
+| `id`           | UUID (String) | PK                | Identitas dokumen.                                      |
+| `filename`     | String        | not null          | Nama berkas (mis. `sop-retur-barang.md`, `kamus-produk.md`). |
+| `title`        | String        | not null          | Judul dokumen.                                          |
+| `docType`      | String        | not null, default `sop` | Jenis dokumen (lihat daftar di catatan).          |
+| `content`      | String        | not null          | Isi lengkap dokumen.                                    |
+| `metadata`     | Json?         | nullable          | Metadata tambahan (opsional).                           |
+| `version`      | Int           | default 1         | Nomor versi; naik saat isi diubah.                      |
+| `isActive`     | Boolean       | default true      | Soft delete; dokumen non-aktif tidak di-ingest.         |
+| `uploadedById` | UUID (String)?| FK → `User.id`, nullable | Pengunggah.                                      |
+| `createdAt`    | DateTime      | default now()     | Timestamp dibuat.                                       |
+| `updatedAt`    | DateTime      | updatedAt         | Timestamp diperbarui.                                   |
 
-> **Catatan:** dimensi `vector(1536)` harus sama dengan `EMBEDDING_DIMENSIONS` di env AI Agent (lihat [TECHNICAL §5.4 & §9.7](./TECHNICAL.md)). Mengganti model embedding (mis. dimensi berbeda) memerlukan migrasi kolom + re-ingest.
+> **`docType`** berupa string (bukan enum) dengan nilai yang dipakai: `sop`, `faq`, `kebijakan`, `runbook`, `panduan-produk`, `onboarding`, `catatan-partner`, `kontrak`, `kamus-produk`, `laporan`. Jenis `catatan-partner` dan `kontrak` dibatasi aksesnya (hanya `OWNER`/`SUPER_ADMIN`).
+
+### 3.16 `DocumentChunk` (Knowledge Base Index — pgvector)
+
+Menyimpan potongan dokumen (`KnowledgeDocument`) beserta embedding untuk **RAG retrieval** oleh AI Agent. Proses *ingest* (chunking + embedding) dijalankan offline/job terpisah; AI Agent mengakses tabel ini **read-only**.
+
+| Column           | Type          | Constraint        | Description                                             |
+| :--------------- | :------------ | :---------------- | :------------------------------------------------------ |
+| `id`             | UUID (String) | PK                | Identitas chunk.                                        |
+| `source`         | String        | not null          | Sumber dokumen (nama berkas).                           |
+| `content`        | String        | not null          | Potongan teks (judul disisipkan saat ingest).           |
+| `embedding`      | vector(1536)  | not null          | Embedding (pgvector); `text-embedding-3-small`, 1536 dim. |
+| `documentId`     | UUID (String)?| FK → `KnowledgeDocument.id`, nullable | Dokumen asal.                |
+| `docType`        | String?       | nullable          | Jenis dokumen (untuk filter retrieval).                 |
+| `title`          | String?       | nullable          | Judul dokumen.                                          |
+| `metadata`       | Json?         | nullable          | Metadata tambahan.                                      |
+| `contentHash`    | String?       | nullable          | SHA-256 isi dokumen; untuk melewati re-ingest tak berubah. |
+| `embeddingModel` | String?       | nullable          | Nama model embedding saat ingest.                       |
+| `dimensions`     | Int?          | nullable          | Dimensi embedding.                                      |
+| `contentTsv`     | tsvector?     | generated         | `to_tsvector('simple', content)` untuk hybrid search.   |
+| `createdAt`      | DateTime      | default now()     | Timestamp.                                              |
+
+> **Catatan:** dimensi `vector(1536)` harus sama dengan `EMBEDDING_DIMENSIONS` di env AI Agent (lihat [TECHNICAL §5.4 & §9.7](./TECHNICAL.md)). Mengganti model embedding (mis. dimensi berbeda) memerlukan migrasi kolom + re-ingest. Kolom `content_tsv` bersifat *generated* dan dibuat via migrasi SQL manual (Prisma tidak mendeklarasikannya).
 
 ---
 
@@ -462,6 +490,8 @@ Menyimpan potongan dokumen SOP/FAQ beserta embedding untuk **RAG retrieval** ole
 | Warehouse       | DeliveryNote         | 1 : N       | `warehouseId`       | Restrict     |
 | DeliveryNote    | DeliveryNoteItem     | 1 : N       | `dnId`              | Cascade      |
 | Product         | DeliveryNoteItem     | 1 : N       | `productId`         | Restrict     |
+| User            | KnowledgeDocument    | 1 : N       | `uploadedById`      | SetNull      |
+| KnowledgeDocument | DocumentChunk      | 1 : N       | `documentId`        | Cascade      |
 
 ---
 
@@ -490,13 +520,17 @@ Menyimpan potongan dokumen SOP/FAQ beserta embedding untuk **RAG retrieval** ole
 | DeliveryNote        | `@@index([status])`, `@@index([shipDate])`         | Filter & rekap kirim.            |
 | AiConversationLog   | `@@index([chatId, createdAt])`, `@@index([intent])`| Audit & evaluasi AI.             |
 | AuditLog            | `@@index([entity, entityId])`, `@@index([createdAt])`| Penelusuran perubahan.         |
-| DocumentChunk       | `@@index([source])` + ivfflat/HNSW on embedding    | Vector search (pgvector).        |
+| KnowledgeDocument   | `@@index([docType])`, `@@index([isActive])`        | Filter & status dokumen.         |
+| DocumentChunk       | `@@index([source])`, `@@index([documentId])` + HNSW on embedding + GIN on `content_tsv` | Vector & hybrid search (pgvector). |
 
-> **Index vector:** Prisma tidak mendeklarasikan index ivfflat/HNSW untuk kolom `Unsupported("vector(1536)")`. Buat via raw SQL pada migration, contoh:
+> **Index vector & hybrid:** Prisma tidak mendeklarasikan index HNSW untuk kolom `Unsupported("vector(1536)")` maupun GIN untuk `tsvector`. Buat via raw SQL pada migration, contoh:
 >
 > ```sql
 > CREATE INDEX document_chunks_embedding_idx
 >   ON document_chunks USING hnsw (embedding vector_cosine_ops);
+>
+> CREATE INDEX document_chunks_content_tsv_idx
+>   ON document_chunks USING gin ("content_tsv");
 > ```
 >
 > **Akses AI Agent:** berikan `GRANT SELECT ON document_chunks TO <ai_agent_role>;` (read-only). Proses ingest memakai role terpisah dengan hak tulis.
@@ -531,12 +565,13 @@ model User {
   whatsappNumber String?  @unique
   isActive       Boolean  @default(true)
 
-  refreshTokens  RefreshToken[]
-  auditLogs      AuditLog[]
-  conversations  AiConversationLog[]
-  transactions   StockTransaction[]
-  purchaseOrders PurchaseOrder[]
-  deliveryNotes  DeliveryNote[]
+  refreshTokens      RefreshToken[]
+  auditLogs          AuditLog[]
+  conversations      AiConversationLog[]
+  transactions       StockTransaction[]
+  purchaseOrders     PurchaseOrder[]
+  deliveryNotes      DeliveryNote[]
+  knowledgeDocuments KnowledgeDocument[]
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -858,14 +893,48 @@ enum ChatPlatform {
 // 7. RAG VECTOR STORE (KNOWLEDGE/SOP, READ-ONLY DI RUNTIME AI AGENT)
 // ----------------------------------------------------------------------
 
+/// Dokumen sumber knowledge base (source of truth). Di-CRUD via web (SUPER_ADMIN),
+/// lalu di-ingest ke `DocumentChunk` oleh AI Agent.
+model KnowledgeDocument {
+  id           String   @id @default(uuid())
+  filename     String
+  title        String
+  docType      String   @default("sop")
+  content      String
+  metadata     Json?
+  version      Int      @default(1)
+  isActive     Boolean  @default(true)
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  chunks DocumentChunk[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([docType])
+  @@index([isActive])
+  @@map("knowledge_documents")
+}
+
 model DocumentChunk {
-  id        String                       @id @default(uuid())
-  source    String
-  content   String
-  embedding Unsupported("vector(1536)")
-  createdAt DateTime                     @default(now())
+  id             String                        @id @default(uuid())
+  source         String
+  content        String
+  embedding      Unsupported("vector(1536)")
+  documentId     String?
+  document       KnowledgeDocument?            @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  docType        String?
+  title          String?
+  metadata       Json?
+  contentHash    String?
+  embeddingModel String?
+  dimensions     Int?
+  contentTsv     Unsupported("tsvector")?      @map("content_tsv")
+  createdAt      DateTime                      @default(now())
 
   @@index([source])
+  @@index([documentId])
   @@map("document_chunks")
 }
 ```
@@ -877,7 +946,7 @@ model DocumentChunk {
 **Dua jalur akses:**
 
 1. **Data bisnis (write/read)** — AI Agent memanggil Backend REST API (function calling). Backend yang menjalankan query Prisma di bawah ini; AI Agent tidak menyentuh tabel bisnis.
-2. **Knowledge/SOP (read-only)** — AI Agent membaca `document_chunks` secara langsung (read-only) via retrieval vector.
+2. **Knowledge/SOP (read-only)** — AI Agent membaca `document_chunks` secara langsung (read-only) via retrieval vector (hybrid: vector + full-text, dengan ambang skor). Dokumen sumber (`knowledge_documents`) dikelola backend/web; AI Agent tidak menulisnya.
 
 | Scenario                | Tool               | Data Access (dijalankan oleh Backend)                                       |
 | :---------------------- | :----------------- | :-------------------------------------------------------------------------- |
@@ -900,7 +969,9 @@ model DocumentChunk {
 
 | Scenario (RAG)          | Tool               | Data Access (langsung, read-only)                                            |
 | :---------------------- | :----------------- | :--------------------------------------------------------------------------- |
-| Tanya SOP/kebijakan     | `cari_sop`         | `SELECT source, content FROM document_chunks ORDER BY embedding <=> :query LIMIT :topK` (role read-only). |
+| Tanya SOP/kebijakan/runbook/panduan/onboarding/FAQ/catatan partner/kontrak | `cari_sop` (`docType?`) | Hybrid: ranking vektor (`embedding <=> :query`) + full-text (`content_tsv @@ plainto_tsquery`) dengan ambang skor, filter `docType`, `LIMIT :topK` (role read-only). |
+| Nama produk dari kamus/sinonim | `cari_nama_produk` | Retrieval `document_chunks` dengan `docType = 'kamus-produk'`. |
+| Laporan naratif historis | `cari_laporan`   | Retrieval `document_chunks` dengan `docType = 'laporan'`.                    |
 
 > AI **tidak** menulis SQL langsung untuk data bisnis. Akses data bisnis melalui backend API/tools yang divalidasi (BR-RULE-007, FSD §10). Akses langsung DB hanya untuk retrieval vector, tanpa hak tulis.
 

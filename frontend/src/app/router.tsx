@@ -15,6 +15,7 @@ import { DeliveryNoteDetailPage } from "@/features/delivery-notes/DeliveryNoteDe
 import { ReportsPage } from "@/features/reports/ReportsPage";
 import { UsersPage } from "@/features/users/UsersPage";
 import { AuditLogsPage } from "@/features/audit-logs/AuditLogsPage";
+import { KnowledgePage } from "@/features/knowledge/KnowledgePage";
 
 export function AppRouter() {
   return (
@@ -52,6 +53,14 @@ export function AppRouter() {
           element={
             <RequireAuth roles={["SUPER_ADMIN"]}>
               <AuditLogsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/knowledge"
+          element={
+            <RequireAuth roles={["SUPER_ADMIN"]}>
+              <KnowledgePage />
             </RequireAuth>
           }
         />

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  BookOpen,
   ChartBar,
   ClipboardText,
   Cube,
@@ -59,6 +60,12 @@ const nav: NavItem[] = [
     to: "/audit-logs",
     label: "Audit Log",
     icon: <Scroll size={18} weight="duotone" />,
+    roles: ["SUPER_ADMIN"],
+  },
+  {
+    to: "/knowledge",
+    label: "Knowledge Base",
+    icon: <BookOpen size={18} weight="duotone" />,
     roles: ["SUPER_ADMIN"],
   },
 ];

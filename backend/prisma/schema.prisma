@@ -23,12 +23,13 @@ model User {
   whatsappNumber String?  @unique
   isActive       Boolean  @default(true)
 
-  refreshTokens  RefreshToken[]
-  auditLogs      AuditLog[]
-  conversations  AiConversationLog[]
-  transactions   StockTransaction[]
-  purchaseOrders PurchaseOrder[]
-  deliveryNotes  DeliveryNote[]
+  refreshTokens      RefreshToken[]
+  auditLogs          AuditLog[]
+  conversations      AiConversationLog[]
+  transactions       StockTransaction[]
+  purchaseOrders     PurchaseOrder[]
+  deliveryNotes      DeliveryNote[]
+  knowledgeDocuments KnowledgeDocument[]
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -350,13 +351,47 @@ enum ChatPlatform {
 // 7. RAG VECTOR STORE (KNOWLEDGE/SOP, READ-ONLY DI RUNTIME AI AGENT)
 // ----------------------------------------------------------------------
 
+/// Dokumen sumber knowledge base (source of truth). Di-CRUD via web (SUPER_ADMIN),
+/// lalu di-ingest ke `document_chunks` oleh AI Agent.
+model KnowledgeDocument {
+  id           String   @id @default(uuid())
+  filename     String
+  title        String
+  docType      String   @default("sop")
+  content      String
+  metadata     Json?
+  version      Int      @default(1)
+  isActive     Boolean  @default(true)
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  chunks DocumentChunk[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([docType])
+  @@index([isActive])
+  @@map("knowledge_documents")
+}
+
 model DocumentChunk {
-  id        String                       @id @default(uuid())
-  source    String
-  content   String
-  embedding Unsupported("vector(1536)")
-  createdAt DateTime                     @default(now())
+  id             String                        @id @default(uuid())
+  source         String
+  content        String
+  embedding      Unsupported("vector(1536)")
+  documentId     String?
+  document       KnowledgeDocument?            @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  docType        String?
+  title          String?
+  metadata       Json?
+  contentHash    String?
+  embeddingModel String?
+  dimensions     Int?
+  contentTsv     Unsupported("tsvector")?      @map("content_tsv")
+  createdAt      DateTime                      @default(now())
 
   @@index([source])
+  @@index([documentId])
   @@map("document_chunks")
 }

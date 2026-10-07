@@ -4,9 +4,12 @@ import type { BackendGateway, StockRow } from "../ports/backendGateway";
 import {
   DIRECTION_TO_TYPE,
   TYPE_LABEL,
+  formatDnList,
+  formatIdDate,
+  formatLowStockList,
   formatPoList,
-  matchedNote,
-  shortDate,
+  formatProductList,
+  formatTransactionList,
   unmatchedNote,
 } from "./format";
 import {
@@ -58,9 +61,11 @@ export function buildReadTools({ backend }: ReadToolDeps) {
       if (result.status === "ambiguous") {
         const candidates = result.candidates ?? [];
         const lines = candidates.map(
-          (c) => `• ${c.name} (SKU ${c.sku}): stok ${c.stock} ${c.unit}`,
+          (c) => `• ${c.name} — SKU ${c.sku} · stok ${c.stock} ${c.unit}`,
         );
-        return `Kata kunci "${input.productName}" cocok dengan beberapa produk:\n${lines.join("\n")}\nMohon sebutkan varian yang dimaksud.`;
+        return `Kata kunci "${input.productName}" cocok dengan beberapa produk:\n${lines.join(
+          "\n",
+        )}\nMohon sebutkan varian yang dimaksud.`;
       }
 
       const p = result.product as StockRow;
@@ -77,9 +82,12 @@ export function buildReadTools({ backend }: ReadToolDeps) {
       const recap = await backend.getShipmentRecap(input.date);
       const shipments = recap?.shipments ?? [];
       if (shipments.length === 0) return `Tidak ada pengiriman tercatat pada ${input.date}.`;
-      return shipments
-        .map((r) => `• ${r.partner}: ${r.qty} ${r.unit} ${r.product} (${r.warehouse})`)
-        .join("\n");
+      const cards = shipments.map(
+        (r) => `• **${r.product}**\n  ${r.qty} ${r.unit} → ${r.partner} (${r.warehouse})`,
+      );
+      return `Pengiriman ${formatIdDate(input.date) ?? input.date}:\n${cards.join(
+        "\n",
+      )}\nTotal: ${shipments.length} pengiriman.`;
     },
   });
 
@@ -90,14 +98,7 @@ export function buildReadTools({ backend }: ReadToolDeps) {
     schema: productSearchSchema,
     func: async (input: ProductSearchInput): Promise<string> => {
       const { data, meta } = await backend.listProducts({ q: input.q });
-      if (data.length === 0) return "Tidak ada produk yang cocok.";
-      const lines = data.map(
-        (p) =>
-          `• ${p.name} (SKU ${p.sku}, ${p.category ?? "tanpa kategori"}) stok ${p.stock} ${p.unit}${
-            p.lowStock ? " [STOK TIPIS]" : ""
-          }`,
-      );
-      return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} produk.`;
+      return formatProductList(data, meta);
     },
   });
 
@@ -108,7 +109,7 @@ export function buildReadTools({ backend }: ReadToolDeps) {
     func: async (): Promise<string> => {
       const rows = await backend.listCategories();
       if (rows.length === 0) return "Belum ada kategori.";
-      return rows.map((c) => `• ${c.name} (${c.productCount} produk)`).join("\n");
+      return rows.map((c) => `• ${c.name} — ${c.productCount} produk`).join("\n");
     },
   });
 
@@ -121,7 +122,7 @@ export function buildReadTools({ backend }: ReadToolDeps) {
       if (data.length === 0) return "Tidak ada partner yang cocok.";
       const lines = data.map(
         (p) =>
-          `• ${p.name} [${p.type}]${p.phone ? ` telp ${p.phone}` : ""}${p.email ? ` email ${p.email}` : ""}`,
+          `• ${p.name} · ${p.type}${p.phone ? ` · telp ${p.phone}` : ""}${p.email ? ` · ${p.email}` : ""}`,
       );
       return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} partner.`;
     },
@@ -150,7 +151,7 @@ export function buildReadTools({ backend }: ReadToolDeps) {
         warehouseCode: input.warehouseCode,
       });
       if (data.length === 0) return "Tidak ada data stok per gudang yang cocok.";
-      const lines = data.map((r) => `• ${r.product} di ${r.warehouse}: ${r.quantity} ${r.unit}`);
+      const lines = data.map((r) => `• ${r.product} — ${r.quantity} ${r.unit} · ${r.warehouse}`);
       return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} baris.`;
     },
   });
@@ -171,13 +172,7 @@ export function buildReadTools({ backend }: ReadToolDeps) {
       });
       if (data.length === 0)
         return `Tidak ada transaksi yang cocok dengan filter tersebut.${unmatchedNote(unmatched)}`;
-      const lines = data.map(
-        (r) =>
-          `• [${r.date}] ${TYPE_LABEL[r.type] ?? r.type} ${r.quantity} ${r.unit} ${r.product} — gudang ${r.warehouse}${
-            r.partner ? ` — partner ${r.partner}` : ""
-          }${r.poNumber ? ` — PO ${r.poNumber}` : ""}`,
-      );
-      return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} transaksi.${matchedNote(matched)}${unmatchedNote(unmatched)}`;
+      return formatTransactionList(data, meta, matched, unmatched);
     },
   });
 
@@ -224,12 +219,19 @@ export function buildReadTools({ backend }: ReadToolDeps) {
       const items = po.items
         .map(
           (i) =>
-            `• ${i.product}: pesan ${i.ordered} ${i.unit}, diterima ${i.received}, sisa ${i.remaining}`,
+            `• **${i.product}**\n  pesan ${i.ordered} ${i.unit} · diterima ${i.received} · sisa ${i.remaining}`,
         )
         .join("\n");
-      return `PO ${po.poNumber} [${po.status}] — supplier ${po.partner}${
-        po.warehouse ? `, gudang ${po.warehouse}` : ""
-      }${po.targetDate ? `, target ${shortDate(po.targetDate)}` : ""}\n${items}`;
+      const target = formatIdDate(po.targetDate);
+      const detail = [
+        po.warehouse ? `Gudang: ${po.warehouse}` : null,
+        target ? `target ${target}` : null,
+      ]
+        .filter((p): p is string => Boolean(p))
+        .join(" · ");
+      return `**${po.poNumber}** · ${po.status} — ${po.partner}${
+        detail ? `\n${detail}` : ""
+      }\n\n${items}`;
     },
   });
 
@@ -246,14 +248,7 @@ export function buildReadTools({ backend }: ReadToolDeps) {
         to: input.to,
       });
       if (data.length === 0) return `Tidak ada surat jalan yang cocok.${unmatchedNote(unmatched)}`;
-      const lines = data.flatMap((dn) => {
-        return [
-          `• ${dn.dnNumber} [${dn.status}] — ${dn.partner}`,
-          ...dn.items.map((i) => `  – ${i.quantity} ${i.unit} ${i.product}`),
-          `  Kirim ${shortDate(dn.shipDate) ?? dn.shipDate}${dn.poNumber ? ` — PO ${dn.poNumber}` : ""}`,
-        ];
-      });
-      return `${lines.join("\n")}\nTotal: ${meta?.total ?? data.length} surat jalan.${matchedNote(matched)}${unmatchedNote(unmatched)}`;
+      return formatDnList(data, meta, matched, unmatched);
     },
   });
 
@@ -264,10 +259,7 @@ export function buildReadTools({ backend }: ReadToolDeps) {
     schema: z.object({}),
     func: async (): Promise<string> => {
       const rows = await backend.getLowStock();
-      if (rows.length === 0) return "Tidak ada produk dengan stok tipis.";
-      return rows
-        .map((p) => `• ${p.name} (SKU ${p.sku}): stok ${p.stock} ${p.unit} (min ${p.minStock})`)
-        .join("\n");
+      return formatLowStockList(rows);
     },
   });
 
@@ -280,10 +272,12 @@ export function buildReadTools({ backend }: ReadToolDeps) {
       const d = await backend.getDashboard();
       const recent = d.recentTransactions
         .slice(0, 5)
-        .map(
-          (t) =>
-            `• ${TYPE_LABEL[t.type] ?? t.type} ${t.quantity} ${t.product.unit} ${t.product.name} (${t.warehouse.name})`,
-        )
+        .map((t) => {
+          const when = formatIdDate(t.createdAt);
+          return `• ${TYPE_LABEL[t.type] ?? t.type} · ${t.quantity} ${t.product.unit} ${
+            t.product.name
+          } (${t.warehouse.name})${when ? ` — ${when}` : ""}`;
+        })
         .join("\n");
       return `Ringkasan hari ini:\n• Total produk: ${d.totalProducts}\n• PO aktif: ${d.activePOs}\n• Barang masuk hari ini: ${d.todayInbound}\n• Barang keluar hari ini: ${d.todayOutbound}\n• Produk stok tipis: ${d.lowStockCount}\nTransaksi terbaru:\n${recent}`;
     },

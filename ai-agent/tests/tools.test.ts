@@ -257,8 +257,9 @@ describe("cari_produk", () => {
       meta: { page: 1, limit: 20, total: 1, totalPages: 1 },
     });
     const result = await findTool("cari_produk").invoke({ q: "air" });
-    expect(String(result)).toContain("Air Mineral Botol 1 Liter");
-    expect(String(result)).toContain("294");
+    expect(String(result)).toContain("• **Air Mineral Botol 1 Liter**");
+    expect(String(result)).toContain("stok 294 dus · SKU AM-1L · Minuman");
+    expect(String(result)).toContain("Total: 1 produk");
     expect(deps.backend.listProducts).toHaveBeenCalledWith({ q: "air" });
   });
 });
@@ -320,6 +321,31 @@ describe("list_transaksi", () => {
     expect(deps.backend.listTransactions).toHaveBeenCalledWith(
       expect.objectContaining({ type: "IN", from: "2026-09-10", to: "2026-09-23" }),
     );
+  });
+
+  it("menampilkan kartu per tanggal dan catatan truncation", async () => {
+    vi.mocked(deps.backend.listTransactions).mockResolvedValue({
+      data: [
+        {
+          date: "2026-10-04 08:00",
+          type: "OUT",
+          product: "Kangkung Kemasan 1kg",
+          sku: "K-1",
+          quantity: 488,
+          unit: "ikat",
+          warehouse: "Gudang Utama",
+          partner: "Kios Pelita",
+          poNumber: null,
+        },
+      ],
+      meta: { page: 1, limit: 20, total: 49, totalPages: 3 },
+      unmatched: [],
+    });
+    const result = await findTool("list_transaksi").invoke({ direction: "keluar" });
+    const text = String(result);
+    expect(text).toContain("**4 Okt**");
+    expect(text).toContain("• **Kangkung Kemasan 1kg**\n  KELUAR · 488 ikat → Kios Pelita");
+    expect(text).toContain("menampilkan 1 dari 49 transaksi");
   });
 
   it("melaporkan filter yang tidak ditemukan bila hasil kosong", async () => {
@@ -447,7 +473,9 @@ describe("stok_tipis", () => {
       { name: "Nugget Ayam", sku: "NGT-01", stock: 3, minStock: 10, unit: "pack" },
     ]);
     const result = await findTool("stok_tipis").invoke({});
-    expect(String(result)).toContain("Nugget Ayam");
+    expect(String(result)).toContain("**Stok tipis (1 produk):**");
+    expect(String(result)).toContain("• **Nugget Ayam**");
+    expect(String(result)).toContain("stok 3 pack · min 10 · kurang 7 · SKU NGT-01");
     expect(deps.backend.getLowStock).toHaveBeenCalled();
   });
 });

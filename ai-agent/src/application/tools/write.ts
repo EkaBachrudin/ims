@@ -1,6 +1,6 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import type { BackendGateway } from "../ports/backendGateway";
-import { draftItemLines, shortDate } from "./format";
+import { draftItemLines, formatIdDate } from "./format";
 import { type DnDraftInput, type PoInput, dnDraftSchema, poSchema } from "./schemas";
 
 export interface WriteToolDeps {
@@ -27,7 +27,7 @@ export function buildWriteTools({ backend }: WriteToolDeps, chatId: string) {
           source: "AI_CHAT",
           chatId,
         });
-        const target = shortDate(po.targetDate);
+        const target = formatIdDate(po.targetDate);
         const lines = [
           `Draft PO ${po.poNumber} untuk ${po.partner.name} berhasil dibuat (status DRAFT).`,
           `• Supplier: ${po.partner.name}`,
@@ -57,7 +57,7 @@ export function buildWriteTools({ backend }: WriteToolDeps, chatId: string) {
           warehouseCode: input.warehouseCode ?? undefined,
           chatId,
         });
-        const shipDate = shortDate(dn.shipDate);
+        const shipDate = formatIdDate(dn.shipDate);
         const lines = [
           `Draft Surat Jalan ${dn.dnNumber} untuk ${dn.partner.name} berhasil dibuat (status DRAFT).`,
           `• Customer: ${dn.partner.name}`,

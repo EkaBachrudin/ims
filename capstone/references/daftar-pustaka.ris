@@ -1,0 +1,148 @@
+TY  - CONF
+TI  - Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks
+AU  - Lewis, Patrick
+AU  - Perez, Ethan
+AU  - Piktus, Aleksandra
+AU  - Petroni, Fabio
+AU  - Karpukhin, Vladimir
+AU  - Goyal, Naman
+AU  - Küttler, Heinrich
+AU  - Lewis, Mike
+AU  - Yih, Wen-tau
+AU  - Rocktäschel, Tim
+AU  - Riedel, Sebastian
+AU  - Kiela, Douwe
+T2  - Advances in Neural Information Processing Systems
+VL  - 33
+PY  - 2020
+UR  - https://arxiv.org/abs/2005.11401
+ID  - lewis2020rag
+ER  -
+
+TY  - CONF
+TI  - Toolformer: Language Models Can Teach Themselves to Use Tools
+AU  - Schick, Timo
+AU  - Dwivedi-Yu, Jane
+AU  - Dessì, Roberto
+AU  - Raileanu, Roberta
+AU  - Lomeli, Maria
+AU  - Zettlemoyer, Luke
+AU  - Cancedda, Nicola
+AU  - Scialom, Thomas
+T2  - Advances in Neural Information Processing Systems
+VL  - 36
+PY  - 2023
+UR  - https://arxiv.org/abs/2302.04761
+ID  - schick2023toolformer
+ER  -
+
+TY  - RPRT
+TI  - Augmented Language Models: A Survey
+AU  - Mialon, Grégoire
+AU  - Dessì, Roberto
+AU  - Lomeli, Maria
+AU  - Nalmpantis, Christoforos
+AU  - Pasunuru, Ram
+AU  - Raileanu, Roberta
+AU  - Rozière, Baptiste
+AU  - Schick, Timo
+AU  - Dwivedi-Yu, Jane
+AU  - Celikyilmaz, Asli
+AU  - Grave, Edouard
+AU  - LeCun, Yann
+AU  - Scialom, Thomas
+PY  - 2023
+UR  - https://arxiv.org/abs/2302.07842
+ID  - mialon2023alm
+ER  -
+
+TY  - JOUR
+TI  - Digital Transformation of MSMEs in Indonesia: A Systematic Literature Review
+AU  - Purnomo, S.
+AU  - Nurmalitasari, N.
+AU  - Nurchim, N.
+JO  - Jurnal Manajemen dan Bisnis
+VL  - 4
+IS  - 2
+PY  - 2024
+DO  - 10.53088/jmdb.v4i2.1121
+UR  - https://doi.org/10.53088/jmdb.v4i2.1121
+ID  - purnomo2024digital
+ER  -
+
+TY  - JOUR
+TI  - ERP-Based Management Information System for MSMEs in Indonesia: A Systematic Literature Review
+AU  - Hasanah, N.
+AU  - Saputra, D. I. S.
+AU  - Hiiyatin, D. L.
+JO  - RIGGS: Journal of Artificial Intelligence and Digital Business
+VL  - 2
+IS  - 2
+PY  - 2024
+DO  - 10.31004/riggs.v2i2.224
+UR  - https://doi.org/10.31004/riggs.v2i2.224
+ID  - hasanah2024erp
+ER  -
+
+TY  - CONF
+TI  - Attention Is All You Need
+AU  - Vaswani, Ashish
+AU  - Shazeer, Noam
+AU  - Parmar, Niki
+AU  - Uszkoreit, Jakob
+AU  - Jones, Llion
+AU  - Gomez, Aidan N.
+AU  - Kaiser, Lukasz
+AU  - Polosukhin, Illia
+T2  - Advances in Neural Information Processing Systems
+VL  - 30
+PY  - 2017
+UR  - https://arxiv.org/abs/1706.03762
+ID  - vaswani2017attention
+ER  -
+
+TY  - CONF
+TI  - Language Models Are Few-Shot Learners
+AU  - Brown, Tom B.
+AU  - Mann, Benjamin
+AU  - Ryder, Nick
+AU  - Subbiah, Melanie
+AU  - Kaplan, Jared
+AU  - Dhariwal, Prafulla
+AU  - Neelakantan, Arvind
+AU  - Shyam, Pranav
+AU  - Sastry, Girish
+AU  - Askell, Amanda
+AU  - Agarwal, Sandhini
+AU  - Herbert-Voss, Ariel
+AU  - Krueger, Gretchen
+AU  - Henighan, Tom
+AU  - Child, Rewon
+AU  - Ramesh, Aditya
+AU  - Ziegler, Daniel M.
+AU  - Wu, Jeffrey
+AU  - Winter, Clemens
+AU  - Amodei, Dario
+T2  - Advances in Neural Information Processing Systems
+VL  - 33
+PY  - 2020
+UR  - https://arxiv.org/abs/2005.14165
+ID  - brown2020fewshot
+ER  -
+
+TY  - RPRT
+TI  - Retrieval-Augmented Generation for Large Language Models: A Survey
+AU  - Gao, Yunfan
+AU  - Xiong, Yun
+AU  - Gao, Xinyu
+AU  - Jia, Kangxiang
+AU  - Pan, Jinliu
+AU  - Bi, Yuxi
+AU  - Dai, Yi
+AU  - Sun, Jiawei
+AU  - Wang, Meng
+AU  - Wang, Haofen
+PY  - 2023
+UR  - https://arxiv.org/abs/2312.10997
+ID  - gao2023ragsurvey
+ER  -

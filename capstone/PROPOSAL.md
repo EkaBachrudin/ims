@@ -118,40 +118,38 @@ Selain tujuan di atas, proyek menargetkan indikator keberhasilan (KPI) yang dapa
 
 ## 1.4 Jadwal Kegiatan
 
-Proyek direncanakan selesai dalam **lima minggu** dengan pendekatan sprint mingguan. Prioritas awal diberikan pada unsur kebaruan (*novelty*) — integrasi AI RAG — agar risiko keterlambatan dapat dikelola. Rencana kegiatan disajikan pada Tabel 1.4 dan divisualisasikan pada Gambar 1.1.
+Proyek ini mengikuti alur kegiatan **pertemuan awal → diskusi & penyusunan proposal → pengerjaan aplikasi → laporan & presentasi**, dengan pengembangan aplikasi direncanakan selesai dalam **enam minggu (28 September – 9 November 2026)** menggunakan pendekatan sprint mingguan. Prioritas awal diberikan pada unsur kebaruan (*novelty*) — integrasi AI RAG — agar risiko keterlambatan dapat dikelola. Jadwal disajikan dalam dua lapis: **milestone proyek** pada Tabel 1.4 dan **rincian sprint pengembangan aplikasi** pada Gambar 1.1.
 
-**Tabel 1.4 — Rencana Kegiatan (5 Minggu)**
+**Tabel 1.4 — Milestone Kegiatan Proyek Capstone**
 
-| Minggu | Fase | Target |
+| Fase | Aktivitas | Periode |
 | :--- | :--- | :--- |
-| **1** | Backend & Basis Data | ERD final, inisialisasi repositori, Docker Compose, Prisma migrate + seed, Auth/RBAC, CRUD master data. |
-| **2** | Backend Transaksi + Frontend Dasar | Transaksi stok atomik, siklus hidup PO, audit; setup Vite + Tailwind + TanStack Query, layout, UI master data. |
-| **3** | Frontend Lanjutan + AI Dasar | UI transaksi & PO + *dashboard*; setup ai-agent, Telegraf, tool cek stok & rekap pengiriman. |
-| **4** | AI Lanjutan + RAG | Tool buat draft PO/DN, RAG ingestion + retriever, tool cari SOP, sinkronisasi chat → web. |
-| **5** | Pengujian & Finalisasi | E2E chat → PO → web, *bug fixing*, optimasi prompt, dokumentasi & demo. |
+| Pertemuan awal (*meeting*) | Kick-off, penentuan topik dan kebutuhan | Awal September 2026 |
+| Diskusi & Penyusunan Proposal | Diskusi kebutuhan, studi pustaka, penyusunan proposal capstone | 14 September – 12 Oktober 2026 |
+| Pengerjaan Aplikasi | Sprint pengembangan WMS + AI RAG (rincian pada Gambar 1.1) | 28 September – 9 November 2026 |
+| Laporan Kemajuan | Laporan kemajuan capstone + timeline pengembangan aplikasi | 15 – 26 Oktober 2026 |
+| Laporan Akhir & Presentasi | Laporan akhir, dokumentasi, demo, dan presentasi | 19 Oktober – 9 November 2026 |
 
-**Gambar 1.1 — Gantt Chart Jadwal Kegiatan**
+**Gambar 1.1 — Gantt Chart Timeline Pengembangan Aplikasi (6 Minggu)**
 
 ```mermaid
 gantt
-    title Jadwal Kegiatan Proyek (5 Minggu)
+    title Timeline Pengembangan Aplikasi (6 Minggu)
     dateFormat  YYYY-MM-DD
     axisFormat  %d %b
     section Minggu 1 — Backend & DB
-    ERD, init repo, Docker Compose       :a1, 2026-09-01, 7d
-    section Minggu 2 — Backend & FE Dasar
-    Transaksi atomik, PO lifecycle, audit :a2, 2026-09-08, 4d
-    Setup FE (Vite/Tailwind/Query), CRUD  :a3, 2026-09-10, 5d
+    ERD, init repo, Docker, Prisma, Auth/RBAC, CRUD :a1, 2026-09-28, 7d
+    section Minggu 2 — Backend Transaksi & FE Dasar
+    Transaksi atomik, PO lifecycle, audit; setup FE, UI master :a2, 2026-10-05, 7d
     section Minggu 3 — FE Lanjutan & AI Dasar
-    UI transaksi, PO, dashboard           :a4, 2026-09-15, 5d
-    Setup ai-agent, Telegraf, tool baca   :a5, 2026-09-17, 5d
+    UI transaksi, PO, dashboard; ai-agent, Telegraf, tool baca :a3, 2026-10-12, 7d
     section Minggu 4 — AI Lanjutan & RAG
-    Tool draft PO/DN, RAG ingestion        :a6, 2026-09-22, 5d
-    section Minggu 5 — Testing & Finalisasi
-    E2E, bug fixing, prompt, dokumentasi   :a7, 2026-09-29, 7d
+    Tool draft PO/DN, RAG ingestion + retriever, cari SOP :a4, 2026-10-19, 7d
+    section Minggu 5 — Pengujian & Finalisasi
+    E2E, bug fixing, prompt, dokumentasi, demo, presentasi :a5, 2026-10-26, 15d
 ```
 
-> **Catatan:** tanggal pada Gantt bersifat ilustratif dan dapat disesuaikan dengan kalender akademik.
+> **Catatan:** timeline pengembangan aplikasi mengikuti kalender capstone 28 September – 9 November 2026. Laporan kemajuan (15–26 Oktober) dan laporan akhir (19 Oktober – 9 November) disusun berjalan paralel dengan sprint pengembangan aplikasi.
 
 ---
 

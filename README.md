@@ -23,7 +23,7 @@
 - [Dokumentasi](#dokumentasi)
 - [Memulai (Quick Start)](#memulai-quick-start)
 - [Contoh Penggunaan](#contoh-penggunaan)
-- [Roadmap (5 Minggu)](#roadmap-5-minggu)
+- [Roadmap (6 Minggu)](#roadmap-6-minggu)
 - [Pengujian](#pengujian)
 - [Kontribusi](#kontribusi)
 - [Lisensi](#lisensi)
@@ -282,15 +282,17 @@ Bot   : (dari knowledge base) Barang retur diverifikasi maksimal 1x24 jam...
 
 ---
 
-## Roadmap (5 Minggu)
+## Roadmap (6 Minggu)
 
-| Minggu | Fase                              | Target                                                                                   |
-| :----- | :-------------------------------- | :--------------------------------------------------------------------------------------- |
-| **1**  | Backend & DB                      | ERD final, init repo, Docker Compose, Prisma migrate + seed, Auth/RBAC, CRUD master data  |
-| **2**  | Backend Transaksi + Frontend Dasar | Transaksi atomic stok, PO lifecycle, audit; setup Vite + Tailwind + TanStack Query, layout, UI master data |
-| **3**  | Frontend Lanjutan + AI Dasar      | UI transaksi & PO + dashboard; setup ai-agent, Telegraf, tools cek stok & rekap pengiriman |
-| **4**  | AI Lanjutan + RAG                 | Tool buat draft PO, knowledge base (`knowledge_documents` + halaman web) & ingest, retriever hybrid + threshold, tool cari SOP/kamus/laporan, sinkronisasi chat → web |
-| **5**  | Testing & Finalisasi              | E2E chat → PO → web, bug fixing, optimasi prompt, dokumentasi & demo                       |
+Timeline pengembangan aplikasi: **28 September – 9 November 2026**.
+
+| Minggu | Periode         | Fase                              | Target                                                                                   |
+| :----- | :-------------- | :-------------------------------- | :--------------------------------------------------------------------------------------- |
+| **1**  | 28 Sep – 4 Okt  | Backend & DB                      | ERD final, init repo, Docker Compose, Prisma migrate + seed, Auth/RBAC, CRUD master data  |
+| **2**  | 5 – 11 Okt      | Backend Transaksi + Frontend Dasar | Transaksi atomic stok, PO lifecycle, audit; setup Vite + Tailwind + TanStack Query, layout, UI master data |
+| **3**  | 12 – 18 Okt     | Frontend Lanjutan + AI Dasar      | UI transaksi & PO + dashboard; setup ai-agent, Telegraf, tools cek stok & rekap pengiriman |
+| **4**  | 19 – 25 Okt     | AI Lanjutan + RAG                 | Tool buat draft PO, knowledge base (`knowledge_documents` + halaman web) & ingest, retriever hybrid + threshold, tool cari SOP/kamus/laporan, sinkronisasi chat → web |
+| **5**  | 26 Okt – 9 Nov  | Testing & Finalisasi              | E2E chat → PO → web, bug fixing, optimasi prompt, dokumentasi & demo                       |
 
 > **Perluasan pasca-MVP:** Asisten AI dapat membaca seluruh data operasional (produk, kategori, partner, gudang, transaksi masuk/keluar, PO, surat jalan, laporan) melalui endpoint baca `/reports/*` dengan internal key.
 

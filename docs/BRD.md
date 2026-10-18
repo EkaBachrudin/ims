@@ -234,7 +234,7 @@ flowchart LR
 - Koneksi internet tersedia di gudang dan di lokasi owner.
 
 ### 11.2 Constraints
-- Dikembangkan oleh **solo developer** dalam **5 minggu** (capstone).
+- Dikembangkan oleh **solo developer** dalam **6 minggu** (28 September – 9 November 2026) (capstone).
 - Anggaran berbayar diminimalkan; memakai kanal gratis (Telegram Bot API) untuk MVP.
 - Kapasitas server terbatas (VPS) — arsitektur harus ringan.
 
@@ -253,7 +253,7 @@ flowchart LR
 | R-001 | Scope creep (fitur WMS melebar)                   | High        | High   | Batasi modul ke master data, transaksi, PO, Surat Jalan sesuai scope.    |
 | R-002 | AI berhalusinasi (jawaban tidak sesuai data)      | Medium      | High   | Wajib function calling; temperature 0; guardrail system prompt.          |
 | R-003 | Koneksi WhatsApp tidak stabil / banned            | Medium      | Medium | MVP pakai Telegram; WhatsApp pakai nomor sekunder/gateway resmi.         |
-| R-004 | Waktu pengerjaan melebihi 5 minggu                | High        | High   | Sprint mingguan; prioritaskan *novelty* (AI RAG) di fase awal; kurangi scope non-esensial. |
+| R-004 | Waktu pengerjaan melebihi 6 minggu                | High        | High   | Sprint mingguan; prioritaskan *novelty* (AI RAG) di fase awal; kurangi scope non-esensial. |
 | R-005 | Data master tidak lengkap/kotor                    | Medium      | Medium | Validasi input, seed data, dan alat impor massal.                        |
 | R-006 | Kebocoran kredensial (API key LLM/bot)            | Low         | High   | Simpan di environment/secrets, jangan commit, gunakan `.env`.           |
 | R-007 | Kegagalan integrasi chat → backend                | Medium      | High   | Kontrak API yang jelas, integration test (E2E chat ke web).              |

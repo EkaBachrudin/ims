@@ -1679,15 +1679,15 @@ Type: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`.
 
 ## 15. Roadmap → Technical Tasks
 
-Pemetaan timeline 5 minggu (FSD) menjadi task teknis.
+Pemetaan timeline 6 minggu (28 September – 9 November 2026) menjadi task teknis.
 
-| Minggu | Fase                              | Task teknis kunci                                                                                                   |
-| :----- | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| 1      | Backend & DB                      | Init monorepo; `docker-compose.yml`; setup Backend + Prisma; migrate `init`; `seed.ts`; Auth (login/refresh/logout) + middleware auth/RBAC/validate/errorHandler; CRUD master data. |
-| 2      | Backend Transaksi + Frontend Dasar | Endpoint transaksi (atomic stock), generator `poNumber`, PO lifecycle, audit helper; setup Vite + Tailwind + Router + `Providers` (QueryClient); layout; feature master data (`useQuery`). |
-| 3      | Frontend Lanjutan + AI Dasar      | Feature transaksi & PO (form + `useMutation` + invalidation), halaman detail PO, dashboard; setup ai-agent, Telegraf long-polling, endpoint `/internal/ai-log`, mapping chatId→user; LLM + tools `cek_stok_barang`, `rekap_pengiriman`. |
-| 4      | AI Lanjutan + RAG                 | Tool `buat_draft_po` → `POST /po/draft`; RAG: `knowledge_documents` (source of truth) + halaman web Knowledge Base (SUPER_ADMIN), ingest DB + job/CLI (`rag-import-docs`, `rag-ingest`); retriever read-only (hybrid + threshold); tool `cari_sop` + tool data live (`cari_produk`, `ringkasan_periode`); guardrail, rate limit, conversation logging. |
-| 5      | Testing & Finalisasi              | Integration E2E (chat → draft PO → muncul di web); bug fixing & error handling; optimasi prompt & latency; hardening; dokumentasi akhir & demo script. |
+| Minggu | Periode         | Fase                              | Task teknis kunci                                                                                                   |
+| :----- | :-------------- | :-------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
+| 1      | 28 Sep – 4 Okt  | Backend & DB                      | Init monorepo; `docker-compose.yml`; setup Backend + Prisma; migrate `init`; `seed.ts`; Auth (login/refresh/logout) + middleware auth/RBAC/validate/errorHandler; CRUD master data. |
+| 2      | 5 – 11 Okt      | Backend Transaksi + Frontend Dasar | Endpoint transaksi (atomic stock), generator `poNumber`, PO lifecycle, audit helper; setup Vite + Tailwind + Router + `Providers` (QueryClient); layout; feature master data (`useQuery`). |
+| 3      | 12 – 18 Okt     | Frontend Lanjutan + AI Dasar      | Feature transaksi & PO (form + `useMutation` + invalidation), halaman detail PO, dashboard; setup ai-agent, Telegraf long-polling, endpoint `/internal/ai-log`, mapping chatId→user; LLM + tools `cek_stok_barang`, `rekap_pengiriman`. |
+| 4      | 19 – 25 Okt     | AI Lanjutan + RAG                 | Tool `buat_draft_po` → `POST /po/draft`; RAG: `knowledge_documents` (source of truth) + halaman web Knowledge Base (SUPER_ADMIN), ingest DB + job/CLI (`rag-import-docs`, `rag-ingest`); retriever read-only (hybrid + threshold); tool `cari_sop` + tool data live (`cari_produk`, `ringkasan_periode`); guardrail, rate limit, conversation logging. |
+| 5      | 26 Okt – 9 Nov  | Testing & Finalisasi              | Integration E2E (chat → draft PO → muncul di web); bug fixing & error handling; optimasi prompt & latency; hardening; dokumentasi akhir & demo script. |
 
 > **Pasca-MVP (enhancement):** halaman Laporan **6 tab** + endpoint agregasi (`stock-trend`, `stock-summary`, `po-summary`, `dn-summary`, `stock-card`, `movement-analysis`, `user-activity`) dengan **recharts**; persistensi job ingest (`ingest_jobs`) & status Knowledge Base yang konsisten pasca-restart; penyempurnaan UI Knowledge Base (chip jenis yang dapat difilter, pencarian berikon, kartu mobile).
 

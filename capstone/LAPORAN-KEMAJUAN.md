@@ -3,15 +3,15 @@
 **Judul Proyek:** Otomatisasi Warehouse Management System (WMS) dan Tata Kelola Dokumen Berbasis Web dengan Integrasi Asisten AI (RAG) pada Platform Pesan Instan
 
 **Jenis Dokumen:** Laporan Kemajuan Capstone
-**Versi:** 1.0.0
+**Versi:** 1.1.0
 **Status:** Draft
-**Status Data:** Simulasi (BAB I subbagian 1.1.2 dan 1.1.3 masih memakai data simulasi; lihat catatan pada tiap tabel)
+**Status Data:** Data primer survei (n = 10, 29 Oktober 2026); estimasi rupiah tidak dihitung karena data keuangan tidak lengkap
 **Penyusun:** [Nama Penyusun]
 **Institusi/Program Studi:** [Nama Institusi / Program Studi]
 **Pembimbing:** [Nama Pembimbing]
-**Tanggal:** [Tanggal]
+**Tanggal:** 29 Oktober 2026
 
-**Dokumen Terkait:** [Proposal Proyek](./PROPOSAL.md) · [BRD](../docs/BRD.md) · [FSD](../docs/FSD.md) · [ERD](../docs/ERD.md) · [TECHNICAL](../docs/TECHNICAL.md) · [README](../README.md)
+**Dokumen Terkait:** [Proposal Proyek](./PROPOSAL.md) · [Data Survei](./survey/respondents.csv) · [BRD](../docs/BRD.md) · [FSD](../docs/FSD.md) · [ERD](../docs/ERD.md) · [TECHNICAL](../docs/TECHNICAL.md) · [README](../README.md)
 
 ---
 
@@ -46,7 +46,7 @@ Tiga hal yang perlu diketahui pembaca sebelum menilai isi dokumen ini.
 
 **Pertama, bab yang masih kosong bukan kelalaian.** BAB IV (Hasil dan Pembahasan) dan BAB V (Kesimpulan dan Rekomendasi) sengaja dikosongkan karena hasil akhir dan kesimpulan baru dapat dirumuskan setelah seluruh target pengujian terpenuhi. Keduanya diisi pada tahap laporan akhir.
 
-**Kedua, sebagian data pada BAB I masih simulasi.** Subbagian 1.1.2 dan 1.1.3 memakai angka simulasi. Angka itu disusun agar konsisten dengan baseline KPI pada subbagian 1.2, sehingga penggantian dengan data primer tidak memaksa penulisan ulang. Setiap tabel simulasi diberi label peringatan dan petunjuk cara menggantinya.
+**Kedua, data pada BAB I berasal dari survei riil, bukan simulasi.** Subbagian 1.1.2 dan 1.1.3 memakai jawaban 10 responden yang disurvei pada 29 Oktober 2026. Sampel dipilih secara purposif, hanya tiga responden yang kategori utamanya *frozen food*, dan sebagian jawaban berupa rentang atau data keuangan yang tidak lengkap. Karena itu hasilnya dibaca sebagai gambaran indikatif, bukan generalisasi statistik; nilai rupiah tidak diestimasi. Data mentah tersedia pada `survey/respondents.csv`.
 
 **Ketiga, dokumen ini melanjutkan proposal.** Uraian yang sudah lengkap pada `PROPOSAL.md` — daftar pustaka, cuplikan kode, diagram, dan konfigurasi — tidak dikutip ulang seluruhnya; dokumen ini merujuk kembali ke sana. Bagian yang ditambahkan di sini adalah metodologi, data pendukung latar belakang, instrumen survei, dan status realisasi pekerjaan.
 
@@ -86,79 +86,109 @@ Berdasarkan uraian tersebut, proyek ini membangun **sistem Warehouse Management 
 
 ### 1.1.1 Identifikasi Masalah
 
-Identifikasi masalah pada Tabel 1.1 diturunkan dari empat sumber: tinjauan pustaka (Purnomo et al., 2024; Hasanah et al., 2024), pengamatan proses gudang harian, wawancara pendahuluan dengan calon pengguna (subbagian 1.1.3), dan analisis dokumen operasional. Setiap kode masalah dipetakan ke tujuan proyek pada subbagian 1.2 sehingga tidak ada masalah yang tanpa penanganan, dan tidak ada tujuan yang tanpa dasar masalah.
+Identifikasi masalah pada Tabel 1.1 diturunkan dari empat sumber: tinjauan pustaka (Purnomo et al., 2024; Hasanah et al., 2024), pengamatan awal proses gudang harian, survei pendahuluan dengan calon pengguna (subbagian 1.1.3), dan analisis awal dokumen operasional. Setiap kode masalah dipetakan ke tujuan proyek pada subbagian 1.2 sehingga tidak ada masalah yang tanpa penanganan, dan tidak ada tujuan yang tanpa dasar masalah.
 
 ### 1.1.2 Data Kuantitatif Dampak Masalah
 
-> ⚠️ **DATA SIMULASI.** Angka pada subbagian ini adalah ilustrasi untuk memperlihatkan cara menghitung dampak kuantitatif, bukan data keuangan atau data operasional riil dari UMKM mana pun. Angka wajib diganti dengan hasil pengukuran sebelum dokumen masuk penilaian.
+> **Catatan data.** Angka pada subbagian ini dihitung dari jawaban 10 responden pada survei 29 Oktober 2026. Karena jawaban berupa rentang dan sebagian data keuangan kosong, nilai rupiah tidak diestimasi; hanya komponen waktu yang dihitung. Data mentah tersedia pada [`survey/respondents.csv`](./survey/respondents.csv).
 
-Tabel 1.2 menghitung dampak masalah dengan asumsi yang dinyatakan terbuka, sehingga pembaca dapat menelusuri asal setiap angka dan menggantinya satu per satu.
+Tabel 1.2 menghitung dampak masalah dari jawaban survei. Setiap baris mencantumkan dasar perhitungan agar asal angka dapat ditelusuri. Nilai dihitung per responden terlebih dahulu, lalu diringkas menjadi median dan rentang.
 
-**Tabel 1.2 — Estimasi Dampak Kuantitatif (Ilustrasi)**
+**Tabel 1.2 — Estimasi Dampak Kuantitatif Berdasarkan Survei (n = 10)**
 
-| Metrik | Asumsi | Perhitungan | Hasil (ilustrasi) |
-| :--- | :--- | :--- | :--- |
-| Waktu pengecekan stok/pengiriman | 6,4 menit/kejadian; 5 kejadian/hari; 26 hari kerja/bulan | 6,4 × 5 × 26 | ± 832 menit/bulan (13,9 jam) |
-| Selisih stok saat *stock opname* | 6,8% dari nilai persediaan contoh Rp 250.000.000; opname bulanan | 6,8% × Rp 250.000.000 | ± Rp 17.000.000 per opname |
-| Frekuensi selisih stok | Rata-rata wawancara (subbagian 1.1.3) | — | ± 3,4 kali/bulan |
-| Waktu pembuatan draft PO | 8,2 menit/PO; 15 PO/bulan | 8,2 × 15 | ± 123 menit/bulan (2,1 jam) |
-| Akumulasi waktu administratif | 832 + 123 menit per bulan | (13,87 + 2,05) jam × 12 | ± 191 jam/tahun |
-| Estimasi nilai selisih setahun | Batas atas, seluruh selisih diasumsikan terealisasi | Rp 17.000.000 × 12 | ± Rp 204.000.000/tahun |
+| Metrik | Dasar perhitungan per responden | Median (jam/bulan) | Rentang (jam/bulan) |
+| :--- | :--- | ---: | ---: |
+| Waktu pengecekan stok | Waktu cek stok × frekuensi cek/hari × hari operasi/bulan | 4,5 | 0,9–14,0 |
+| Waktu pengecekan status pengiriman | Waktu cek kirim × frekuensi cek/hari × hari operasi/bulan (9 responden; satu responden tidak relevan) | 15,5 | 4,9–62,0 |
+| Waktu rekap laporan harian | Waktu rekap × hari operasi/bulan | 10,7 | 1,2–23,0 |
+| Waktu pembuatan draft PO | Waktu buat PO × jumlah PO/bulan | 1,4 | 0–26,9 |
+| **Total waktu administratif** | Penjumlahan empat komponen per responden | **35,6** | **10,9–86,5** |
 
 **Keterangan:**
-- Angka pada kolom **Asumsi** diambil dari subbagian 1.1.3 agar kedua subbagian tidak saling bertentangan.
-- Baris terakhir adalah **batas atas**; pada praktiknya tidak semua selisih stok berakhir sebagai kerugian nyata. Sebagian dapat dipulihkan melalui rekonsiliasi atau penyesuaian.
-- Nilai persediaan Rp 250.000.000 adalah angka contoh yang berdiri sendiri, bukan hasil survei.
-
-**Cara mengganti dengan data riil:** catat (1) nilai persediaan rata-rata dari laporan keuangan UMKM mitra, (2) hasil *stock opname* terakhir berupa persentase selisih, (3) hasil pengukuran waktu untuk pengecekan stok dan pembuatan PO, dan (4) jumlah PO per bulan dari buku atau sistem yang dipakai. Ganti angka pada kolom **Asumsi**, lalu hitung ulang kolom **Hasil**. Bila nilai persediaan belum tersedia, hapus baris estimasi rupiah dan pertahankan baris waktu, karena baris waktu hanya memerlukan pencatatan durasi.
+- Jawaban berupa rentang dikonversi ke titik tengah; jawaban "≤5" dipakai 2,5 menit (titik tengah), dan ">60" dipakai 60 menit (batas bawah, sehingga estimasi cenderung konservatif).
+- Frekuensi kategori dinormalisasi: "setiap hari" atau "hampir setiap hari" dipakai 1 kali/hari, rentang frekuensi dipakai titik tengah, dan rentang hari operasi dipakai titik tengah (26–30 = 28 hari; 21–25 = 23 hari).
+- Total dihitung per responden, bukan penjumlahan median tiap baris; median tiap baris juga dihitung dari nilai per responden, bukan perkalian antar-median. Median total 35,6 jam/bulan setara ±427 jam/tahun; rata-rata total 39,6 jam/bulan lebih tinggi karena beberapa responden memiliki volume aktivitas jauh di atas median, terutama volume PO dan frekuensi cek pengiriman.
+- Satu responden produsen makanan tidak memiliki proses pengiriman (sistem *dine-in*), sehingga komponen pengiriman dihitung 0 pada total; baris pengiriman hanya memakai 9 responden yang relevan.
+- Surat Jalan tidak dimasukkan ke total karena dua responden tidak membuatnya dan data jumlah per bulan tidak lengkap.
+- Selisih stok tidak dimasukkan ke tabel waktu karena satuannya persen dan kali/bulan; ringkasannya ada pada Tabel 1.4 (median 2,75%; median 2,5 kali/bulan).
+- Estimasi bersifat indikatif: waktu adalah persepsi responden, bukan hasil *stopwatch*, dan belum diverifikasi melalui observasi. Tabel ini mencakup empat komponen, sehingga tidak dapat dibandingkan langsung dengan ilustrasi lama yang hanya menghitung cek stok dan PO.
+- Nilai rupiah tidak dihitung. Empat dari sepuluh responden tidak mengetahui atau tidak bersedia menjawab nilai persediaan; enam jawaban lainnya berupa rentang (< Rp50 juta sampai ≥ Rp500 juta). Nilai kerugian hanya diberikan oleh lima responden dengan rentang sangat lebar (< Rp1 juta sampai Rp10–25 juta), sehingga agregasi rupiah akan menyesatkan. Dampak finansial tetap mungkin ada, tetapi tidak dapat diestimasi dari data ini.
 
 ### 1.1.3 Hasil Survei/Wawancara Pendahuluan
 
-> ⚠️ **DATA SIMULASI.** Profil responden dan jawaban pada subbagian ini adalah simulasi untuk memperlihatkan bentuk analisis, bukan hasil wawancara riil. Bagian ini wajib digantikan hasil wawancara atau survei yang benar-benar dijalankan sebelum dokumen dinilai.
+> **Catatan data.** Subbagian ini memakai hasil survei riil yang dilaksanakan pada 29 Oktober 2026 terhadap 10 responden. Nama dan nama usaha tidak ditampilkan; kode R01–R10 ditetapkan ulang untuk menjaga privasi dan konsistensi. Data mentah tersedia pada [`survey/respondents.csv`](./survey/respondents.csv).
 
-Wawancara pendahuluan dirancang untuk mengonfirmasi apakah masalah pada Tabel 1.1 benar dialami calon pengguna, dan seberapa besar dampaknya. Responden adalah pemilik atau pengelola UMKM yang bergerak di distribusi produk *frozen food*. Pedoman wawancara lengkap ada pada **Lampiran G**.
+Survei pendahuluan dirancang untuk mengonfirmasi apakah masalah pada Tabel 1.1 benar dialami calon pengguna dan seberapa besar dampaknya. Responden adalah pemilik atau pengelola yang terlibat langsung dalam pencatatan stok dan usahanya menyimpan/mengelola persediaan; seluruh responden memenuhi kedua kriteria tersebut. Instrumen ringkas ada pada **Lampiran G**, sedangkan daftar pertanyaan lengkap tercermin pada header `survey/respondents.csv`.
 
-**Tabel 1.3 — Profil Responden (Simulasi, n = 10)**
+Komposisi responden tidak seluruhnya *frozen food*: tiga responden bergerak di *frozen food*, tiga di makanan-minuman, dan empat lainnya di retail umum, toko plastik, manufaktur elektroda las, serta distributor suku cadang mesin. Jenis usaha terdiri atas empat toko/retail, dua agen/reseller, dua produsen/UMKM makanan, satu distributor, dan satu manufaktur. Karena itu, hasil survei dibaca sebagai gambaran usaha yang mengelola persediaan, dengan mayoritas berskala UMKM, bukan khusus *frozen food*. Sebagian responden memiliki skala jauh lebih besar: satu distributor memiliki 1.104 SKU, dan tiga responden melaporkan ≥21 PO/bulan. Karena itu median dipakai sebagai ukuran pusat.
 
-| Kode | Jenis Usaha | Jumlah SKU | Transaksi/hari | Kanal Pencatatan Saat Ini |
-| :--- | :--- | ---: | ---: | :--- |
-| R1 | Distributor *frozen food* | 120 | 45 | Buku tulis |
-| R2 | Toko *frozen food* | 85 | 30 | Grup pesan instan |
-| R3 | Distributor *frozen food* | 160 | 60 | *Spreadsheet* |
-| R4 | Toko *frozen food* | 60 | 25 | Buku tulis |
-| R5 | Distributor *frozen food* | 200 | 75 | *Spreadsheet* |
-| R6 | Toko *frozen food* | 45 | 18 | Grup pesan instan |
-| R7 | Agen *frozen food* | 95 | 35 | *Spreadsheet* |
-| R8 | Distributor *frozen food* | 140 | 50 | Aplikasi kasir sederhana |
-| R9 | Toko *frozen food* | 70 | 28 | Buku tulis |
-| R10 | Agen *frozen food* | 110 | 40 | Grup pesan instan |
-| **Rata-rata** | — | **± 109** | **± 41** | — |
+**Tabel 1.3 — Profil Responden (n = 10; Survei 29 Oktober 2026)**
 
-**Tabel 1.4 — Ringkasan Jawaban Wawancara (Simulasi)**
+| Kode | Profil Usaha (Jenis — Kategori) | Jumlah SKU | Media Pencatatan | Lama Usaha |
+| :--- | :--- | ---: | :--- | :--- |
+| R01 | Agen/reseller — *Frozen food* | n/a | *Spreadsheet* | 1–3 tahun |
+| R02 | Toko/retail — Makanan-minuman | 8 | Buku tulis | < 1 tahun |
+| R03 | Manufaktur — Elektroda las | 12–48 | ERP | ≥ 5 tahun |
+| R04 | Produsen/UMKM makanan — Makanan-minuman | 10 | Buku tulis | ≥ 5 tahun |
+| R05 | Distributor — Suku cadang mesin | 1.104 | *Spreadsheet* | 3–5 tahun |
+| R06 | Toko/retail — *Frozen food* | 89 | Aplikasi kasir | 1–3 tahun |
+| R07 | Toko/retail — *Frozen food* | 87 | Buku tulis | 1–3 tahun |
+| R08 | Agen/reseller — Retail umum | 45 | Grup pesan instan | < 1 tahun |
+| R09 | Toko/retail — Toko plastik | 1.430 | Buku tulis | ≥ 5 tahun |
+| R10 | Produsen/UMKM makanan — Makanan-minuman | 12 | Aplikasi kasir | < 1 tahun |
 
-| Kode | Waktu Cek Stok (menit) | Selisih Stok (%) | Selisih Stok (kali/bulan) | Waktu Buat PO (menit) | Bersedia Pakai Asisten Chat |
-| :--- | ---: | ---: | ---: | ---: | :---: |
-| R1 | 7,0 | 7,5 | 4 | 9 | Ya |
-| R2 | 5,5 | 6,7 | 3 | 7 | Ya |
-| R3 | 8,0 | 8,0 | 5 | 10 | Ya |
-| R4 | 6,0 | 6,5 | 3 | 9 | Ya |
-| R5 | 7,5 | 7,0 | 4 | 9 | Ya |
-| R6 | 6,0 | 6,0 | 2 | 7 | Tidak |
-| R7 | 6,5 | 6,8 | 3 | 8 | Ya |
-| R8 | 4,5 | 5,0 | 2 | 7 | Ya |
-| R9 | 6,5 | 6,2 | 3 | 7 | Ya |
-| R10 | 6,5 | 8,3 | 5 | 9 | Ya |
-| **Rata-rata** | **6,4** | **6,8** | **3,4** | **8,2** | **9 dari 10** |
+**Keterangan:**
+- R01 tidak memberikan angka SKU yang valid; jawabannya tidak dapat ditafsirkan sebagai jumlah SKU sehingga ditandai `n/a` dan tidak diikutkan dalam median.
+- R03 menjawab "4 kategori, masing-masing 3–12 tipe"; angka 12–48 adalah taksiran bawah–atas dari jawaban tersebut.
+- R09 menjawab "jumlah barang 1430"; angka dipertahankan apa adanya, tetapi kemungkinan mencakup unit barang, bukan jumlah SKU.
+- Median jumlah SKU adalah **66** dari 8 jawaban numerik (R02, R04, R05, R06, R07, R08, R09, R10), dengan rentang 8–1.430. Bila R09 dikeluarkan karena kemungkinan bukan jumlah SKU, median menjadi 45. Angka ini hanya gambaran kasar karena sebaran sangat lebar.
+- Media pencatatan: 4 buku tulis, 2 *spreadsheet*, 2 aplikasi kasir, 1 ERP, dan 1 grup pesan instan.
 
-**Temuan utama (simulasi):**
+Volume transaksi harian dilaporkan dalam satuan yang tidak seragam: empat responden menyebut angka dalam rentang 30–250 transaksi/hari, empat menyebut nilai rupiah harian, satu menyebut 5–20 PO masuk/hari, dan satu tidak mengisi. Karena satuannya berbeda, volume transaksi tidak diagregasi menjadi rata-rata.
 
-1. **Kanal pencatatan terbagi tiga.** Tiga responden memakai buku tulis, tiga memakai *spreadsheet*, dan tiga mengandalkan grup pesan instan. Hanya satu responden memakai aplikasi kasir sederhana. Kondisi ini menjelaskan mengapa rekonsiliasi stok sulit dilakukan.
-2. **Waktu akses informasi melebihi baseline.** Rata-rata 6,4 menit untuk memperoleh satu informasi stok atau pengiriman, dengan rentang 4,5–8,0 menit. Ini melampaui baseline KPI-1 (> 5 menit).
-3. **Selisih stok konsisten di atas ambang.** Rata-rata selisih 6,8%, dengan rentang 5,0–8,3%. Seluruh responden berada di atas baseline KPI-2 (≥ 5%).
-4. **Pembuatan dokumen menyita waktu.** Rata-rata 8,2 menit per draft PO, masuk rentang baseline KPI-3 (5–10 menit).
-5. **Kesediaan mencoba tinggi.** Sembilan dari sepuluh responden bersedia memakai asisten berbasis chat. Angka ini menunjukkan kesediaan mencoba, bukan tingkat adopsi harian, sehingga tidak dapat dibandingkan langsung dengan target KPI-5.
+**Tabel 1.4 — Ringkasan Jawaban Survei (n = 10; 29 Oktober 2026)**
 
-**Cara mengganti dengan data riil:** jalankan pedoman wawancara pada Lampiran G, catat jumlah responden dan tanggal pelaksanaan, lalu isi ulang Tabel 1.3 dan 1.4. Setelah tabel terisi, perbarui angka pada Tabel 1.2 agar kedua subbagian tetap konsisten, dan sesuaikan baseline KPI pada subbagian 1.2 bila hasil wawancara berbeda.
+| Kode | Cek Stok (menit) | Cek Kirim (menit) | Selisih Stok (%) | Selisih (kali/bulan) | Buat PO (menit) | Rekap Harian (menit) | Bersedia Chat |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
+| R01 | 2 | 3 | 3–5 | 2–3 | ≤5 | 6–15 | Tidak |
+| R02 | 10 | 15 | 1–2 | 1 | ≤5 | ≤5 | Tidak |
+| R03 | 1–5 | 10–30 | 0 | 0 | 16–30 | 31–60 | Ragu |
+| R04 | 10 | 30 | 0 | 0 | ≤5 | 16–30 | Ya |
+| R05 | 5 | 5 | 1–2 | 2–3 | 31–60 | >60 | Ya |
+| R06 | 10 | 15 | 6–10 | 4–10 | 6–15 | 16–30 | Ya |
+| R07 | 5 | 10 | 3–5 | 2–3 | 6–15 | 16–30 | Ya |
+| R08 | 10 | 5 | 3–5 | 2–3 | 6–15 | 6–15 | Ya |
+| R09 | 2–3 | 30 | 3–5 | 4–10 | 16–30 | ≤5 | Ragu |
+| R10 | 5–10 | n/a | 0 | 0 | 6–15 | 16–30 | Ya |
+| **Median / ringkasan** | **6,3** | **15** | **2,75** | **2,5** | **10,5** | **23** | **6 Ya / 2 Ragu / 2 Tidak** |
+
+**Keterangan:**
+- Selisih stok (%) diturunkan dari pertanyaan "dari 100 unit yang dihitung, biasanya berapa unit yang selisih?"; 3–5 unit setara 3–5%.
+- Median dihitung dari titik tengah rentang; sel tabel menampilkan jawaban asli. Untuk "≤5" dipakai 2,5 menit, dan ">60" dipakai 60 menit.
+- R10 tidak memiliki proses pengiriman (*dine-in*), sehingga kolom cek kirim ditandai `n/a` dan tidak diikutkan dalam median cek kirim.
+- Cek stok = waktu mengetahui sisa satu produk; cek kirim = waktu mengetahui barang yang dikirim pada satu tanggal; rekap harian = waktu membuat rekap laporan harian.
+- Median cek stok 6,3 menit; median cek pengiriman 15 menit; median rekap harian 23 menit; median waktu buat PO 10,5 menit.
+- Jumlah PO per bulan: median 8 (rentang 0–50); frekuensi cek stok median 2 kali/hari; frekuensi cek pengiriman median 3,5 kali/hari (9 responden); hari operasi median 28 hari/bulan.
+- Kesediaan chat: 6 responden menjawab Ya, 2 Ragu, dan 2 Tidak. Angka ini menunjukkan kesediaan mencoba, bukan tingkat adopsi harian.
+
+Frekuensi *stock opname*: 4 responden harian, 3 mingguan, dan 3 bulanan; delapan melakukan opname dalam satu bulan terakhir, satu lebih dari satu bulan lalu, dan satu tidak mengisi. Skor keterlambatan informasi memiliki median 3 dari 5 (9 dari 10 memberi skor ≥3), yang menunjukkan informasi tidak selalu tersedia tepat waktu.
+
+**Temuan utama:**
+
+1. **Pencatatan masih dominan manual atau semi-manual.** Empat responden memakai buku tulis, dua *spreadsheet*, dan satu grup pesan instan; hanya tiga responden memakai aplikasi kasir atau ERP. Kondisi ini mendukung P-002 dan P-005: tujuh dari sepuluh responden belum memakai sistem inventori terpadu.
+2. **Waktu akses stok masih di atas baseline.** Median 6,3 menit untuk mengetahui sisa satu produk, dengan rentang jawaban 1–10 menit. Tujuh dari sepuluh responden melaporkan ≥5 menit dan lima dari sepuluh melaporkan >5 menit. Ini mendukung P-001/P-003 dan baseline KPI-1.
+3. **Selisih stok nyata, tetapi lebih rendah dari asumsi awal.** Median 2,75% (rentang jawaban 0–10%); tujuh dari sepuluh responden mencatat selisih, tetapi hanya satu yang berada di atas 5% (6–10%). Sebarannya: tiga responden 0%, dua responden 1–2%, empat responden 3–5%, dan satu responden 6–10%. Baseline KPI-2 disesuaikan menjadi 2,75%; masalah P-002 tetap ada, tetapi tidak sebesar asumsi awal.
+4. **Frekuensi selisih moderat.** Median 2,5 kali/bulan (rentang jawaban 0–10); tujuh dari sepuluh responden mengalami setidaknya satu kali selisih per bulan, dan dua responden melaporkan 4–10 kali/bulan.
+5. **Pembuatan PO bervariasi dan sebagian menyita waktu.** Median 10,5 menit (rentang jawaban ≤5–60); tiga responden ≤5 menit, empat responden 6–15 menit, dua responden 16–30 menit, dan satu responden 31–60 menit. Ini mendukung P-004 dan baseline KPI-3.
+6. **Beban administratif lain juga signifikan.** Median waktu rekap laporan harian 23 menit (rentang ≤5 sampai >60), dan median waktu mengecek status pengiriman 15 menit (rentang 3–30; sembilan responden yang relevan). Estimasi total pada Tabel 1.2 menunjukkan median 35,6 jam/bulan per responden.
+7. **Kesediaan mencoba lebih rendah dari perkiraan awal.** Enam dari sepuluh responden bersedia mencoba asisten chat, dua ragu, dan dua tidak. Kekhawatiran yang paling sering muncul adalah data bocor (3), susah dipakai (3), dan jawaban salah (1); tiga responden menyatakan tidak ada kekhawatiran. Ini menandakan target KPI-5 (≥70% interaksi harian) berisiko dan perlu diuji melalui pilot, karena kesediaan mencoba bukan adopsi harian.
+8. **WhatsApp mendominasi kanal chat.** Sembilan dari sepuluh responden memilih WhatsApp dan satu memilih Telegram. Fitur yang paling dibutuhkan adalah cek stok (4), laporan (3), buat PO (2), dan cek pengiriman (1). Enam responden menyatakan asisten akan dipakai oleh pemilik dan staf sekaligus, dua oleh pemilik, dan dua oleh staf. Preferensi WhatsApp ini perlu dicatat sebagai risiko adopsi bagi MVP Telegram; WhatsApp tetap menjadi prioritas tahap lanjut.
+
+**Keterbatasan data:**
+- Sampel purposif 10 responden tidak dapat digeneralisasi ke seluruh UMKM. Hanya tiga responden yang kategori utamanya *frozen food*, sehingga hasil tidak dapat diklaim mewakili distribusi *frozen food* secara khusus.
+- Satu distributor memiliki 1.104 SKU, dan tiga responden melaporkan ≥21 PO/bulan; skala ini jauh lebih besar daripada responden lain, sehingga rata-rata mudah tertarik oleh outlier. Karena itu median dan rentang dilaporkan.
+- Waktu dan selisih stok adalah perkiraan responden, bukan hasil *stopwatch* atau audit stok. Jawaban berupa rentang dikonversi ke titik tengah, dan data kosong tidak diimputasi.
+- Data keuangan tidak lengkap: 4 dari 10 responden tidak memberikan nilai persediaan dan 5 dari 10 tidak memberikan nilai kerugian. Estimasi rupiah karena itu tidak dihitung.
 
 ## 1.2 Tujuan
 
@@ -182,16 +212,18 @@ Tujuan umum proyek ini adalah merancang dan membangun sistem WMS berbasis web ya
 
 | ID | Metrik | Baseline | Target |
 | :--- | :--- | :--- | :--- |
-| KPI-1 | Waktu pemilik memperoleh info stok/pengiriman | > 5 menit (manual) | < 10 detik (chat) |
-| KPI-2 | Selisih stok pada *stock opname* | ≥ 5% | ≤ 1% |
-| KPI-3 | Waktu pembuatan draft PO | 5–10 menit | < 1 menit (via chat) |
+| KPI-1 | Waktu pemilik memperoleh info stok/pengiriman | Median 6,3 menit (rentang 1–10; 7/10 ≥5 menit) | < 10 detik (chat) |
+| KPI-2 | Selisih stok pada *stock opname* | Median 2,75% (rentang 0–10; 7/10 mencatat selisih) | ≤ 1% |
+| KPI-3 | Waktu pembuatan draft PO | Median 10,5 menit (rentang ≤5–60; 7/10 ≤15 menit) | < 1 menit (via chat) |
 | KPI-4 | Akurasi jawaban AI terhadap data aktual | N/A | 100% (dari basis data, tanpa halusinasi) |
 | KPI-5 | Adopsi asisten chat oleh pemilik | 0% | ≥ 70% interaksi harian |
 | KPI-6 | Waktu admin mengetahui draft PO baru dari chat | Cek berkala manual | < 10 detik (notifikasi Telegram) |
 
 **Keterangan:**
 - `KPI-1` … `KPI-6` = kode *Key Performance Indicator* ke-1 sampai ke-6.
-- Kolom **Baseline** menyatakan kondisi sebelum sistem dibangun. Nilai baseline pada KPI-1, KPI-2, dan KPI-3 berasal dari simulasi wawancara pada subbagian 1.1.3 dan wajib diperbarui setelah wawancara riil dijalankan.
+- Kolom **Baseline** menyatakan kondisi sebelum sistem dibangun. Nilai baseline pada KPI-1, KPI-2, dan KPI-3 berasal dari survei 10 responden pada 29 Oktober 2026 (subbagian 1.1.3), bukan simulasi. Nilai berupa median; rentang jawaban asli ditampilkan pada Tabel 1.4.
+- Baseline KPI-2 (2,75%) lebih rendah dari asumsi awal (5–6,8%), tetapi target ≤1% tetap dipertahankan. Evaluasi perlu mempertimbangkan bahwa tiga responden sudah melaporkan 0% selisih.
+- KPI-5: 6 dari 10 responden bersedia mencoba, 2 ragu, dan 2 tidak. Angka ini adalah kesediaan, bukan adopsi harian; target ≥70% akan diuji pada pilot.
 - `N/A` pada KPI-4 berarti tidak ada padanan sebelum sistem dibangun, karena pengukuran baru bermakna setelah asisten tersedia.
 - KPI-4 dan KPI-5 diukur pada tahap pengujian (subbagian 3.5), bukan pada tahap ini.
 
@@ -242,12 +274,14 @@ Tujuan umum proyek ini adalah merancang dan membangun sistem WMS berbasis web ya
 | *Demand forecasting* / ML prediktif | Fitur lanjutan pasca-MVP. |
 | WhatsApp sebagai kanal utama | MVP memakai Telegram; WhatsApp menjadi tahap lanjut. |
 
+**Catatan kanal chat:** survei menunjukkan 9 dari 10 responden memilih WhatsApp dan 1 memilih Telegram. Keputusan memakai Telegram pada MVP merupakan kompromi teknis (ketersediaan API dan kecepatan implementasi), bukan cerminan preferensi pengguna; WhatsApp tetap menjadi prioritas tahap lanjut.
+
 **Keterangan:**
 - Batas ruang lingkup ini menjadi acuan resmi selama pengerjaan. Permintaan di luar daftar ini dicatat sebagai usulan pasca-MVP dan tidak dikerjakan sebelum laporan akhir.
 
 ## 1.4 Jadwal Kegiatan
 
-Proyek mengikuti alur **pertemuan awal → diskusi & penyusunan proposal → pengerjaan aplikasi → laporan & presentasi**. Pengembangan aplikasi direncanakan enam minggu (28 September – 9 November 2026) dengan pendekatan sprint mingguan. Prioritas awal diberikan pada unsur kebaruan (*novelty*) berupa integrasi AI RAG, agar risiko keterlambatan dapat dikelola. Jadwal disajikan dalam tiga lapis: milestone proyek (Tabel 1.8), Gantt rencana (Gambar 1.1), dan realisasi per 18 Oktober 2026 (Gambar 1.2 dan Tabel 1.9).
+Proyek mengikuti alur **pertemuan awal → diskusi & penyusunan proposal → pengerjaan aplikasi → laporan & presentasi**. Pengembangan aplikasi direncanakan enam minggu (28 September – 9 November 2026) dengan pendekatan sprint mingguan. Prioritas awal diberikan pada unsur kebaruan (*novelty*) berupa integrasi AI RAG, agar risiko keterlambatan dapat dikelola. Jadwal disajikan dalam tiga lapis: milestone proyek (Tabel 1.8), Gantt rencana (Gambar 1.1), dan realisasi per 29 Oktober 2026 (Gambar 1.2 dan Tabel 1.9).
 
 **Tabel 1.8 — Milestone Kegiatan Proyek Capstone**
 
@@ -278,11 +312,11 @@ gantt
     E2E, bug fixing, prompt, dokumentasi, demo, presentasi :a5, 2026-10-26, 15d
 ```
 
-**Gambar 1.2 — Gantt Chart Realisasi Pengembangan Aplikasi (per 18 Oktober 2026)**
+**Gambar 1.2 — Gantt Chart Realisasi Pengembangan Aplikasi (per 29 Oktober 2026)**
 
 ```mermaid
 gantt
-    title Realisasi Pengembangan Aplikasi (per 18 Oktober 2026)
+    title Realisasi Pengembangan Aplikasi (per 29 Oktober 2026)
     dateFormat  YYYY-MM-DD
     axisFormat  %d %b
     section Fondasi & Dokumentasi
@@ -302,7 +336,7 @@ gantt
     23 berkas uji, E2E, perbaikan bug, dokumentasi :active, r9, 2026-10-08, 32d
 ```
 
-**Tabel 1.9 — Realisasi Pekerjaan per 18 Oktober 2026**
+**Tabel 1.9 — Realisasi Pekerjaan per 29 Oktober 2026**
 
 | Minggu Rencana | Fokus Rencana | Status | Bukti |
 | :--- | :--- | :--- | :--- |
@@ -310,13 +344,14 @@ gantt
 | 2 (5 – 11 Okt) | Backend transaksi & FE dasar | Selesai lebih awal | Commit 22–29 Sep (transaksi atomik, PO lifecycle, audit, UI master) |
 | 3 (12 – 18 Okt) | FE lanjutan & AI dasar | Selesai lebih awal | Commit 23 Sep – 7 Okt (tool baca, draft PO/DN, dashboard) |
 | 4 (19 – 25 Okt) | AI lanjutan & RAG | Selesai lebih awal | Commit 6 Okt (knowledge base, retriever hybrid, cari SOP, ingest jobs) |
-| 5 (26 Okt – 9 Nov) | Pengujian & finalisasi | Berjalan | 23 berkas uji tersedia; pengujian E2E dan finalisasi berlangsung |
+| 5 (26 Okt – 9 Nov) | Pengujian & finalisasi | Berjalan | 23 berkas uji tersedia; survei pendahuluan 10 responden (29 Okt); pengujian E2E dan finalisasi berlangsung |
 
 **Keterangan:**
 - **Selesai lebih awal** berarti pekerjaan yang direncanakan pada minggu tersebut telah tuntas sebelum minggu itu dimulai. Implementasi inti aplikasi tuntas pada 7 Oktober 2026, lebih cepat dari rencana.
 - Karena implementasi selesai lebih awal, sisa waktu dialokasikan untuk pengujian, penyempurnaan, dan penyusunan laporan. Pada 18 Oktober 2026 jadwal diperluas dari lima menjadi enam minggu agar selaras dengan kalender capstone.
+- Snapshot implementasi tidak berubah setelah 18 Oktober 2026; kegiatan 19–29 Oktober mencakup pengumpulan data survei dan persiapan pengujian.
 - **Bukti** merujuk riwayat versi repositori, sehingga status pada tabel ini dapat diverifikasi ulang.
-- Tanggal realisasi diambil dari riwayat *commit* repositori. Tanggal ini menunjukkan kapan perubahan tercatat, bukan durasi pengerjaan.
+- Tanggal realisasi implementasi diambil dari riwayat *commit* repositori; tanggal survei (29 Oktober 2026) diambil dari cap waktu pengisian formulir. Tanggal menunjukkan kapan perubahan tercatat, bukan durasi pengerjaan.
 
 ---
 
@@ -466,29 +501,30 @@ Data dikumpulkan dengan empat teknik yang saling melengkapi.
 | Teknik | Sasaran | Hasil yang Diharapkan | Instrumen |
 | :--- | :--- | :--- | :--- |
 | Studi pustaka | Dasar teori dan posisi terhadap penelitian sebelumnya | Kerangka konsep, kebaruan, rujukan | Basis data akademik, arXiv, DOI |
-| Wawancara semi-terstruktur | Pemilik/pengelola UMKM *frozen food* | Konfirmasi masalah, baseline metrik, preferensi antarmuka | Pedoman wawancara (Lampiran G) |
+| Survei semi-terstruktur | Pemilik/pengelola usaha yang mengelola persediaan (n = 10; 3 *frozen food*) | Konfirmasi masalah, baseline metrik, preferensi kanal dan fitur | Instrumen survei (Lampiran G); data mentah `survey/respondents.csv` |
 | Observasi proses | Alur kerja gudang harian | Pemetaan proses as-is, titik rawan kesalahan | Lembar observasi |
 | Analisis dokumen | SOP, format PO, format Surat Jalan, catatan stok | Aturan bisnis, format keluaran, kamus istilah | Dokumen operasional UMKM |
 
-**Keterangan:** saat dokumen ini disusun, pelaksanaan wawancara dan observasi masih pada tahap persiapan. Karena itu subbagian 1.1.3 masih memuat data simulasi, dan pedoman wawancara pada Lampiran G disertakan agar pengumpulan data dapat segera dijalankan.
+**Keterangan:** survei pendahuluan telah dilaksanakan pada 29 Oktober 2026 terhadap 10 responden. Data primer yang sudah terkumpul dan diolah pada laporan ini adalah data survei; observasi proses dan analisis dokumen operasional dilengkapi pada laporan akhir.
 
 ### 3.1.3 Jenis dan Sumber Data
 
-- **Data primer:** hasil wawancara dengan pemilik/pengelola UMKM, hasil observasi alur kerja gudang, dan pengukuran waktu pada saat uji coba sistem.
+- **Data primer:** hasil survei semi-terstruktur dengan pemilik/pengelola usaha (n = 10, 29 Oktober 2026), hasil observasi alur kerja gudang, dan pengukuran waktu pada saat uji coba sistem.
 - **Data sekunder:** literatur ilmiah, dokumentasi resmi perangkat (PostgreSQL, Docker, LangChain, Telegram Bot API), serta dokumen operasional UMKM mitra.
 
 ### 3.1.4 Teknik Analisis Data
 
-Data kualitatif dianalisis secara tematik sederhana: jawaban wawancara dikelompokkan menurut kemiripan tema, lalu setiap tema dinilai apakah dapat dipetakan ke salah satu masalah pada Tabel 1.1. Tema yang tidak dapat dipetakan dicatat sebagai temuan tambahan dan tidak dipaksakan masuk ke daftar masalah. Data kuantitatif hasil wawancara diolah menjadi rata-rata dan rentang, lalu dipakai sebagai baseline KPI pada Tabel 1.6.
+Data kualitatif dianalisis secara tematik sederhana: jawaban survei dikelompokkan menurut kemiripan tema, lalu setiap tema dinilai apakah dapat dipetakan ke salah satu masalah pada Tabel 1.1. Tema yang tidak dapat dipetakan dicatat sebagai temuan tambahan dan tidak dipaksakan masuk ke daftar masalah. Data kuantitatif hasil survei diolah menjadi median dan rentang; jawaban berupa rentang dikonversi ke titik tengah, dan data kosong tidak diimputasi. Median dipilih karena sebaran data lebar dan terdapat outlier. Nilai ini dipakai sebagai baseline KPI pada Tabel 1.6.
 
 ### 3.1.5 Batasan Metodologis
 
-Empat batasan berikut perlu dinyatakan terbuka agar penilaian hasil dapat dilakukan secara wajar:
+Lima batasan berikut perlu dinyatakan terbuka agar penilaian hasil dapat dilakukan secara wajar:
 
 1. Pengembangan dilakukan oleh satu orang dalam waktu terbatas, sehingga tidak ada pengujian bebas (independen) oleh pihak kedua.
-2. Jumlah responden wawancara direncanakan kecil (sekitar 10 UMKM), sehingga hasilnya bersifat indikatif, bukan generalisasi statistik.
+2. Survei diikuti 10 responden yang dipilih secara purposif, sehingga hasilnya bersifat indikatif, bukan generalisasi statistik. Komposisi sampel tidak sepenuhnya sesuai target awal: hanya 3 responden yang kategori utamanya *frozen food*; sisanya makanan-minuman, retail umum, toko plastik, manufaktur, dan suku cadang mesin. Satu distributor memiliki 1.104 SKU, dan tiga responden melaporkan ≥21 PO/bulan.
 3. Pengukuran dampak (KPI-2 dan KPI-5) menuntut periode pemakaian nyata yang lebih panjang daripada durasi capstone; pada tahap ini pengukuran hanya dapat dilakukan secara terbatas pada lingkungan uji.
 4. Perbandingan sebelum-sesudah untuk KPI-2 bergantung pada kedisiplinan pencatatan *stock opname* pada UMKM mitra, yang tidak sepenuhnya dapat dikendalikan.
+5. Jawaban waktu dan selisih stok adalah perkiraan responden, bukan hasil *stopwatch* atau audit stok; jawaban berupa rentang dikonversi ke titik tengah dan data keuangan yang kosong tidak diimputasi. Karena itu, Tabel 1.2 adalah estimasi indikatif, bukan hasil pengukuran presisi.
 
 ## 3.2 Proses Analisis
 
@@ -500,7 +536,7 @@ Analisis dijalankan berurutan, dengan setiap langkah menghasilkan artefak yang m
 
 ```mermaid
 flowchart LR
-    A[Pengumpulan data<br/>wawancara, observasi, dokumen] --> B[Identifikasi masalah<br/>P-001 … P-005]
+    A[Pengumpulan data<br/>survei, observasi, dokumen] --> B[Identifikasi masalah<br/>P-001 … P-005]
     B --> C[Perumusan tujuan<br/>OBJ-1 … OBJ-5]
     C --> D[Penetapan indikator<br/>KPI-1 … KPI-6]
     D --> E[Kebutuhan bisnis<br/>BR-001 … BR-018]
@@ -1136,14 +1172,14 @@ make rag-ingest
 
 ## Lampiran G — Instrumen Survei/Wawancara Pendahuluan
 
-> Instrumen ini disusun untuk menggantikan data simulasi pada subbagian 1.1.3. Tidak ada pertanyaan yang menuntut data keuangan rahasia; pertanyaan rupiah hanya diajukan bila responden bersedia dan boleh dilewati.
+> Instrumen ini dipakai pada survei pendahuluan 29 Oktober 2026. Tidak ada pertanyaan yang menuntut data keuangan rahasia; pertanyaan rupiah hanya diajukan bila responden bersedia dan boleh dilewati. Daftar pertanyaan lengkap beserta pilihan jawaban tercermin pada header [`survey/respondents.csv`](./survey/respondents.csv); bagian ini memuat ringkasan pertanyaan inti.
 
 ### G.1 Identitas Responden
 
 | No | Pertanyaan | Bentuk Jawaban |
 | :--- | :--- | :--- |
 | 1 | Nama usaha (boleh disingkat atau disamarkan) | Teks |
-| 2 | Jenis usaha | Distributor / Toko / Agen / lainnya |
+| 2 | Jenis usaha | Distributor / Toko/retail / Agen/reseller / Produsen/UMKM makanan / Manufaktur / lainnya |
 | 3 | Perkiraan jumlah SKU aktif | Angka |
 | 4 | Perkiraan jumlah transaksi masuk dan keluar per hari | Angka |
 | 5 | Kanal pencatatan yang dipakai saat ini | Buku tulis / *spreadsheet* / grup pesan instan / aplikasi / lainnya |
@@ -1163,7 +1199,7 @@ make rag-ingest
 | No | Pertanyaan | Bentuk Jawaban |
 | :--- | :--- | :--- |
 | 11 | Seberapa sering diadakan penghitungan fisik stok? | Harian / mingguan / bulanan / tidak teratur |
-| 12 | Pada penghitungan terakhir, berapa persen perkiraan selisih stok? | Persen (boleh perkiraan) |
+| 12 | Pada penghitungan terakhir, dari 100 unit yang dihitung, berapa unit yang selisih? | Unit per 100 unit (dikonversi ke persen) |
 | 13 | Dalam satu bulan, berapa kali biasanya muncul selisih stok? | Angka |
 | 14 | Bila bersedia, berapa nilai persediaan rata-rata yang disimpan? | Rupiah (opsional) |
 
@@ -1184,14 +1220,15 @@ make rag-ingest
 | 20 | Kanal chat apa yang paling nyaman dipakai sehari-hari? | Telegram / WhatsApp / lainnya |
 | 21 | Hal apa yang paling dikhawatirkan dari asisten berbasis AI? | Teks (boleh lebih dari satu jawaban) |
 | 22 | Siapa yang akan memakai asisten ini sehari-hari? | Pemilik / staf / keduanya |
+| 23 | Fitur apa yang paling dibutuhkan dari asisten? | Cek stok / cek pengiriman / buat PO / laporan |
 
 ### G.6 Catatan Pelaksanaan
 
-- **Jumlah responden minimal:** 10 UMKM *frozen food*, atau sesuai kesepakatan dengan pembimbing.
-- **Durasi wawancara:** sekitar 20–30 menit per responden.
-- **Pencatatan:** setiap wawancara dicatat pada satu lembar jawaban beserta tanggal dan nama pewawancara.
-- **Pengolahan:** jawaban pertanyaan 7, 9, 12, 15, dan 16 dihitung rata-rata dan rentangnya, lalu dipindahkan ke Tabel 1.3 dan 1.4.
-- **Setelah terisi:** hapus seluruh penanda **DATA SIMULASI**, perbarui baris **Status Data** pada header dokumen, dan sesuaikan angka pada Tabel 1.2 bila hasil wawancara berbeda dari simulasi.
+- **Jumlah responden:** 10 usaha yang mengelola persediaan (3 *frozen food*, 3 makanan-minuman, 1 retail umum, 1 toko plastik, 1 manufaktur, 1 distributor suku cadang). Target awal 10 UMKM *frozen food* tidak sepenuhnya terpenuhi.
+- **Durasi survei:** instrumen dirancang untuk 20–30 menit; survei dilaksanakan 29 Oktober 2026.
+- **Pencatatan:** jawaban direkam pada formulir daring dan diekspor ke `survey/respondents.csv`; nama responden tidak ditampilkan pada laporan.
+- **Pengolahan:** seluruh jawaban kuantitatif pada formulir (antara lain waktu dan frekuensi cek stok/pengiriman, selisih stok, waktu rekap harian, serta waktu dan jumlah PO) diolah menjadi median dan rentang; jawaban rentang dikonversi ke titik tengah. Hasilnya ada pada Tabel 1.2–1.4.
+- **Status:** data telah diolah pada 29 Oktober 2026 dan siap dipakai pada laporan.
 
 ---
 

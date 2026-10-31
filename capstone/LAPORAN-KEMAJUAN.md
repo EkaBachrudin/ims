@@ -43,13 +43,15 @@
 
 ## Catatan Pembacaan Dokumen
 
-Tiga hal yang perlu diketahui pembaca sebelum menilai isi dokumen ini.
+Empat hal yang perlu diketahui pembaca sebelum menilai isi dokumen ini.
 
 **Pertama, bab yang masih kosong bukan kelalaian.** BAB IV (Hasil dan Pembahasan) dan BAB V (Kesimpulan dan Rekomendasi) sengaja dikosongkan karena hasil akhir dan kesimpulan baru dapat dirumuskan setelah seluruh target pengujian terpenuhi. Keduanya diisi pada tahap laporan akhir.
 
 **Kedua, data pada BAB I berasal dari survei riil, bukan simulasi.** Subbagian 1.1.2 dan 1.1.3 memakai jawaban 10 responden yang disurvei pada 29 Oktober 2026. Sampel dipilih secara purposif, hanya tiga responden yang kategori utamanya *frozen food*, dan sebagian jawaban berupa rentang atau data keuangan yang tidak lengkap. Karena itu hasilnya dibaca sebagai gambaran indikatif, bukan generalisasi statistik; nilai rupiah tidak diestimasi. Data mentah tersedia pada `survey/respondents.csv` dan disajikan secara anonim pada Lampiran H.
 
 **Ketiga, dokumen ini melanjutkan proposal.** Uraian yang sudah lengkap pada `PROPOSAL.md` — daftar pustaka, cuplikan kode, diagram, dan konfigurasi — tidak dikutip ulang seluruhnya; dokumen ini merujuk kembali ke sana. Bagian yang ditambahkan di sini adalah metodologi, data pendukung latar belakang, instrumen survei, data mentah, lembar observasi, dokumen operasional UMKM, protokol studi pustaka, dan status realisasi pekerjaan. Instrumen lengkap dilampirkan pada Lampiran G–K.
+
+**Keempat, observasi lapangan tidak dilaksanakan.** Lampiran I memuat formulir observasi kosong dan rekaman observasi tidak langsung yang disusun dari jawaban survei R01–R10. Lampiran J memuat checklist dan format acuan dokumen karena dokumen operasional mitra belum diperoleh. Tidak ada data observasi lapangan yang diklaim pada laporan ini.
 
 **Catatan penomoran.** Proposal memakai nomor sitasi gaya angka (`[1]`–`[8]`). Dokumen ini memakai gaya APA 7 author-date agar sitasi dapat dimasukkan langsung melalui Mendeley Cite di Word. Pemetaan antara kedua gaya tersedia pada `references/PANDUAN-MENDELEY.md`.
 
@@ -527,12 +529,12 @@ Data dikumpulkan dengan empat teknik yang saling melengkapi. Instrumen lengkap t
 | Observasi proses | Alur kerja gudang harian | Lembar observasi + rubrik penilaian | Pemetaan proses as-is, titik rawan kesalahan | Lampiran I |
 | Analisis dokumen | SOP, format PO, format Surat Jalan, catatan stok | Checklist dokumen operasional + format acuan | Aturan bisnis, format keluaran, kamus istilah | Lampiran J |
 
-**Keterangan:** survei pendahuluan telah dilaksanakan pada 29 Oktober 2026 terhadap 10 responden. Data primer yang sudah terkumpul dan diolah pada laporan ini adalah data survei; instrumen observasi dan analisis dokumen dilampirkan pada Lampiran I dan J, sedangkan pengisian lapangannya dilengkapi pada laporan akhir.
+**Keterangan:** survei pendahuluan telah dilaksanakan pada 29 Oktober 2026 terhadap 10 responden. Data primer yang sudah terkumpul dan diolah pada laporan ini adalah data survei. Observasi lapangan tidak dilaksanakan karena keterbatasan akses dan waktu. Lampiran I memuat formulir observasi kosong dan rekaman observasi tidak langsung yang disusun dari jawaban survei. Lampiran J memuat checklist dan format acuan dokumen karena dokumen mitra belum diperoleh.
 
 ### 3.1.4 Jenis dan Sumber Data
 
-- **Data primer:** hasil survei semi-terstruktur dengan pemilik/pengelola usaha (n = 10, 29 Oktober 2026), hasil observasi alur kerja gudang, dan pengukuran waktu pada saat uji coba sistem.
-- **Data sekunder:** literatur ilmiah, dokumentasi resmi perangkat (PostgreSQL, Docker, LangChain, Telegram Bot API), serta dokumen operasional UMKM mitra.
+- **Data primer:** hasil survei semi-terstruktur dengan pemilik/pengelola usaha (n = 10, 29 Oktober 2026) dan pengukuran waktu pada saat uji coba sistem. Observasi lapangan tidak dilaksanakan.
+- **Data sekunder:** literatur ilmiah, dokumentasi resmi perangkat (PostgreSQL, Docker, LangChain, Telegram Bot API), serta format acuan dokumen operasional UMKM.
 
 ### 3.1.5 Teknik Analisis Data
 
@@ -540,13 +542,14 @@ Data kualitatif dianalisis secara tematik sederhana: jawaban survei dikelompokka
 
 ### 3.1.6 Batasan Metodologis
 
-Lima batasan berikut perlu dinyatakan terbuka agar penilaian hasil dapat dilakukan secara wajar:
+Enam batasan berikut perlu dinyatakan terbuka agar penilaian hasil dapat dilakukan secara wajar:
 
 1. Pengembangan dilakukan oleh satu orang dalam waktu terbatas, sehingga tidak ada pengujian bebas (independen) oleh pihak kedua.
 2. Survei diikuti 10 responden yang dipilih secara purposif, sehingga hasilnya bersifat indikatif, bukan generalisasi statistik. Komposisi sampel tidak sepenuhnya sesuai target awal: hanya 3 responden yang kategori utamanya *frozen food*; sisanya makanan-minuman, retail umum, toko plastik, manufaktur, dan suku cadang mesin. Satu distributor memiliki 1.104 SKU, dan tiga responden melaporkan ≥21 PO/bulan.
 3. Pengukuran dampak (KPI-2 dan KPI-5) menuntut periode pemakaian nyata yang lebih panjang daripada durasi capstone; pada tahap ini pengukuran hanya dapat dilakukan secara terbatas pada lingkungan uji.
 4. Perbandingan sebelum-sesudah untuk KPI-2 bergantung pada kedisiplinan pencatatan *stock opname* pada UMKM mitra, yang tidak sepenuhnya dapat dikendalikan.
 5. Jawaban waktu dan selisih stok adalah perkiraan responden, bukan hasil *stopwatch* atau audit stok; jawaban berupa rentang dikonversi ke titik tengah dan data keuangan yang kosong tidak diimputasi. Karena itu, Tabel 1.2 adalah estimasi indikatif, bukan hasil pengukuran presisi.
+6. Observasi lapangan dan pengumpulan dokumen operasional mitra tidak dapat dilaksanakan karena keterbatasan akses, waktu, dan privasi. Data proses disusun dari survei dan format acuan, bukan pengamatan langsung.
 
 ## 3.2 Proses Analisis
 
@@ -969,8 +972,8 @@ Lampiran memuat dokumen pendukung: kode program kunci, diagram, data pengujian, 
 | F | Konfigurasi & Cara Menjalankan | Prasyarat, langkah menjalankan, URL, dan variabel lingkungan | — |
 | G | Instrumen Survei | Kisi-kisi, 41 butir kuesioner, dan *informed consent* | — |
 | H | Data Mentah Survei | Jawaban R01–R10 dalam lima tabel tematik | — |
-| I | Lembar Observasi | Formulir, rubrik, status, dan rencana pengisian | — |
-| J | Dokumen Operasional UMKM | Checklist dokumen, format acuan, dan status perolehan | — |
+| I | Lembar Observasi | Formulir observasi, rekaman observasi tidak langsung, rubrik, status, dan etika | — |
+| J | Dokumen Operasional UMKM | Checklist dokumen, format acuan, status perolehan, dan surat permintaan | — |
 | K | Instrumen Studi Pustaka | Basis data, *string* pencarian, kriteria, dan matriks DOI/arXiv | — |
 
 **Keterangan:** nomor halaman diisi setelah tata letak final di Word. Tanda `—` berarti belum ditetapkan. Tabel pada lampiran memakai penomoran sendiri (mis. Tabel G.1, H.1) agar tidak mengubah penomoran Tabel 3.1–3.9 pada BAB III.
@@ -1439,7 +1442,7 @@ Butir etis yang disampaikan sebelum pengisian:
 
 ### I.1 Tujuan dan Objek Observasi
 
-Lembar observasi dipakai untuk merekam alur kerja gudang pada kondisi *as-is*, meliputi urutan aktivitas, pelaku, dokumen yang dipakai, waktu yang dibutuhkan, dan kendala yang muncul. Observasi direncanakan pada satu atau beberapa UMKM mitra selama 1–2 hari operasi per mitra. Instrumen ini melengkapi survei: survei menangkap persepsi responden, sedangkan observasi mencatat proses yang benar-benar terjadi.
+Lembar observasi dipakai untuk merekam alur kerja gudang pada kondisi *as-is*, meliputi urutan aktivitas, pelaku, dokumen yang dipakai, waktu yang dibutuhkan, dan kendala yang muncul. Observasi lapangan tidak dilaksanakan pada tahap ini karena keterbatasan akses dan waktu. Instrumen tetap dilampirkan sebagai formulir siap pakai, sedangkan data proses yang tersedia disusun sebagai rekaman observasi tidak langsung dari jawaban survei R01–R10. Rekaman tersebut tidak diklaim sebagai hasil pengamatan langsung.
 
 ### I.2 Aspek yang Diamati
 
@@ -1464,11 +1467,27 @@ Lembar observasi dipakai untuk merekam alur kerja gudang pada kondisi *as-is*, m
 | 2 | … | … | … | … | … | … | … | … |
 | 3 | … | … | … | … | … | … | … | … |
 
-**Keterangan:** satu baris untuk satu aktivitas yang diamati. Kolom **Temuan** diisi fakta, bukan opini; kolom **Kode Foto** diisi nomor foto bila dokumentasi diizinkan.
+**Keterangan:** satu baris untuk satu aktivitas yang diamati. Kolom **Temuan** diisi fakta, bukan opini. Kolom **Kode Foto** diisi nomor foto bila dokumentasi diizinkan. Formulir ini dilampirkan sebagai instrumen. Karena observasi lapangan tidak dilaksanakan, tidak ada data pengamatan langsung yang diisi pada tabel ini.
 
-### I.4 Rubrik Penilaian
+### I.4 Rekaman Observasi Tidak Langsung
 
-**Tabel I.3 — Rubrik Penilaian Proses**
+> Rekaman ini disusun dari jawaban survei R01–R10, bukan hasil observasi lapangan. Data tidak diklaim sebagai pengamatan langsung. Tujuannya menyediakan ringkasan proses yang tersedia dari data primer tanpa mengarang aktivitas yang tidak diamati.
+
+**Tabel I.3 — Rekaman Observasi Tidak Langsung**
+
+| No | Tahap | Indikator | Temuan dari Survei | Sumber |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | Penerimaan barang | Media pencatatan, dokumen, dan waktu cek stok | Empat dari sepuluh responden memakai buku tulis, dua *spreadsheet*, dua aplikasi kasir, satu ERP, dan satu grup pesan instan. Median waktu cek stok 6,3 menit. | Tabel 1.3, 1.4, H.1, H.2 |
+| 2 | Penyimpanan | Jumlah SKU dan media pencatatan | Tujuh dari sepuluh responden masih manual atau semi-manual. Satu distributor memiliki 1.104 SKU dan satu toko melaporkan 1.430 unit. Median SKU 66 dari 8 jawaban numerik. | Tabel 1.3, H.1 |
+| 3 | Pengeluaran barang | Waktu cek kirim, frekuensi, dan dokumen | Median cek kirim 15 menit dari 9 responden. Dua responden tidak membuat Surat Jalan. Enam responden mengecek status pengiriman 2–5 kali per hari atau lebih. | Tabel 1.4, H.2, H.4 |
+| 4 | *Stock opname* | Frekuensi dan selisih stok | Empat responden harian, tiga mingguan, dan tiga bulanan. Median selisih 2,75 persen dan 2,5 kali per bulan. Tujuh dari sepuluh responden mencatat selisih. | Tabel 1.4, H.2, H.3 |
+| 5 | Pelaporan | Waktu rekap dan media pencatatan | Median waktu rekap 23 menit. Media pencatatan didominasi buku tulis dan *spreadsheet*. Hanya tiga responden memakai aplikasi kasir atau ERP. | Tabel 1.3, 1.4, H.1, H.2 |
+
+**Keterangan:** tabel ini adalah sintesis dari jawaban survei, bukan catatan aktivitas lapangan. Sumber pada kolom terakhir menunjukkan tabel tempat angka diambil. Tidak ada durasi atau temuan yang berasal dari *stopwatch* atau pengamatan langsung.
+
+### I.5 Rubrik Penilaian
+
+**Tabel I.4 — Rubrik Penilaian Proses**
 
 | Dimensi | Skor 1 | Skor 3 | Skor 5 | Cara menilai |
 | :--- | :--- | :--- | :--- | :--- |
@@ -1478,23 +1497,25 @@ Lembar observasi dipakai untuk merekam alur kerja gudang pada kondisi *as-is*, m
 | Duplikasi pencatatan | Input berulang di banyak tempat | Sebagian berulang | Sekali input | Hitung jumlah input per transaksi |
 | Upaya manual | Sepenuhnya manual | Campuran manual dan sistem | Otomatis | Hitung langkah manual |
 
-### I.5 Status Pengisian dan Rencana
+### I.6 Status Pengisian dan Rencana
 
-**Status:** instrumen siap digunakan; pengisian lapangan dijadwalkan pada tahap pengujian. Hasil pengisian akan dilampirkan pada laporan akhir. Tidak ada data observasi yang diklaim pada laporan kemajuan ini.
+**Status:** formulir observasi kosong dilampirkan sebagai instrumen. Rekaman observasi tidak langsung diisi dari jawaban survei R01–R10. Observasi lapangan tidak dilaksanakan pada tahap ini. Tidak ada data observasi lapangan yang diklaim pada laporan kemajuan ini.
 
-**Tabel I.4 — Rencana Pengisian Observasi**
+**Tabel I.5 — Rencana Pengisian Observasi**
 
 | No | Tahap | Objek | Perkiraan Waktu | Penanggung Jawab | Status |
 | :---: | :--- | :--- | :--- | :--- | :--- |
-| 1 | Penerimaan barang | UMKM mitra | 1 hari operasi | Tim peneliti | Dijadwalkan |
-| 2 | Penyimpanan | UMKM mitra | 1 hari operasi | Tim peneliti | Dijadwalkan |
-| 3 | Pengeluaran barang | UMKM mitra | 1 hari operasi | Tim peneliti | Dijadwalkan |
-| 4 | *Stock opname* | UMKM mitra | 1 siklus opname | Tim peneliti | Dijadwalkan |
-| 5 | Pelaporan | UMKM mitra | 1 hari operasi | Tim peneliti | Dijadwalkan |
+| 1 | Penerimaan barang | UMKM mitra | 1 hari operasi | Tim peneliti | Belum dilaksanakan |
+| 2 | Penyimpanan | UMKM mitra | 1 hari operasi | Tim peneliti | Belum dilaksanakan |
+| 3 | Pengeluaran barang | UMKM mitra | 1 hari operasi | Tim peneliti | Belum dilaksanakan |
+| 4 | *Stock opname* | UMKM mitra | 1 siklus opname | Tim peneliti | Belum dilaksanakan |
+| 5 | Pelaporan | UMKM mitra | 1 hari operasi | Tim peneliti | Belum dilaksanakan |
 
-### I.6 Etika Observasi
+**Keterangan:** rencana ini dapat dijalankan pada laporan akhir bila akses ke UMKM mitra tersedia. Selama observasi belum dilakukan, laporan hanya memuat instrumen dan rekaman tidak langsung.
 
-- Observasi dilakukan setelah pemilik usaha memberikan izin lisan atau tertulis.
+### I.7 Etika Observasi
+
+- Observasi lapangan hanya dilakukan setelah pemilik usaha memberikan izin lisan atau tertulis.
 - Nama usaha, lokasi, dan identitas pelaku tidak ditampilkan; kode mitra dipakai pada laporan.
 - Foto hanya diambil bila diizinkan; wajah orang tidak dimasukkan ke laporan.
 - Catatan lapangan disimpan terbatas dan digunakan hanya untuk analisis kebutuhan.
@@ -1507,9 +1528,9 @@ Lembar observasi dipakai untuk merekam alur kerja gudang pada kondisi *as-is*, m
 
 | No | Dokumen | Tujuan analisis | Status | Keterangan |
 | :---: | :--- | :--- | :--- | :--- |
-| 1 | SOP penerimaan barang | Aturan *inbound*, pengecekan, dan pencatatan | Belum diperoleh | Akan diminta pada observasi |
-| 2 | SOP pengeluaran/pengiriman | Aturan *outbound* dan serah terima | Belum diperoleh | Akan diminta pada observasi |
-| 3 | SOP *stock opname* | Frekuensi, metode, dan koreksi selisih | Belum diperoleh | Akan diminta pada observasi |
+| 1 | SOP penerimaan barang | Aturan *inbound*, pengecekan, dan pencatatan | Belum diperoleh | Akan diminta bila akses tersedia |
+| 2 | SOP pengeluaran/pengiriman | Aturan *outbound* dan serah terima | Belum diperoleh | Akan diminta bila akses tersedia |
+| 3 | SOP *stock opname* | Frekuensi, metode, dan koreksi selisih | Belum diperoleh | Akan diminta bila akses tersedia |
 | 4 | Format Purchase Order (PO) | Field, alur status, dan penomoran | Belum diperoleh | Format acuan ada pada J.2 |
 | 5 | Format Surat Jalan | Field, alur status, dan serah terima | Belum diperoleh | Format acuan ada pada J.3 |
 | 6 | Kartu stok/buku stok | Saldo awal, mutasi, dan saldo akhir | Belum diperoleh | Format acuan ada pada J.4 |
@@ -1581,7 +1602,7 @@ Lembar observasi dipakai untuk merekam alur kerja gudang pada kondisi *as-is*, m
 
 ### J.6 Status Perolehan dan Anonimisasi
 
-**Status perolehan:** per 31 Oktober 2026, dokumen operasional mitra belum diperoleh. Tabel J.2–J.5 adalah format acuan yang diturunkan dari `docs/FSD.md` dan dipakai sistem, bukan dokumen mitra. Dokumen mitra yang telah dianonimkan akan ditambahkan pada laporan akhir.
+**Status perolehan:** per 31 Oktober 2026, tidak ada dokumen operasional mitra yang diperoleh. Tabel J.2–J.5 adalah format acuan yang diturunkan dari `docs/FSD.md` dan dipakai sistem, bukan dokumen mitra. Keterbatasan akses, privasi, dan waktu membuat dokumen mitra belum dapat dilampirkan. Jika dokumen diperoleh, dokumen akan dianonimkan dan ditambahkan pada laporan akhir.
 
 **Rencana perolehan:** dokumen diminta melalui surat pada J.7, lalu dipindai, dianonimkan (nama usaha, lokasi, harga, dan nama pelanggan dihapus), dan dilampirkan sebagai gambar atau tabel. Bila mitra tidak mengizinkan, laporan hanya memuat checklist dan format acuan, disertai catatan keterbatasan.
 

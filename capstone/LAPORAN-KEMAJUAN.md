@@ -3,15 +3,15 @@
 **Judul Proyek:** Otomatisasi Warehouse Management System (WMS) dan Tata Kelola Dokumen Berbasis Web dengan Integrasi Asisten AI (RAG) pada Platform Pesan Instan
 
 **Jenis Dokumen:** Laporan Kemajuan Capstone
-**Versi:** 1.1.0
+**Versi:** 1.2.0
 **Status:** Draft
-**Status Data:** Data primer survei (n = 10, 29 Oktober 2026); estimasi rupiah tidak dihitung karena data keuangan tidak lengkap
+**Status Data:** Data primer survei (n = 10, 29 Oktober 2026); data mentah anonim pada Lampiran H; estimasi rupiah tidak dihitung karena data keuangan tidak lengkap
 **Penyusun:** [Nama Penyusun]
 **Institusi/Program Studi:** [Nama Institusi / Program Studi]
 **Pembimbing:** [Nama Pembimbing]
-**Tanggal:** 29 Oktober 2026
+**Tanggal:** 31 Oktober 2026
 
-**Dokumen Terkait:** [Proposal Proyek](./PROPOSAL.md) · [Data Survei](./survey/respondents.csv) · [BRD](../docs/BRD.md) · [FSD](../docs/FSD.md) · [ERD](../docs/ERD.md) · [TECHNICAL](../docs/TECHNICAL.md) · [README](../README.md)
+**Dokumen Terkait:** [Proposal Proyek](./PROPOSAL.md) · [Data Survei](./survey/respondents.csv) · [Data Survei Anonim](./survey/respondents-anonim.csv) · [BRD](../docs/BRD.md) · [FSD](../docs/FSD.md) · [ERD](../docs/ERD.md) · [TECHNICAL](../docs/TECHNICAL.md) · [README](../README.md)
 
 ---
 
@@ -37,6 +37,7 @@
 - [V. Kesimpulan dan Rekomendasi](#v-kesimpulan-dan-rekomendasi)
 - [Daftar Pustaka](#daftar-pustaka)
 - [VI. Lampiran](#vi-lampiran)
+  - [Daftar Lampiran](#daftar-lampiran)
 
 ---
 
@@ -46,9 +47,9 @@ Tiga hal yang perlu diketahui pembaca sebelum menilai isi dokumen ini.
 
 **Pertama, bab yang masih kosong bukan kelalaian.** BAB IV (Hasil dan Pembahasan) dan BAB V (Kesimpulan dan Rekomendasi) sengaja dikosongkan karena hasil akhir dan kesimpulan baru dapat dirumuskan setelah seluruh target pengujian terpenuhi. Keduanya diisi pada tahap laporan akhir.
 
-**Kedua, data pada BAB I berasal dari survei riil, bukan simulasi.** Subbagian 1.1.2 dan 1.1.3 memakai jawaban 10 responden yang disurvei pada 29 Oktober 2026. Sampel dipilih secara purposif, hanya tiga responden yang kategori utamanya *frozen food*, dan sebagian jawaban berupa rentang atau data keuangan yang tidak lengkap. Karena itu hasilnya dibaca sebagai gambaran indikatif, bukan generalisasi statistik; nilai rupiah tidak diestimasi. Data mentah tersedia pada `survey/respondents.csv`.
+**Kedua, data pada BAB I berasal dari survei riil, bukan simulasi.** Subbagian 1.1.2 dan 1.1.3 memakai jawaban 10 responden yang disurvei pada 29 Oktober 2026. Sampel dipilih secara purposif, hanya tiga responden yang kategori utamanya *frozen food*, dan sebagian jawaban berupa rentang atau data keuangan yang tidak lengkap. Karena itu hasilnya dibaca sebagai gambaran indikatif, bukan generalisasi statistik; nilai rupiah tidak diestimasi. Data mentah tersedia pada `survey/respondents.csv` dan disajikan secara anonim pada Lampiran H.
 
-**Ketiga, dokumen ini melanjutkan proposal.** Uraian yang sudah lengkap pada `PROPOSAL.md` — daftar pustaka, cuplikan kode, diagram, dan konfigurasi — tidak dikutip ulang seluruhnya; dokumen ini merujuk kembali ke sana. Bagian yang ditambahkan di sini adalah metodologi, data pendukung latar belakang, instrumen survei, dan status realisasi pekerjaan.
+**Ketiga, dokumen ini melanjutkan proposal.** Uraian yang sudah lengkap pada `PROPOSAL.md` — daftar pustaka, cuplikan kode, diagram, dan konfigurasi — tidak dikutip ulang seluruhnya; dokumen ini merujuk kembali ke sana. Bagian yang ditambahkan di sini adalah metodologi, data pendukung latar belakang, instrumen survei, data mentah, lembar observasi, dokumen operasional UMKM, protokol studi pustaka, dan status realisasi pekerjaan. Instrumen lengkap dilampirkan pada Lampiran G–K.
 
 **Catatan penomoran.** Proposal memakai nomor sitasi gaya angka (`[1]`–`[8]`). Dokumen ini memakai gaya APA 7 author-date agar sitasi dapat dimasukkan langsung melalui Mendeley Cite di Word. Pemetaan antara kedua gaya tersedia pada `references/PANDUAN-MENDELEY.md`.
 
@@ -90,7 +91,7 @@ Identifikasi masalah pada Tabel 1.1 diturunkan dari empat sumber: tinjauan pusta
 
 ### 1.1.2 Data Kuantitatif Dampak Masalah
 
-> **Catatan data.** Angka pada subbagian ini dihitung dari jawaban 10 responden pada survei 29 Oktober 2026. Karena jawaban berupa rentang dan sebagian data keuangan kosong, nilai rupiah tidak diestimasi; hanya komponen waktu yang dihitung. Data mentah tersedia pada [`survey/respondents.csv`](./survey/respondents.csv).
+> **Catatan data.** Angka pada subbagian ini dihitung dari jawaban 10 responden pada survei 29 Oktober 2026. Karena jawaban berupa rentang dan sebagian data keuangan kosong, nilai rupiah tidak diestimasi; hanya komponen waktu yang dihitung. Data mentah tersedia pada [`survey/respondents.csv`](./survey/respondents.csv) dan disajikan secara anonim pada Lampiran H.
 
 Tabel 1.2 menghitung dampak masalah dari jawaban survei. Setiap baris mencantumkan dasar perhitungan agar asal angka dapat ditelusuri. Nilai dihitung per responden terlebih dahulu, lalu diringkas menjadi median dan rentang.
 
@@ -116,9 +117,9 @@ Tabel 1.2 menghitung dampak masalah dari jawaban survei. Setiap baris mencantumk
 
 ### 1.1.3 Hasil Survei/Wawancara Pendahuluan
 
-> **Catatan data.** Subbagian ini memakai hasil survei riil yang dilaksanakan pada 29 Oktober 2026 terhadap 10 responden. Nama dan nama usaha tidak ditampilkan; kode R01–R10 ditetapkan ulang untuk menjaga privasi dan konsistensi. Data mentah tersedia pada [`survey/respondents.csv`](./survey/respondents.csv).
+> **Catatan data.** Subbagian ini memakai hasil survei riil yang dilaksanakan pada 29 Oktober 2026 terhadap 10 responden. Nama dan nama usaha tidak ditampilkan; kode R01–R10 ditetapkan ulang untuk menjaga privasi dan konsistensi. Data mentah tersedia pada [`survey/respondents.csv`](./survey/respondents.csv) dan disajikan secara anonim pada Lampiran H.
 
-Survei pendahuluan dirancang untuk mengonfirmasi apakah masalah pada Tabel 1.1 benar dialami calon pengguna dan seberapa besar dampaknya. Responden adalah pemilik atau pengelola yang terlibat langsung dalam pencatatan stok dan usahanya menyimpan/mengelola persediaan; seluruh responden memenuhi kedua kriteria tersebut. Instrumen ringkas ada pada **Lampiran G**, sedangkan daftar pertanyaan lengkap tercermin pada header `survey/respondents.csv`.
+Survei pendahuluan dirancang untuk mengonfirmasi apakah masalah pada Tabel 1.1 benar dialami calon pengguna dan seberapa besar dampaknya. Responden adalah pemilik atau pengelola yang terlibat langsung dalam pencatatan stok dan usahanya menyimpan/mengelola persediaan; seluruh responden memenuhi kedua kriteria tersebut. Instrumen lengkap ada pada **Lampiran G**, data mentah pada **Lampiran H**, dan daftar pertanyaan juga tercermin pada header `survey/respondents.csv`.
 
 Komposisi responden tidak seluruhnya *frozen food*: tiga responden bergerak di *frozen food*, tiga di makanan-minuman, dan empat lainnya di retail umum, toko plastik, manufaktur elektroda las, serta distributor suku cadang mesin. Jenis usaha terdiri atas empat toko/retail, dua agen/reseller, dua produsen/UMKM makanan, satu distributor, dan satu manufaktur. Karena itu, hasil survei dibaca sebagai gambaran usaha yang mengelola persediaan, dengan mayoritas berskala UMKM, bukan khusus *frozen food*. Sebagian responden memiliki skala jauh lebih besar: satu distributor memiliki 1.104 SKU, dan tiga responden melaporkan ≥21 PO/bulan. Karena itu median dipakai sebagai ukuran pusat.
 
@@ -487,36 +488,57 @@ Bab ini menjelaskan cara pekerjaan dilakukan: metode penelitian, proses analisis
 
 ### 3.1.1 Pendekatan dan Model Proses
 
-Proyek ini adalah penelitian pengembangan perangkat lunak (R&D) dengan pendekatan *incremental*. Setiap penambahan kemampuan dirancang, dibangun, dan diuji dalam satu siklus pendek, lalu hasilnya menjadi dasar siklus berikutnya. Model prosesnya adalah Agile versi ringkas yang dijalankan sembilan sprint mingguan setara lima fase pada Tabel 1.8. Pemilihan model ini didasari dua pertimbangan:
+Proyek ini adalah penelitian pengembangan perangkat lunak (R&D) dengan pendekatan *incremental*. Setiap penambahan kemampuan dirancang, dibangun, dan diuji dalam satu siklus pendek, lalu hasilnya menjadi dasar siklus berikutnya. Model prosesnya adalah Agile versi ringkas yang dijalankan dalam sprint mingguan dan dipetakan ke lima fase pada Tabel 1.8. Metode pengembangan yang dipakai adalah *incremental development* dengan *prototyping* pada bagian yang berisiko tinggi, yaitu integrasi AI/RAG: prototipe diuji lebih dahulu, lalu disempurnakan pada sprint berikutnya. Pemilihan model ini didasari dua pertimbangan:
 
 1. **Kebutuhan belum sepenuhnya pasti di awal.** Calon pengguna UMKM belum memiliki pengalaman dengan asisten AI, sehingga sebagian kebutuhan baru muncul setelah prototipe dapat dicoba.
 2. **Risiko teknis terkonsentrasi pada satu bagian.** Unsur kebaruan berupa integrasi AI RAG memiliki ketidakpastian paling tinggi, sehingga dikerjakan lebih awal agar bila gagal, ruang lingkup dapat disesuaikan.
 
-Setiap fase menghasilkan luaran yang dapat diperiksa: analisis kebutuhan, dokumen perancangan, kode teruji, dan hasil pengujian.
+Setiap fase menghasilkan luaran yang dapat diperiksa: analisis kebutuhan, dokumen perancangan, kode teruji, dan hasil pengujian. Metode dan perkakas yang dipakai pada setiap tahap dirangkum pada subbagian 3.1.2.
 
-### 3.1.2 Teknik Pengumpulan Data
+### 3.1.2 Metode dan Perkakas Pengembangan
 
-Data dikumpulkan dengan empat teknik yang saling melengkapi.
+Metode dan perkakas dipilih agar setiap tahap menghasilkan artefak yang dapat diperiksa dan dapat diulang. Tabel 3.1 merangkum metode, perkakas utama, dan luaran pada setiap tahap.
 
-| Teknik | Sasaran | Hasil yang Diharapkan | Instrumen |
+**Tabel 3.1 — Metode dan Perkakas Pengembangan per Tahap**
+
+| Tahap | Metode | Perkakas utama | Luaran |
 | :--- | :--- | :--- | :--- |
-| Studi pustaka | Dasar teori dan posisi terhadap penelitian sebelumnya | Kerangka konsep, kebaruan, rujukan | Basis data akademik, arXiv, DOI |
-| Survei semi-terstruktur | Pemilik/pengelola usaha yang mengelola persediaan (n = 10; 3 *frozen food*) | Konfirmasi masalah, baseline metrik, preferensi kanal dan fitur | Instrumen survei (Lampiran G); data mentah `survey/respondents.csv` |
-| Observasi proses | Alur kerja gudang harian | Pemetaan proses as-is, titik rawan kesalahan | Lembar observasi |
-| Analisis dokumen | SOP, format PO, format Surat Jalan, catatan stok | Aturan bisnis, format keluaran, kamus istilah | Dokumen operasional UMKM |
+| Analisis kebutuhan | Studi pustaka naratif, survei semi-terstruktur, observasi proses, dan analisis dokumen | Formulir daring (Google Forms), Google Sheets, Mendeley, Mermaid | P-001–P-005, OBJ-1–OBJ-5, KPI-1–KPI-6, BRD, FSD |
+| Perancangan | Pemodelan data relasional dan normalisasi, arsitektur berlapis (*ports and adapters*), *state machine*, dan *sequence diagram* | Mermaid, Prisma Schema, Markdown | ERD, rancangan arsitektur, *state machine*, rancangan antarmuka |
+| Implementasi | Pengembangan inkremental per sprint, *containerization*, dan migrasi basis data berbasis kode | Git/GitHub, Docker Compose, Node.js 20, TypeScript 5.7, React 18.3, Vite 6, Tailwind CSS 4, Express 4.21, Prisma 6.3, PostgreSQL + pgvector, LangChain.js 0.3, Telegraf 4.16, OpenAI API, Nginx | Kode aplikasi, *container*, migrasi basis data |
+| Pengujian | Unit, integrasi, *end-to-end* manual, dan pengujian komponen | Vitest 2.1, Supertest 7, Testing Library 16, Playwright (opsional), Makefile | 23 berkas uji, Tabel 3.7, Tabel 3.8 |
+| Dokumentasi | *Docs-as-code* dan pengelolaan sitasi | Markdown, Mermaid, Mendeley Cite, Git | Laporan, BRD/FSD/ERD/TECHNICAL, daftar pustaka |
 
-**Keterangan:** survei pendahuluan telah dilaksanakan pada 29 Oktober 2026 terhadap 10 responden. Data primer yang sudah terkumpul dan diolah pada laporan ini adalah data survei; observasi proses dan analisis dokumen operasional dilengkapi pada laporan akhir.
+**Keterangan:**
+- Versi perkakas mengikuti `package.json`, `Dockerfile`, dan `docker-compose.yml` per 31 Oktober 2026; versi dapat berubah tanpa mengubah metode.
+- Pengujian dijalankan melalui target Makefile (`make test`, `make lint`, `make typecheck`) agar lingkungannya sama dengan lingkungan pengembangan.
+- Rincian teknologi per lapisan dan variabel lingkungan ada pada subbagian 3.4.1 dan Lampiran F.4.
 
-### 3.1.3 Jenis dan Sumber Data
+### 3.1.3 Teknik Pengumpulan Data dan Instrumen
+
+Data dikumpulkan dengan empat teknik yang saling melengkapi. Instrumen lengkap tidak diulang pada bab ini, tetapi dilampirkan pada Lampiran G–K agar dapat diperiksa langsung.
+
+**Tabel 3.2 — Teknik Pengumpulan Data, Instrumen, dan Lokasi Lampiran**
+
+| Teknik | Sasaran | Instrumen | Hasil yang Diharapkan | Lokasi Lampiran |
+| :--- | :--- | :--- | :--- | :--- |
+| Studi pustaka | Dasar teori dan posisi terhadap penelitian sebelumnya | Protokol pencarian: basis data akademik, *string* pencarian, kriteria inklusi/eksklusi, matriks literatur | Kerangka konsep, kebaruan, rujukan | Lampiran K |
+| Survei semi-terstruktur | Pemilik/pengelola usaha yang mengelola persediaan (n = 10; 3 *frozen food*) | Kuesioner 41 butir + *informed consent* | Konfirmasi masalah, baseline metrik, preferensi kanal dan fitur | Lampiran G (instrumen); Lampiran H (data mentah) |
+| Observasi proses | Alur kerja gudang harian | Lembar observasi + rubrik penilaian | Pemetaan proses as-is, titik rawan kesalahan | Lampiran I |
+| Analisis dokumen | SOP, format PO, format Surat Jalan, catatan stok | Checklist dokumen operasional + format acuan | Aturan bisnis, format keluaran, kamus istilah | Lampiran J |
+
+**Keterangan:** survei pendahuluan telah dilaksanakan pada 29 Oktober 2026 terhadap 10 responden. Data primer yang sudah terkumpul dan diolah pada laporan ini adalah data survei; instrumen observasi dan analisis dokumen dilampirkan pada Lampiran I dan J, sedangkan pengisian lapangannya dilengkapi pada laporan akhir.
+
+### 3.1.4 Jenis dan Sumber Data
 
 - **Data primer:** hasil survei semi-terstruktur dengan pemilik/pengelola usaha (n = 10, 29 Oktober 2026), hasil observasi alur kerja gudang, dan pengukuran waktu pada saat uji coba sistem.
 - **Data sekunder:** literatur ilmiah, dokumentasi resmi perangkat (PostgreSQL, Docker, LangChain, Telegram Bot API), serta dokumen operasional UMKM mitra.
 
-### 3.1.4 Teknik Analisis Data
+### 3.1.5 Teknik Analisis Data
 
 Data kualitatif dianalisis secara tematik sederhana: jawaban survei dikelompokkan menurut kemiripan tema, lalu setiap tema dinilai apakah dapat dipetakan ke salah satu masalah pada Tabel 1.1. Tema yang tidak dapat dipetakan dicatat sebagai temuan tambahan dan tidak dipaksakan masuk ke daftar masalah. Data kuantitatif hasil survei diolah menjadi median dan rentang; jawaban berupa rentang dikonversi ke titik tengah, dan data kosong tidak diimputasi. Median dipilih karena sebaran data lebar dan terdapat outlier. Nilai ini dipakai sebagai baseline KPI pada Tabel 1.6.
 
-### 3.1.5 Batasan Metodologis
+### 3.1.6 Batasan Metodologis
 
 Lima batasan berikut perlu dinyatakan terbuka agar penilaian hasil dapat dilakukan secara wajar:
 
@@ -546,9 +568,9 @@ flowchart LR
 
 ### 3.2.2 Penelusuran Kebutuhan
 
-Setiap masalah ditelusuri sampai ke kebutuhan fungsional, sehingga dapat dipastikan tidak ada kebutuhan yang tanpa dasar masalah. Tabel 3.1 merangkum penelusuran tersebut; kolom terakhir menyatakan di bagian mana kebutuhan itu dibuktikan pada tahap pengujian.
+Setiap masalah ditelusuri sampai ke kebutuhan fungsional, sehingga dapat dipastikan tidak ada kebutuhan yang tanpa dasar masalah. Tabel 3.3 merangkum penelusuran tersebut; kolom terakhir menyatakan di bagian mana kebutuhan itu dibuktikan pada tahap pengujian.
 
-**Tabel 3.1 — Penelusuran Masalah ke Kebutuhan dan Pengujian**
+**Tabel 3.3 — Penelusuran Masalah ke Kebutuhan dan Pengujian**
 
 | Masalah | Tujuan | Indikator | Kebutuhan Bisnis | Kebutuhan Fungsional | Bukti Uji |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -560,7 +582,7 @@ Setiap masalah ditelusuri sampai ke kebutuhan fungsional, sehingga dapat dipasti
 
 **Keterangan:**
 - Kode `BR-00n` adalah kebutuhan bisnis (*Business Requirement*) pada `docs/BRD.md`; kode `FR-0n` adalah kebutuhan fungsional (*Functional Requirement*) pada `docs/FSD.md`.
-- Kode `AC-0n` adalah skenario pengujian pada Tabel 3.5 dan Lampiran C.
+- Kode `AC-0n` adalah skenario pengujian pada Tabel 3.8 dan Lampiran C.
 - Sel yang memuat lebih dari satu kode berarti kebutuhan itu melayani beberapa masalah sekaligus.
 
 ### 3.2.3 Pemetaan Proses
@@ -569,7 +591,7 @@ Proses bisnis dipetakan dalam dua keadaan: **as-is** untuk memahami titik masala
 
 ### 3.2.4 Alat Analisis
 
-Alat yang dipakai pada tahap analisis adalah diagram alir Mermaid untuk pemetaan proses, matriks penelusuran (Tabel 3.1) untuk memastikan keterhubungan kebutuhan, dan lembar observasi untuk mencatat alur kerja nyata. Pemilihan Mermaid dilakukan karena diagram tersimpan sebagai teks di dalam repositori, sehingga ikut terkendali versinya bersama kode dan dokumen lain.
+Alat yang dipakai pada tahap analisis adalah diagram alir Mermaid untuk pemetaan proses, matriks penelusuran (Tabel 3.3) untuk memastikan keterhubungan kebutuhan, dan lembar observasi untuk mencatat alur kerja nyata. Pemilihan Mermaid dilakukan karena diagram tersimpan sebagai teks di dalam repositori, sehingga ikut terkendali versinya bersama kode dan dokumen lain.
 
 ## 3.3 Proses Perancangan
 
@@ -699,20 +721,21 @@ Kontrol akses dirancang pada empat lapis: autentikasi pengguna web dengan token 
 
 ### 3.4.1 Lingkungan dan Perkakas
 
-Seluruh layanan berjalan di dalam Docker, sehingga versi *runtime* seragam dan Node.js tidak perlu dipasang di mesin pengembang. Tabel 3.2 merangkum teknologi yang dipakai.
+Seluruh layanan berjalan di dalam Docker, sehingga versi *runtime* seragam dan Node.js tidak perlu dipasang di mesin pengembang. Tabel 3.4 merangkum teknologi dan versi yang dipakai pada implementasi; metode dan perkakas per tahap sudah dirangkum pada Tabel 3.1.
 
-**Tabel 3.2 — Teknologi yang Digunakan**
+**Tabel 3.4 — Teknologi dan Versi yang Digunakan**
 
-| Lapisan | Teknologi |
-| :--- | :--- |
-| Frontend | React (Vite), TypeScript, Tailwind CSS, TanStack Query |
-| Backend | Node.js (Express), TypeScript, Prisma ORM, Zod |
-| AI Agent | Node.js, TypeScript, LangChain.js, Telegraf |
-| Basis data | PostgreSQL + ekstensi `pgvector` |
-| Model bahasa | OpenAI (`gpt-4o-mini`) dan `text-embedding-3-small` |
-| Infrastruktur | Docker, Docker Compose |
+| Lapisan | Teknologi | Versi/Keterangan |
+| :--- | :--- | :--- |
+| Frontend | React, Vite, TypeScript, Tailwind CSS, TanStack Query | React 18.3; Vite 6; TypeScript 5.7; Tailwind CSS 4; TanStack Query 5 |
+| Backend | Node.js, Express, TypeScript, Prisma ORM, Zod | Node.js 20; Express 4.21; TypeScript 5.7; Prisma 6.3; Zod 3.24 |
+| AI Agent | Node.js, TypeScript, LangChain.js, Telegraf | Node.js 20; TypeScript 5.7; LangChain.js 0.3; Telegraf 4.16 |
+| Basis data | PostgreSQL + ekstensi `pgvector` | Image `ankane/pgvector`; dimensi vektor 1536 |
+| Model bahasa | OpenAI (`gpt-4o-mini`) dan `text-embedding-3-small` | Dibaca dari variabel lingkungan |
+| Infrastruktur | Docker, Docker Compose, Nginx | Nginx dipakai pada mode produksi |
+| Pengujian | Vitest, Supertest, Testing Library, Playwright | Vitest 2.1; Supertest 7; Testing Library 16; Playwright opsional |
 
-**Keterangan:** model dan versi dicatat sebagai konfigurasi, bukan bagian tetap sistem. Nilai sebenarnya dibaca dari variabel lingkungan (Lampiran F.4), sehingga penggantian model tidak menuntut perubahan kode.
+**Keterangan:** versi mengikuti `package.json`, `Dockerfile`, dan `docker-compose.yml` per 31 Oktober 2026. Model dan versi dicatat sebagai konfigurasi, bukan bagian tetap sistem; nilai sebenarnya dibaca dari variabel lingkungan (Lampiran F.4), sehingga penggantian model tidak menuntut perubahan kode.
 
 ### 3.4.2 Modul yang Diimplementasikan
 
@@ -738,9 +761,9 @@ Logika format nomor dipisahkan ke lapisan domain sebagai fungsi murni tanpa akse
 
 ### 3.4.5 Implementasi Asisten AI
 
-Agent dirakit ulang untuk setiap pesan masuk, agar identitas percakapan dapat disertakan pada setiap panggilan dan jejak audit tetap utuh. Agent dibatasi jumlah langkahnya, dibangun dengan *temperature* 0, dan menerima daftar tool yang dibentuk sesuai peran pengirim pesan. Tabel 3.3 merangkum tool yang tersedia.
+Agent dirakit ulang untuk setiap pesan masuk, agar identitas percakapan dapat disertakan pada setiap panggilan dan jejak audit tetap utuh. Agent dibatasi jumlah langkahnya, dibangun dengan *temperature* 0, dan menerima daftar tool yang dibentuk sesuai peran pengirim pesan. Tabel 3.5 merangkum tool yang tersedia.
 
-**Tabel 3.3 — Daftar Tool Asisten AI**
+**Tabel 3.5 — Daftar Tool Asisten AI**
 
 | Kategori | Nama Tool | Fungsi |
 | :--- | :--- | :--- |
@@ -776,9 +799,9 @@ Notifikasi dijalankan sebagai panggilan *best-effort* dengan batas waktu lima de
 
 ### 3.4.9 Ringkasan Realisasi
 
-Tabel 3.4 memetakan aktivitas implementasi ke tanggal pengerjaannya.
+Tabel 3.6 memetakan aktivitas implementasi ke tanggal pengerjaannya.
 
-**Tabel 3.4 — Realisasi Implementasi (Ringkas)**
+**Tabel 3.6 — Realisasi Implementasi (Ringkas)**
 
 | Tanggal | Aktivitas | Luaran |
 | :--- | :--- | :--- |
@@ -812,7 +835,7 @@ Pengujian dilakukan pada tiga tingkat, dari yang paling terisolasi sampai yang p
 
 Saat dokumen ini disusun, repositori memuat 23 berkas pengujian.
 
-**Tabel 3.5 — Sebaran Berkas Pengujian**
+**Tabel 3.7 — Sebaran Berkas Pengujian**
 
 | Layanan | Jenis | Berkas Uji |
 | :--- | :--- | :--- |
@@ -827,7 +850,7 @@ Saat dokumen ini disusun, repositori memuat 23 berkas pengujian.
 
 Skenario berikut diturunkan dari kebutuhan fungsional dan dipakai untuk menilai kesiapan sistem. Kolom **Hasil Aktual** dan **Status** diisi saat pengujian dijalankan, sehingga tabel ini berfungsi sebagai lembar kerja sekaligus laporan hasil.
 
-**Tabel 3.6 — Skenario Pengujian Penerimaan**
+**Tabel 3.8 — Skenario Pengujian Penerimaan**
 
 | ID | Skenario | Hasil yang Diharapkan | Hasil Aktual | Status |
 | :--- | :--- | :--- | :--- | :--- |
@@ -855,7 +878,7 @@ Skenario berikut diturunkan dari kebutuhan fungsional dan dipakai untuk menilai 
 | AC-22 | Status ingest bertahan setelah restart | Status dan waktu selesai tetap tampil setelah AI Agent dinyalakan ulang. | | |
 
 **Keterangan:**
-- Kode `AC-0n` sama dengan yang dipakai pada `PROPOSAL.md` Lampiran C dan Tabel 3.1, sehingga hasil pengujian dapat dirujuk dari mana saja.
+- Kode `AC-0n` sama dengan yang dipakai pada `PROPOSAL.md` Lampiran C dan Tabel 3.3, sehingga hasil pengujian dapat dirujuk dari mana saja.
 - Kolom **Hasil Aktual** diisi dengan nilai terukur, misalnya durasi dalam detik, bukan kata seperti "berhasil". Nilai terukur inilah yang dipakai menilai KPI.
 
 ### 3.5.4 Prosedur Uji End-to-End
@@ -869,15 +892,15 @@ Uji E2E dijalankan mengikuti urutan berikut, dan setiap langkah dicatat waktunya
 5. Konfirmasi PO, catat penerimaan barang, lalu verifikasi perubahan stok.
 6. Kirim pertanyaan SOP, verifikasi jawaban bersumber dari knowledge base dan menyebut sumbernya.
 7. Periksa notifikasi pada sisi admin dan owner.
-8. Isi kolom **Hasil Aktual** dan **Status** pada Tabel 3.6.
+8. Isi kolom **Hasil Aktual** dan **Status** pada Tabel 3.8.
 
 **Keterangan:** langkah 2, 3, dan 6 menghasilkan angka yang dipakai menilai KPI-1, KPI-3, dan KPI-4.
 
 ### 3.5.5 Rencana Evaluasi terhadap KPI
 
-Tabel 3.7 menyatakan bagaimana setiap indikator akan dinilai, dan sejauh mana penilaian dapat diselesaikan pada tahap ini.
+Tabel 3.9 menyatakan bagaimana setiap indikator akan dinilai, dan sejauh mana penilaian dapat diselesaikan pada tahap ini.
 
-**Tabel 3.7 — Rencana dan Keterbatasan Pengukuran KPI**
+**Tabel 3.9 — Rencana dan Keterbatasan Pengukuran KPI**
 
 | Indikator | Cara Ukur | Dapat Diselesaikan pada Tahap Ini? |
 | :--- | :--- | :--- |
@@ -932,7 +955,25 @@ Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Ka
 
 # VI. LAMPIRAN
 
-Lampiran memuat dokumen pendukung: kode program kunci, diagram, data pengujian, surat pernyataan, berita acara kerja kelompok, konfigurasi cara menjalankan, dan instrumen survei pendahuluan. Cuplikan kode dan diagram lengkap tersedia pada `PROPOSAL.md` Lampiran A dan B; lampiran di sini memuat bagian yang diperlukan untuk membuktikan pernyataan pada BAB I sampai BAB III.
+Lampiran memuat dokumen pendukung: kode program kunci, diagram, data pengujian, surat pernyataan, berita acara kerja kelompok, konfigurasi cara menjalankan, instrumen survei, data mentah survei, lembar observasi, dokumen operasional UMKM, dan instrumen studi pustaka. Cuplikan kode dan diagram lengkap tersedia pada `PROPOSAL.md` Lampiran A dan B; lampiran di sini memuat bagian yang diperlukan untuk membuktikan pernyataan pada BAB I sampai BAB III. Instrumen dan data mentah ditempatkan pada Lampiran G–K agar dapat diperiksa tanpa berpindah ke dokumen lain.
+
+## Daftar Lampiran
+
+| Lampiran | Judul | Isi utama | Halaman |
+| :--- | :--- | :--- | :---: |
+| A | Kode Program (Cuplikan Kunci) | Cuplikan transaksi stok atomik dan retrieval RAG | — |
+| B | Diagram | Daftar gambar dan letaknya di dalam laporan | — |
+| C | Data Pengujian | Lingkungan uji, data seed, lembar hasil, dan skenario manual | — |
+| D | Surat Pernyataan | Template pernyataan keaslian karya | — |
+| E | Berita Acara Kerja Kelompok | Template daftar hadir dan pembagian tugas | — |
+| F | Konfigurasi & Cara Menjalankan | Prasyarat, langkah menjalankan, URL, dan variabel lingkungan | — |
+| G | Instrumen Survei | Kisi-kisi, 41 butir kuesioner, dan *informed consent* | — |
+| H | Data Mentah Survei | Jawaban R01–R10 dalam lima tabel tematik | — |
+| I | Lembar Observasi | Formulir, rubrik, status, dan rencana pengisian | — |
+| J | Dokumen Operasional UMKM | Checklist dokumen, format acuan, dan status perolehan | — |
+| K | Instrumen Studi Pustaka | Basis data, *string* pencarian, kriteria, dan matriks DOI/arXiv | — |
+
+**Keterangan:** nomor halaman diisi setelah tata letak final di Word. Tanda `—` berarti belum ditetapkan. Tabel pada lampiran memakai penomoran sendiri (mis. Tabel G.1, H.1) agar tidak mengubah penomoran Tabel 3.1–3.9 pada BAB III.
 
 ## Lampiran A — Kode Program (Cuplikan Kunci)
 
@@ -1023,7 +1064,7 @@ export async function searchKnowledge(query: string, topK = env.AGENT_TOP_K): Pr
 
 ### C.3 Lembar Hasil Pengujian
 
-Gunakan Tabel 3.6 pada subbagian 3.5.3 sebagai lembar kerja. Isi kolom **Hasil Aktual** dengan nilai terukur dan kolom **Status** dengan `Lulus`, `Gagal`, atau `Tidak diuji`, beserta catatan singkat untuk status selain `Lulus`.
+Gunakan Tabel 3.8 pada subbagian 3.5.3 sebagai lembar kerja. Isi kolom **Hasil Aktual** dengan nilai terukur dan kolom **Status** dengan `Lulus`, `Gagal`, atau `Tidak diuji`, beserta catatan singkat untuk status selain `Lulus`.
 
 ### C.4 Contoh Skenario Uji Manual
 
@@ -1170,65 +1211,476 @@ make rag-ingest
 | Lint / Typecheck / Test | `make lint` · `make typecheck` · `make test` |
 | Build produksi | `make up` / `make down` · `make prod-rag-ingest` |
 
-## Lampiran G — Instrumen Survei/Wawancara Pendahuluan
+## Lampiran G — Instrumen Survei
 
-> Instrumen ini dipakai pada survei pendahuluan 29 Oktober 2026. Tidak ada pertanyaan yang menuntut data keuangan rahasia; pertanyaan rupiah hanya diajukan bila responden bersedia dan boleh dilewati. Daftar pertanyaan lengkap beserta pilihan jawaban tercermin pada header [`survey/respondents.csv`](./survey/respondents.csv); bagian ini memuat ringkasan pertanyaan inti.
+> Instrumen ini dipakai pada survei pendahuluan 29 Oktober 2026. Kuesioner terdiri atas 41 butir pertanyaan dalam lima kelompok, ditambah tiga kolom administrasi (cap waktu, persetujuan, kode responden). Daftar pertanyaan dan pilihan jawaban disusun ulang dari header [`survey/respondents.csv`](./survey/respondents.csv); tidak ada butir yang ditambahkan atau diubah. Data mentah jawaban disajikan pada Lampiran H.
 
-### G.1 Identitas Responden
+### G.1 Kisi-kisi Instrumen
 
-| No | Pertanyaan | Bentuk Jawaban |
-| :--- | :--- | :--- |
-| 1 | Nama usaha (boleh disingkat atau disamarkan) | Teks |
-| 2 | Jenis usaha | Distributor / Toko/retail / Agen/reseller / Produsen/UMKM makanan / Manufaktur / lainnya |
-| 3 | Perkiraan jumlah SKU aktif | Angka |
-| 4 | Perkiraan jumlah transaksi masuk dan keluar per hari | Angka |
-| 5 | Kanal pencatatan yang dipakai saat ini | Buku tulis / *spreadsheet* / grup pesan instan / aplikasi / lainnya |
-| 6 | Jumlah orang yang menangani pencatatan | Angka |
+**Tabel G.1 — Kisi-kisi Instrumen Survei**
 
-### G.2 Waktu dan Cara Memperoleh Informasi
+| Kelompok | Variabel/Dimensi | Indikator | Butir | Bentuk Jawaban |
+| :--- | :--- | :--- | :---: | :--- |
+| A | Identitas dan profil usaha | Jenis usaha, kategori produk, jumlah SKU, volume transaksi, media pencatatan, jumlah pencatat, lama usaha | 1–11 | Kategorik, angka, teks |
+| B | Waktu dan akses informasi | Cara mengetahui stok, waktu cek stok, frekuensi cek stok, waktu cek pengiriman, hari operasi, keterlambatan informasi, waktu rekap, frekuensi opname | 12–21 | Menit, kali, hari, skala 1–5 |
+| C | Selisih stok | Selisih per 100 unit, frekuensi selisih, nilai persediaan, nilai kerugian, penyebab selisih | 22–28 | Unit, persen, kali, rupiah, kategorik |
+| D | Pembuatan dokumen | Waktu draft PO, jumlah PO, waktu Surat Jalan, jumlah Surat Jalan, dokumen paling menyita waktu, alat pembuatan | 29–34 | Menit, angka, kategorik |
+| E | Sikap terhadap asisten AI | Kesediaan mencoba, kanal chat, kekhawatiran, pengguna, fitur, perangkat, kualitas internet | 35–41 | Kategorik |
 
-| No | Pertanyaan | Bentuk Jawaban |
-| :--- | :--- | :--- |
-| 7 | Berapa lama biasanya untuk mengetahui sisa stok satu produk? | Menit (perkiraan responden) |
-| 8 | Bagaimana cara mengetahuinya saat ini? | Teks |
-| 9 | Berapa lama untuk mengetahui barang yang dikirim pada satu tanggal? | Menit |
-| 10 | Seberapa sering informasi yang dibutuhkan baru tersedia setelah dibutuhkan? | Skala 1–5 (1 = tidak pernah, 5 = selalu) |
+**Keterangan:** kolom **Butir** merujuk pada nomor pertanyaan pada Tabel G.2a–G.2e. Tiga kolom administrasi (cap waktu, persetujuan, kode responden) tidak diberi nomor butir karena bukan pertanyaan substantif.
 
-### G.3 Selisih Stok
+### G.2 Instrumen Lengkap
 
-| No | Pertanyaan | Bentuk Jawaban |
-| :--- | :--- | :--- |
-| 11 | Seberapa sering diadakan penghitungan fisik stok? | Harian / mingguan / bulanan / tidak teratur |
-| 12 | Pada penghitungan terakhir, dari 100 unit yang dihitung, berapa unit yang selisih? | Unit per 100 unit (dikonversi ke persen) |
-| 13 | Dalam satu bulan, berapa kali biasanya muncul selisih stok? | Angka |
-| 14 | Bila bersedia, berapa nilai persediaan rata-rata yang disimpan? | Rupiah (opsional) |
+> Pilihan jawaban di bawah ini mengikuti pilihan yang tercatat pada formulir dan data mentah. Butir terbuka ditandai "teks"; pertanyaan opsional boleh dilewati.
 
-### G.4 Pembuatan Dokumen
+#### G.2.1 Kelompok A — Identitas dan Profil Usaha
 
-| No | Pertanyaan | Bentuk Jawaban |
-| :--- | :--- | :--- |
-| 15 | Berapa lama membuat satu draft Purchase Order? | Menit |
-| 16 | Berapa banyak PO yang dibuat dalam satu bulan? | Angka |
-| 17 | Berapa lama membuat satu Surat Jalan? | Menit |
-| 18 | Dokumen apa yang paling sering dibuat dan paling menyita waktu? | Teks |
+**Tabel G.2a — Butir 1–11**
 
-### G.5 Sikap terhadap Asisten AI
+| No | Pertanyaan | Pilihan/Bentuk Jawaban | Kolom CSV |
+| :---: | :--- | :--- | :---: |
+| 1 | Apakah Anda pemilik/pengelola yang terlibat langsung dalam pencatatan stok? | Ya / Tidak (wajib) | 4 |
+| 2 | Apakah usaha Anda menyimpan/mengelola persediaan barang? | Ya / Tidak | 5 |
+| 3 | Jenis usaha | Distributor / Toko/retail / Agen/reseller / Produsen/UMKM makanan / Manufaktur / Lainnya | 6 |
+| 4 | Kategori produk utama | Frozen food / Makanan-minuman / Retail umum / Toko plastik / Elektroda las / Suku cadang mesin / Lainnya | 7 |
+| 5 | Nama usaha | Teks (boleh disamarkan) | 8 |
+| 6 | Lokasi usaha | Teks (boleh disamarkan) | 9 |
+| 7 | Jumlah SKU aktif | Angka atau teks | 10 |
+| 8 | Rata-rata transaksi masuk + keluar per hari | Angka, rupiah, atau rentang | 11 |
+| 9 | Media/metode pencatatan yang paling sering dipakai | Buku tulis / Spreadsheet / Grup pesan instan / Aplikasi kasir / ERP / Lainnya | 12 |
+| 10 | Jumlah orang yang menangani pencatatan stok | Angka atau teks | 13 |
+| 11 | Lama usaha | < 1 tahun / 1–3 tahun / 3–5 tahun / ≥ 5 tahun | 14 |
 
-| No | Pertanyaan | Bentuk Jawaban |
-| :--- | :--- | :--- |
-| 19 | Bila tersedia asisten yang dapat menjawab lewat chat, apakah bersedia mencoba? | Ya / Tidak / Ragu |
-| 20 | Kanal chat apa yang paling nyaman dipakai sehari-hari? | Telegram / WhatsApp / lainnya |
-| 21 | Hal apa yang paling dikhawatirkan dari asisten berbasis AI? | Teks (boleh lebih dari satu jawaban) |
-| 22 | Siapa yang akan memakai asisten ini sehari-hari? | Pemilik / staf / keduanya |
-| 23 | Fitur apa yang paling dibutuhkan dari asisten? | Cek stok / cek pengiriman / buat PO / laporan |
+#### G.2.2 Kelompok B — Waktu dan Akses Informasi
 
-### G.6 Catatan Pelaksanaan
+**Tabel G.2b — Butir 12–21**
+
+| No | Pertanyaan | Pilihan/Bentuk Jawaban | Kolom CSV |
+| :---: | :--- | :--- | :---: |
+| 12 | Bagaimana cara Anda mengetahui sisa stok satu produk saat ini? | Teks | 15 |
+| 13 | Pada hari biasa, berapa menit untuk mengetahui sisa stok satu produk? | Menit atau rentang | 16 |
+| 14 | Berapa kali sehari Anda atau staf mengecek stok? | Kali atau teks | 17 |
+| 15 | Berapa menit untuk mengetahui barang yang dikirim pada satu tanggal? | Menit atau rentang | 18 |
+| 16 | Berapa kali sehari Anda/staf mengecek status pengiriman? | Kali atau teks | 19 |
+| 17 | Berapa hari usaha beroperasi per bulan? | Hari atau rentang | 20 |
+| 18 | Seberapa sering informasi yang dibutuhkan baru tersedia setelah dibutuhkan? | Skala 1–5 (1 = tidak pernah … 5 = selalu) | 21 |
+| 19 | Berapa menit untuk membuat rekap laporan harian? (opsional) | Menit atau rentang | 22 |
+| 20 | Seberapa sering diadakan stock opname? | Harian / Mingguan / Bulanan / Tidak teratur | 23 |
+| 21 | Kapan opname terakhir dilakukan? (opsional) | Dalam 1 minggu terakhir / Dalam 1 bulan terakhir / Lebih dari 1 bulan lalu / Tidak tahu | 24 |
+
+#### G.2.3 Kelompok C — Selisih Stok
+
+**Tabel G.2c — Butir 22–28**
+
+| No | Pertanyaan | Pilihan/Bentuk Jawaban | Kolom CSV |
+| :---: | :--- | :--- | :---: |
+| 22 | Dari 100 unit yang dihitung, biasanya berapa unit yang selisih? (opsional) | Unit atau rentang | 25 |
+| 23 | Pilihan: saya tidak tahu/tidak ingin menjawab perkiraan selisih stok (opsional) | Saya dapat memberikan perkiraan / Saya tidak tahu/tidak ingin menjawab | 26 |
+| 24 | Dalam satu bulan, berapa kali muncul selisih stok? | Kali atau rentang | 27 |
+| 25 | Berapa nilai persediaan rata-rata? (opsional) | Rupiah atau rentang | 28 |
+| 26 | Apakah Anda bersedia menuliskan angka nilai persediaan pastinya? (opsional) | Ya / Tidak bersedia / Tidak tahu | 29 |
+| 27 | Berapa nilai kerugian akibat selisih per opname? (opsional) | Rupiah atau rentang | 30 |
+| 28 | Penyebab utama selisih stok (opsional) | Barang hilang / Salah catat / Salah kirim / Barang rusak / Lainnya | 31 |
+
+#### G.2.4 Kelompok D — Pembuatan Dokumen
+
+**Tabel G.2d — Butir 29–34**
+
+| No | Pertanyaan | Pilihan/Bentuk Jawaban | Kolom CSV |
+| :---: | :--- | :--- | :---: |
+| 29 | Berapa menit untuk membuat satu draft PO? | Menit atau rentang | 32 |
+| 30 | Berapa PO per bulan? | Angka atau rentang | 33 |
+| 31 | Berapa menit untuk membuat satu Surat Jalan? (opsional) | Menit atau rentang | 34 |
+| 32 | Berapa Surat Jalan per bulan? (opsional) | Angka atau rentang | 35 |
+| 33 | Dokumen apa yang paling sering dibuat dan paling menyita waktu? | Rekap harian / Laporan stok / PO / Surat Jalan / Lainnya | 36 |
+| 34 | Alat pembuatan dokumen yang paling sering dipakai (opsional) | Excel / Spreadsheet / Buku tulis / Aplikasi / Lainnya | 37 |
+
+#### G.2.5 Kelompok E — Sikap terhadap Asisten AI dan Perangkat
+
+**Tabel G.2e — Butir 35–41**
+
+| No | Pertanyaan | Pilihan/Bentuk Jawaban | Kolom CSV |
+| :---: | :--- | :--- | :---: |
+| 35 | Apakah Anda bersedia mencoba asisten chat? | Ya / Tidak / Ragu | 38 |
+| 36 | Media chat apa yang paling nyaman dipakai sehari-hari? | WhatsApp / Telegram / Lainnya | 39 |
+| 37 | Apa yang paling Anda khawatirkan dari asisten AI? | Data bocor / Susah dipakai / Jawaban salah / Tidak ada kekhawatiran / Lainnya | 40 |
+| 38 | Siapa yang akan memakai asisten sehari-hari? | Pemilik / Staf / Keduanya | 41 |
+| 39 | Fitur apa yang paling dibutuhkan dari asisten? | Cek stok / Cek pengiriman / Buat PO / Laporan | 42 |
+| 40 | Perangkat yang biasanya dipakai untuk bekerja (opsional) | Smartphone / Laptop / Keduanya | 43 |
+| 41 | Kualitas internet di tempat usaha (opsional) | Stabil / Kadang-kadang / Tidak stabil | 44 |
+
+### G.3 Informed Consent
+
+Pernyataan persetujuan yang ditampilkan pada formulir:
+
+> "Saya telah membaca tujuan penelitian, memahami bahwa partisipasi bersifat sukarela, dan setuju untuk berpartisipasi."
+
+Butir etis yang disampaikan sebelum pengisian:
+
+1. Partisipasi bersifat sukarela; responden dapat berhenti kapan saja tanpa konsekuensi.
+2. Jawaban digunakan hanya untuk penelitian dan pengembangan sistem, bukan untuk publikasi identitas usaha.
+3. Nama responden, nama usaha, dan lokasi tidak ditampilkan pada laporan; kode R01–R10 dipakai sebagai pengganti.
+4. Pertanyaan rupiah bersifat opsional dan boleh dilewati.
+5. Data mentah disimpan terbatas dan hanya diakses oleh tim peneliti.
+
+### G.4 Catatan Pelaksanaan
 
 - **Jumlah responden:** 10 usaha yang mengelola persediaan (3 *frozen food*, 3 makanan-minuman, 1 retail umum, 1 toko plastik, 1 manufaktur, 1 distributor suku cadang). Target awal 10 UMKM *frozen food* tidak sepenuhnya terpenuhi.
 - **Durasi survei:** instrumen dirancang untuk 20–30 menit; survei dilaksanakan 29 Oktober 2026.
-- **Pencatatan:** jawaban direkam pada formulir daring dan diekspor ke `survey/respondents.csv`; nama responden tidak ditampilkan pada laporan.
+- **Pencatatan:** jawaban direkam pada formulir daring (Google Forms) dan diekspor ke `survey/respondents.csv`; nama responden tidak ditampilkan pada laporan.
 - **Pengolahan:** seluruh jawaban kuantitatif pada formulir (antara lain waktu dan frekuensi cek stok/pengiriman, selisih stok, waktu rekap harian, serta waktu dan jumlah PO) diolah menjadi median dan rentang; jawaban rentang dikonversi ke titik tengah. Hasilnya ada pada Tabel 1.2–1.4.
 - **Status:** data telah diolah pada 29 Oktober 2026 dan siap dipakai pada laporan.
+
+## Lampiran H — Data Mentah Survei
+
+> Data mentah pada lampiran ini berasal dari [`survey/respondents.csv`](./survey/respondents.csv) (44 kolom × 10 baris). Tiga kolom administrasi (cap waktu, persetujuan, kode responden) tidak ditampilkan; nama usaha dan lokasi disamarkan. Nilai jawaban tidak diubah. Tabel H.1–H.5 memecah 39 butir substantif menurut tema agar terbaca di Word; dua butir identitas (nama usaha dan lokasi) tidak ditampilkan. Berkas CSV asli dan versi anonim diserahkan sebagai berkas digital.
+
+### H.1 Profil Responden
+
+**Tabel H.1 — Profil Responden (R01–R10)**
+
+| Kode | Pemilik/pengelola | Mengelola persediaan | Jenis usaha | Kategori produk | Jumlah SKU | Transaksi/hari | Media pencatatan | Jumlah pencatat | Lama usaha |
+| :---: | :---: | :---: | :--- | :--- | :--- | :--- | :--- | :---: | :--- |
+| R01 | Ya | Ya | Agen/reseller | Frozen food | n/a | — | Spreadsheet | 2 | 1–3 tahun |
+| R02 | Ya | Ya | Toko/retail | Makanan-minuman | 8 | Rp400.000 | Buku tulis | 1 | < 1 tahun |
+| R03 | Ya | Ya | Manufaktur | Elektroda las | 12–48 (taksiran) | 5–20 PO masuk/hari; nominal Rp5–500 juta | ERP | 3–10 per cabang | ≥ 5 tahun |
+| R04 | Ya | Ya | Produsen/UMKM makanan | Makanan-minuman | 10 | 100 | Buku tulis | 1 | ≥ 5 tahun |
+| R05 | Ya | Ya | Distributor | Suku cadang mesin | 1.104 | 100–250 | Spreadsheet | 1 | 3–5 tahun |
+| R06 | Ya | Ya | Toko/retail | Frozen food | 89 | Rp8,5–9 juta | Aplikasi kasir | 3 | 1–3 tahun |
+| R07 | Ya | Ya | Toko/retail | Frozen food | 87 | > Rp5 juta | Buku tulis | 1 | 1–3 tahun |
+| R08 | Ya | Ya | Agen/reseller | Retail umum | 45 | < Rp3 juta | Grup pesan instan | 1 | < 1 tahun |
+| R09 | Ya | Ya | Toko/retail | Toko plastik | 1.430 (kemungkinan unit) | 30–40 keluar + 20 masuk/hari | Buku tulis | 2 | ≥ 5 tahun |
+| R10 | Ya | Ya | Produsen/UMKM makanan | Makanan-minuman | 12 | 30 | Aplikasi kasir | 2 | < 1 tahun |
+
+**Keterangan:** R01 tidak memberikan angka SKU yang valid; jawabannya "bekicot" tidak dapat ditafsirkan sebagai jumlah SKU sehingga ditandai `n/a`. R03 menjawab "4 kategori, masing-masing 3–12 tipe"; angka 12–48 adalah taksiran bawah–atas. R09 menjawab "jumlah barang 1430"; angka dipertahankan apa adanya, tetapi kemungkinan mencakup unit barang, bukan jumlah SKU. Butir nama usaha dan lokasi tidak ditampilkan karena termasuk identitas; keduanya disamarkan pada CSV anonim.
+
+### H.2 Waktu dan Frekuensi
+
+**Tabel H.2 — Jawaban Waktu dan Frekuensi (R01–R10)**
+
+| Kode | Cara mengetahui stok | Waktu cek stok | Frek. cek stok | Waktu cek kirim | Frek. cek kirim | Hari operasi | Skor keterlambatan | Waktu rekap | Frek. opname | Opname terakhir |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :--- | :--- | :--- |
+| R01 | Berbagi link | 2 menit | Setiap hari | 3 menit | 2–5 kali | 26–30 | 1 | 6–15 menit | Mingguan | Dalam 1 bulan terakhir |
+| R02 | Melihat catatan buku | 10 menit | 3 kali | 15 menit | 1 kali | 26–30 | 3 | ≤ 5 menit | Harian | — |
+| R03 | Bertanya ke admin | 1–5 menit | Hampir setiap hari | 10–30 menit | 2–5 kali | 26–30 | 3 | 31–60 menit | Bulanan | Dalam 1 bulan terakhir |
+| R04 | Membuka buku | 10 menit | 1 kali | 30 menit | 1 kali | 31 (setiap hari) | 5 | 16–30 menit | Harian | Dalam 1 minggu terakhir |
+| R05 | Buka spreadsheet, cocokkan aktual | 5 menit | 2 kali | 5 menit | 2–5 kali | 21–25 | 3 | > 60 menit | Bulanan | Lebih dari 1 bulan lalu |
+| R06 | Catatan Excel | 10 menit | 2 kali | 15 menit | 6–10 kali | 31 (setiap hari) | 4 | 16–30 menit | Bulanan | Dalam 1 bulan terakhir |
+| R07 | Tanya staf | 5 menit | 4 kali | 10 menit | 2–5 kali | 26–30 | 3 | 16–30 menit | Mingguan | Dalam 1 minggu terakhir |
+| R08 | Buka chat grup | 10 menit | 2 kali | 5 menit | 2–5 kali | 26–30 | 4 | 6–15 menit | Harian | Dalam 1 minggu terakhir |
+| R09 | Membuka buku manual | 2–3 menit | 2–4 kali | 30 menit | 1 kali | 31 (setiap hari) | 4 | ≤ 5 menit | Harian | Dalam 1 minggu terakhir |
+| R10 | Membuka aplikasi kasir | 5–10 menit | 1 kali (setelah tutup) | n/a (dine-in) | Tidak pernah | 26–30 | 3 | 16–30 menit | Mingguan | Dalam 1 bulan terakhir |
+
+**Keterangan:** skor keterlambatan memakai skala 1–5 (1 = tidak pernah, 5 = selalu). R10 tidak memiliki proses pengiriman (*dine-in*), sehingga kolom cek kirim ditandai `n/a` dan tidak diikutkan dalam median cek kirim.
+
+### H.3 Selisih Stok
+
+**Tabel H.3 — Jawaban Selisih Stok (R01–R10)**
+
+| Kode | Selisih per 100 unit | Alasan tidak menjawab | Frek. selisih/bulan | Nilai persediaan | Bersedia angka | Nilai kerugian | Penyebab |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| R01 | 3–5 unit | Tidak tahu/tidak ingin menjawab | 2–3 kali | Rp50–100 juta | Tidak bersedia/tidak tahu | < Rp1 juta | Barang hilang |
+| R02 | 1–2 unit | — | 1 kali | Tidak tahu/tidak mau | — | — | — |
+| R03 | 0 unit | — | 0 kali | ≥ Rp500 juta | — | Tidak tahu/tidak mau | Salah catat |
+| R04 | 0 unit | Tidak tahu/tidak ingin menjawab | 0 kali | Tidak tahu/tidak mau | Tidak bersedia/tidak tahu | Tidak tahu/tidak mau | Salah catat |
+| R05 | 1–2 unit | Saya dapat memberikan perkiraan | 2–3 kali | Tidak tahu/tidak mau | Tidak bersedia/tidak tahu | Rp10–25 juta | Staf gudang sembarang menyimpan barang/tidak memberi info |
+| R06 | 6–10 unit | Saya dapat memberikan perkiraan | 4–10 kali | Rp50–100 juta | Tidak bersedia/tidak tahu | Rp1–5 juta | Salah kirim |
+| R07 | 3–5 unit | Tidak tahu/tidak ingin menjawab | 2–3 kali | < Rp50 juta | Tidak bersedia/tidak tahu | < Rp1 juta | Salah catat |
+| R08 | 3–5 unit | Tidak tahu/tidak ingin menjawab | 2–3 kali | < Rp50 juta | Tidak bersedia/tidak tahu | < Rp1 juta | Salah kirim |
+| R09 | 3–5 unit | Tidak tahu/tidak ingin menjawab | 4–10 kali | Tidak tahu/tidak mau | Tidak bersedia/tidak tahu | Tidak tahu/tidak mau | Salah catat |
+| R10 | 0 unit | — | 0 kali | < Rp50 juta | — | — | — |
+
+**Keterangan:** selisih per 100 unit setara persen. Nilai rupiah tidak diagregasi karena empat responden tidak mengetahui nilai persediaan dan lima tidak memberikan nilai kerugian; rentang yang sangat lebar membuat rata-rata menyesatkan.
+
+### H.4 Pembuatan Dokumen
+
+**Tabel H.4 — Jawaban Pembuatan Dokumen (R01–R10)**
+
+| Kode | Waktu draft PO | PO/bulan | Waktu Surat Jalan | Surat Jalan/bulan | Dokumen paling menyita | Alat pembuatan |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
+| R01 | ≤ 5 menit | 1–5 | 16–30 menit | 6–20 | Rekap harian | Excel |
+| R02 | ≤ 5 menit | 0 | ≤ 5 menit | — | Rekap harian | — |
+| R03 | 16–30 menit | 21–50 | 16–30 menit | > 50 | Laporan stok | Excel |
+| R04 | ≤ 5 menit | 1–5 | 6–15 menit | 0 | Lainnya | Buku tulis |
+| R05 | 31–60 menit | 21–50 | 16–30 menit | 21–50 | PO | Spreadsheet |
+| R06 | 6–15 menit | 6–20 | 6–15 menit | 6–20 | Laporan stok | Excel |
+| R07 | 6–15 menit | 6–20 | 6–15 menit | 6–20 | PO | Excel |
+| R08 | 6–15 menit | 1–5 | 6–15 menit | 1–5 | Laporan stok | Buku tulis |
+| R09 | 16–30 menit | > 50 | > 60 menit/tidak membuat | 0 | Rekap harian | Buku tulis |
+| R10 | 6–15 menit | 1–5 | > 60 menit/tidak membuat | — | Rekap harian | Aplikasi |
+
+**Keterangan:** R02 dan R10 tidak mengisi jumlah Surat Jalan. R09 dan R10 menjawab "> 60 menit / tidak membuat Surat Jalan"; nilai tersebut tidak diikutkan dalam median waktu Surat Jalan.
+
+### H.5 Sikap terhadap Asisten AI dan Perangkat
+
+**Tabel H.5 — Jawaban Sikap terhadap AI dan Perangkat (R01–R10)**
+
+| Kode | Bersedia chat | Kanal | Kekhawatiran | Pengguna | Fitur | Perangkat | Internet |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| R01 | Tidak | WhatsApp | Data bocor | Staf | Buat PO | Laptop | Kadang-kadang |
+| R02 | Tidak | Telegram | Jawaban salah | Keduanya | Laporan | Smartphone | Stabil |
+| R03 | Ragu | WhatsApp | Tidak ada kekhawatiran | Staf | Cek stok | Keduanya | Stabil |
+| R04 | Ya | WhatsApp | Tidak ada kekhawatiran | Pemilik | Cek pengiriman | Smartphone | Stabil |
+| R05 | Ya | WhatsApp | Data bocor | Keduanya | Cek stok | Keduanya | Stabil |
+| R06 | Ya | WhatsApp | Susah dipakai | Keduanya | Cek stok | Laptop | Stabil |
+| R07 | Ya | WhatsApp | Susah dipakai | Keduanya | Buat PO | Smartphone | Stabil |
+| R08 | Ya | WhatsApp | Susah dipakai | Pemilik | Laporan | Smartphone | Stabil |
+| R09 | Ragu | WhatsApp | Data bocor | Keduanya | Cek stok | Smartphone | Stabil |
+| R10 | Ya | WhatsApp | Tidak ada kekhawatiran | Keduanya | Laporan | Keduanya | Stabil |
+
+### H.6 Catatan Pengolahan dan Anonimisasi
+
+- **Struktur data:** 44 kolom terdiri atas 3 kolom administrasi (cap waktu, persetujuan, kode responden) dan 41 butir pertanyaan. Tabel H.1–H.5 memuat 39 butir substantif; butir nama usaha dan lokasi disamarkan karena termasuk identitas. Tidak ada nilai jawaban yang diubah.
+- **Anonimisasi:** nama responden, nama usaha, dan lokasi dihapus atau disamarkan; kode asli tidak ditampilkan. Kode R01–R10 mengikuti urutan baris pada CSV dan konsisten dengan Tabel 1.3–1.4.
+- **Pengolahan kuantitatif:** jawaban berupa rentang dikonversi ke titik tengah; jawaban "≤5" dipakai 2,5 menit dan ">60" dipakai 60 menit. Data kosong tidak diimputasi. Median dan rentang hasil pengolahan ada pada Tabel 1.2–1.4.
+- **Berkas digital:** [`survey/respondents.csv`](./survey/respondents.csv) (asli, akses terbatas) dan [`survey/respondents-anonim.csv`](./survey/respondents-anonim.csv) (versi yang diserahkan bersama laporan). Berkas asli tidak dimasukkan ke badan laporan untuk menjaga privasi.
+
+## Lampiran I — Lembar Observasi
+
+### I.1 Tujuan dan Objek Observasi
+
+Lembar observasi dipakai untuk merekam alur kerja gudang pada kondisi *as-is*, meliputi urutan aktivitas, pelaku, dokumen yang dipakai, waktu yang dibutuhkan, dan kendala yang muncul. Observasi direncanakan pada satu atau beberapa UMKM mitra selama 1–2 hari operasi per mitra. Instrumen ini melengkapi survei: survei menangkap persepsi responden, sedangkan observasi mencatat proses yang benar-benar terjadi.
+
+### I.2 Aspek yang Diamati
+
+**Tabel I.1 — Aspek, Indikator, dan Cara Pencatatan**
+
+| Tahap | Aspek yang diamati | Indikator | Cara mencatat |
+| :--- | :--- | :--- | :--- |
+| Penerimaan barang | Dokumen surat jalan, kecocokan dengan PO, hitung fisik, pencatatan, penyimpanan dokumen | Kelengkapan dokumen; selisih jumlah; durasi penerimaan | Checklist + *stopwatch* |
+| Penyimpanan | Lokasi, FIFO, suhu (untuk *frozen food*), label, kebersihan | Kepatuhan FIFO; suhu; kelengkapan label | Checklist |
+| Pengeluaran barang | Pesanan, Surat Jalan, *picking*, *packing*, pencatatan, serah terima | Kelengkapan dokumen; waktu; kesalahan pengambilan | Checklist + *stopwatch* |
+| *Stock opname* | Frekuensi, metode hitung, selisih, tindakan koreksi | Selisih persen; waktu opname; tindakan | Checklist + hitung |
+| Pelaporan | Rekap harian, format, waktu, distribusi | Waktu rekap; kelengkapan; media | Checklist + *stopwatch* |
+| Dokumen | PO, Surat Jalan, kartu stok, laporan harian | Ketersediaan; format; duplikasi | Checklist dokumen |
+
+### I.3 Formulir Observasi
+
+**Tabel I.2 — Formulir Pencatatan Observasi**
+
+| No | Tanggal/Waktu | Tahap | Pelaku | Dokumen | Alat | Durasi | Temuan | Kode Foto |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | … | … | … | … | … | … | … | … |
+| 2 | … | … | … | … | … | … | … | … |
+| 3 | … | … | … | … | … | … | … | … |
+
+**Keterangan:** satu baris untuk satu aktivitas yang diamati. Kolom **Temuan** diisi fakta, bukan opini; kolom **Kode Foto** diisi nomor foto bila dokumentasi diizinkan.
+
+### I.4 Rubrik Penilaian
+
+**Tabel I.3 — Rubrik Penilaian Proses**
+
+| Dimensi | Skor 1 | Skor 3 | Skor 5 | Cara menilai |
+| :--- | :--- | :--- | :--- | :--- |
+| Kelengkapan dokumen | Banyak dokumen hilang | Sebagian dokumen lengkap | Seluruh dokumen lengkap | Cocokkan dengan checklist |
+| Akurasi pencatatan | Sering salah | Kadang salah | Konsisten benar | Bandingkan catatan dengan fisik |
+| Ketepatan waktu informasi | > 1 hari | Beberapa jam | < 10 menit | Catat waktu permintaan sampai jawaban |
+| Duplikasi pencatatan | Input berulang di banyak tempat | Sebagian berulang | Sekali input | Hitung jumlah input per transaksi |
+| Upaya manual | Sepenuhnya manual | Campuran manual dan sistem | Otomatis | Hitung langkah manual |
+
+### I.5 Status Pengisian dan Rencana
+
+**Status:** instrumen siap digunakan; pengisian lapangan dijadwalkan pada tahap pengujian. Hasil pengisian akan dilampirkan pada laporan akhir. Tidak ada data observasi yang diklaim pada laporan kemajuan ini.
+
+**Tabel I.4 — Rencana Pengisian Observasi**
+
+| No | Tahap | Objek | Perkiraan Waktu | Penanggung Jawab | Status |
+| :---: | :--- | :--- | :--- | :--- | :--- |
+| 1 | Penerimaan barang | UMKM mitra | 1 hari operasi | Tim peneliti | Dijadwalkan |
+| 2 | Penyimpanan | UMKM mitra | 1 hari operasi | Tim peneliti | Dijadwalkan |
+| 3 | Pengeluaran barang | UMKM mitra | 1 hari operasi | Tim peneliti | Dijadwalkan |
+| 4 | *Stock opname* | UMKM mitra | 1 siklus opname | Tim peneliti | Dijadwalkan |
+| 5 | Pelaporan | UMKM mitra | 1 hari operasi | Tim peneliti | Dijadwalkan |
+
+### I.6 Etika Observasi
+
+- Observasi dilakukan setelah pemilik usaha memberikan izin lisan atau tertulis.
+- Nama usaha, lokasi, dan identitas pelaku tidak ditampilkan; kode mitra dipakai pada laporan.
+- Foto hanya diambil bila diizinkan; wajah orang tidak dimasukkan ke laporan.
+- Catatan lapangan disimpan terbatas dan digunakan hanya untuk analisis kebutuhan.
+
+## Lampiran J — Dokumen Operasional UMKM
+
+### J.1 Checklist Dokumen
+
+**Tabel J.1 — Checklist Dokumen Operasional yang Diminta**
+
+| No | Dokumen | Tujuan analisis | Status | Keterangan |
+| :---: | :--- | :--- | :--- | :--- |
+| 1 | SOP penerimaan barang | Aturan *inbound*, pengecekan, dan pencatatan | Belum diperoleh | Akan diminta pada observasi |
+| 2 | SOP pengeluaran/pengiriman | Aturan *outbound* dan serah terima | Belum diperoleh | Akan diminta pada observasi |
+| 3 | SOP *stock opname* | Frekuensi, metode, dan koreksi selisih | Belum diperoleh | Akan diminta pada observasi |
+| 4 | Format Purchase Order (PO) | Field, alur status, dan penomoran | Belum diperoleh | Format acuan ada pada J.2 |
+| 5 | Format Surat Jalan | Field, alur status, dan serah terima | Belum diperoleh | Format acuan ada pada J.3 |
+| 6 | Kartu stok/buku stok | Saldo awal, mutasi, dan saldo akhir | Belum diperoleh | Format acuan ada pada J.4 |
+| 7 | Laporan harian | Isi, format, dan waktu pembuatan | Belum diperoleh | Format acuan ada pada J.5 |
+| 8 | Daftar supplier/customer | Data partner dan syarat transaksi | Belum diperoleh | Akan dianonimkan |
+| 9 | Struktur tugas/pembagian peran | Pelaku dan tanggung jawab pencatatan | Belum diperoleh | Akan dianonimkan |
+
+**Keterangan:** status "Belum diperoleh" berarti dokumen mitra belum diterima pada saat laporan kemajuan disusun. Format acuan pada J.2–J.5 diturunkan dari `docs/FSD.md` dan dipakai sistem; format tersebut bukan dokumen mitra dan tidak diklaim sebagai hasil pengumpulan lapangan.
+
+### J.2 Format Acuan Purchase Order
+
+**Tabel J.2 — Field Purchase Order**
+
+| No | Field | Tipe | Wajib | Keterangan |
+| :---: | :--- | :--- | :---: | :--- |
+| 1 | Nomor PO | Teks | Ya | Format `PO-YYYYMM-NNN` |
+| 2 | Tanggal | Tanggal | Ya | Tanggal dibuat |
+| 3 | Supplier | Relasi | Ya | Partner bertipe `SUPPLIER` |
+| 4 | Gudang tujuan | Relasi | Ya | Gudang penerima |
+| 5 | Item | Daftar | Ya | Produk, kuantitas, harga satuan |
+| 6 | Status | Enum | Ya | `DRAFT`, `CONFIRMED`, `COMPLETED`, `CANCELLED` |
+| 7 | Catatan | Teks | Tidak | Keterangan tambahan |
+
+### J.3 Format Acuan Surat Jalan
+
+**Tabel J.3 — Field Surat Jalan**
+
+| No | Field | Tipe | Wajib | Keterangan |
+| :---: | :--- | :--- | :---: | :--- |
+| 1 | Nomor Surat Jalan | Teks | Ya | Format `SJ-YYYYMM-NNN` |
+| 2 | Tanggal | Tanggal | Ya | Tanggal pengiriman |
+| 3 | Customer | Relasi | Ya | Partner bertipe `CUSTOMER` |
+| 4 | PO referensi | Relasi | Tidak | Diisi bila pengiriman berasal dari PO |
+| 5 | Gudang asal | Relasi | Ya | Gudang pengirim |
+| 6 | Item | Daftar | Ya | Produk dan kuantitas |
+| 7 | Penerima | Teks | Ya | Nama penerima di customer |
+| 8 | Status | Enum | Ya | `DRAFT`, `SHIPPED`, `DELIVERED`, `CANCELLED` |
+
+### J.4 Format Acuan Kartu Stok
+
+**Tabel J.4 — Field Kartu Stok**
+
+| No | Field | Tipe | Wajib | Keterangan |
+| :---: | :--- | :--- | :---: | :--- |
+| 1 | Tanggal | Tanggal | Ya | Tanggal mutasi |
+| 2 | Produk | Relasi | Ya | SKU dan nama produk |
+| 3 | Gudang | Relasi | Ya | Lokasi mutasi |
+| 4 | Tipe transaksi | Enum | Ya | `IN`, `OUT`, `ADJUSTMENT` |
+| 5 | Kuantitas masuk | Angka | Tidak | Diisi untuk `IN` |
+| 6 | Kuantitas keluar | Angka | Tidak | Diisi untuk `OUT` |
+| 7 | Saldo | Angka | Ya | Saldo berjalan |
+| 8 | Referensi | Teks | Tidak | Nomor PO/Surat Jalan |
+| 9 | Catatan | Teks | Tidak | Alasan penyesuaian |
+
+### J.5 Format Acuan Laporan Harian
+
+**Tabel J.5 — Isi Laporan Harian**
+
+| No | Komponen | Keterangan |
+| :---: | :--- | :--- |
+| 1 | Tanggal laporan | Tanggal periode |
+| 2 | Total barang masuk | Jumlah kuantitas `IN` |
+| 3 | Total barang keluar | Jumlah kuantitas `OUT` |
+| 4 | Stok kritis | Produk dengan stok ≤ `minStock` |
+| 5 | PO draft | Daftar PO berstatus `DRAFT` |
+| 6 | Surat Jalan | Daftar Surat Jalan `SHIPPED`/`DELIVERED` |
+| 7 | Selisih stok | Catatan `ADJUSTMENT` dan alasannya |
+| 8 | Catatan | Kejadian operasional penting |
+
+### J.6 Status Perolehan dan Anonimisasi
+
+**Status perolehan:** per 31 Oktober 2026, dokumen operasional mitra belum diperoleh. Tabel J.2–J.5 adalah format acuan yang diturunkan dari `docs/FSD.md` dan dipakai sistem, bukan dokumen mitra. Dokumen mitra yang telah dianonimkan akan ditambahkan pada laporan akhir.
+
+**Rencana perolehan:** dokumen diminta melalui surat pada J.7, lalu dipindai, dianonimkan (nama usaha, lokasi, harga, dan nama pelanggan dihapus), dan dilampirkan sebagai gambar atau tabel. Bila mitra tidak mengizinkan, laporan hanya memuat checklist dan format acuan, disertai catatan keterbatasan.
+
+### J.7 Surat Permintaan Dokumen (Template)
+
+> **SURAT PERMINTAAN DOKUMEN OPERASIONAL**
+>
+> Kepada: [Nama UMKM]
+> Alamat: [Alamat]
+> Tanggal: [Tanggal]
+>
+> Dengan hormat,
+>
+> Dalam rangka penyusunan laporan capstone tentang sistem *Warehouse Management System* dan asisten AI berbasis RAG, kami memohon salinan dokumen operasional berikut: SOP penerimaan barang, SOP pengeluaran/pengiriman, SOP *stock opname*, format Purchase Order, format Surat Jalan, kartu stok, dan laporan harian.
+>
+> Dokumen digunakan hanya untuk analisis kebutuhan dan tidak dipublikasikan tanpa izin. Nama usaha, lokasi, harga, dan nama pelanggan akan dianonimkan pada laporan.
+>
+> Hormat kami,
+>
+> [Nama Peneliti]
+> [Program Studi/Institusi]
+> [Kontak]
+
+## Lampiran K — Instrumen Studi Pustaka
+
+### K.1 Basis Data dan Sumber
+
+**Tabel K.1 — Sumber Pencarian Literatur**
+
+| Sumber | Jenis | Fungsi | Akses |
+| :--- | :--- | :--- | :--- |
+| Google Scholar | Mesin pencari akademik | Pencarian awal dan penelusuran sitasi | https://scholar.google.com |
+| arXiv | Repositori *preprint* | Artikel ilmu komputer dan AI | https://arxiv.org |
+| Crossref/DOI | Registrasi DOI | Verifikasi metadata dan akses artikel | https://doi.org |
+| Situs penerbit | Jurnal/prosiding | *Full text* melalui DOI | Melalui DOI |
+| Mendeley | Manajer referensi | Penyimpanan, sitasi, dan ekspor RIS/BibTeX | Aplikasi desktop/web |
+
+**Keterangan:** pencarian dilakukan secara naratif, bukan *systematic literature review*. Karena itu tidak ada klaim jumlah artikel tersaring (PRISMA); yang dilaporkan adalah sumber, *string*, kriteria, dan delapan rujukan yang akhirnya dipakai.
+
+### K.2 String Pencarian
+
+**Tabel K.2 — String Pencarian dan Tanggal**
+
+| No | Fokus | String pencarian | Tanggal |
+| :---: | :--- | :--- | :--- |
+| 1 | WMS dan UMKM | ("warehouse management system" OR "inventory management") AND ("UMKM" OR "MSME" OR "small business") | September–Oktober 2026 |
+| 2 | RAG dan LLM | ("retrieval-augmented generation" OR "RAG") AND ("large language model" OR "LLM") | September–Oktober 2026 |
+| 3 | *Tool calling* | ("tool calling" OR "function calling") AND ("language model") | September–Oktober 2026 |
+| 4 | Transformasi digital | ("digital transformation") AND ("MSME" OR "UMKM") AND "Indonesia" | September–Oktober 2026 |
+| 5 | Fondasi | ("attention is all you need") OR ("few-shot learners") | September–Oktober 2026 |
+
+**Keterangan:** *string* dapat disesuaikan dengan sintaks masing-masing basis data; inti kata kunci dan kriteria tetap sama.
+
+### K.3 Kriteria Inklusi dan Eksklusi
+
+**Tabel K.3 — Kriteria Seleksi Literatur**
+
+| Aspek | Inklusi | Eksklusi |
+| :--- | :--- | :--- |
+| Periode | 2017–2026 | Sebelum 2017 |
+| Jenis | Artikel jurnal, prosiding, *preprint* arXiv | Sumber non-akademik |
+| Bahasa | Inggris atau Indonesia | Bahasa lain |
+| Relevansi | WMS, UMKM, LLM, RAG, *tool calling* | Tidak berkaitan dengan topik |
+| Akses | *Full text* tersedia | Tidak dapat diakses |
+
+### K.4 Matriks Literatur
+
+**Tabel K.4 — Matriks Literatur dan DOI/arXiv**
+
+| No | Penulis (tahun) | Judul | Jenis | Sumber | DOI/arXiv | Digunakan pada |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | Lewis et al. (2020) | Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks | Prosiding | NeurIPS 33 | arXiv:2005.11401 | 2.4; 3.3.6 |
+| 2 | Schick et al. (2023) | Toolformer: Language Models Can Teach Themselves to Use Tools | Prosiding | NeurIPS 36 | arXiv:2302.04761 | 2.5 |
+| 3 | Mialon et al. (2023) | Augmented Language Models: A Survey | *Preprint* | arXiv | arXiv:2302.07842 | 2.5 |
+| 4 | Purnomo et al. (2024) | Digital Transformation of MSMEs in Indonesia: A Systematic Literature Review | Artikel | Jurnal Manajemen dan Bisnis 4(2) | DOI:10.53088/jmdb.v4i2.1121 | 1.1; 2.2 |
+| 5 | Hasanah et al. (2024) | ERP-Based Management Information System for MSMEs in Indonesia: A Systematic Literature Review | Artikel | RIGGS 2(2) | DOI:10.31004/riggs.v2i2.224 | 1.1; 2.1–2.2 |
+| 6 | Vaswani et al. (2017) | Attention Is All You Need | Prosiding | NeurIPS 30 | arXiv:1706.03762 | 2.3 |
+| 7 | Brown et al. (2020) | Language Models Are Few-Shot Learners | Prosiding | NeurIPS 33 | arXiv:2005.14165 | 2.3 |
+| 8 | Gao et al. (2023) | Retrieval-Augmented Generation for Large Language Models: A Survey | *Preprint* | arXiv | arXiv:2312.10997 | 2.4 |
+
+**Keterangan:** delapan rujukan ini sama dengan Daftar Pustaka dan `PROPOSAL.md`. Enam berasal dari arXiv, dua dari jurnal ber-DOI. Tidak ada rujukan baru yang ditambahkan tanpa penelusuran.
+
+### K.5 Daftar Tautan DOI dan arXiv
+
+1. Lewis et al. (2020) — https://arxiv.org/abs/2005.11401
+2. Schick et al. (2023) — https://arxiv.org/abs/2302.04761
+3. Mialon et al. (2023) — https://arxiv.org/abs/2302.07842
+4. Purnomo et al. (2024) — https://doi.org/10.53088/jmdb.v4i2.1121
+5. Hasanah et al. (2024) — https://doi.org/10.31004/riggs.v2i2.224
+6. Vaswani et al. (2017) — https://arxiv.org/abs/1706.03762
+7. Brown et al. (2020) — https://arxiv.org/abs/2005.14165
+8. Gao et al. (2023) — https://arxiv.org/abs/2312.10997
+
+### K.6 Catatan Metode
+
+- Pencarian dilakukan pada September–Oktober 2026 dan berhenti ketika sumber yang ditemukan sudah mencakup WMS, UMKM, LLM, RAG, dan *tool calling*.
+- Fokus pencarian adalah sumber primer dan survei, bukan artikel populer.
+- Sitasi dikelola dengan Mendeley; berkas `references/daftar-pustaka.ris` dan `references/daftar-pustaka.bib` tersedia di repositori.
+- Karena bukan SLR, laporan tidak mengklaim kelengkapan cakupan seluruh literatur; yang diklaim adalah kecukupan sumber untuk membangun kerangka konsep dan posisi penelitian.
 
 ---
 

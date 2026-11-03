@@ -1,12 +1,12 @@
 # WMS Berbasis Web Terintegrasi Asisten AI Retrieval-Augmented Generation melalui Telegram untuk UMKM Distribusi Barang
 
-[Nama Mahasiswa]^1^, Hanafi Eko Darono^2^
+Eka Bachrudin Nursa^1^ (055230541), Muhammad Abdul Majid^1^ (048467065), M. Sofan Al Fajri^1^ (051610794), Abelina Theresia Sipahutar^1^ (048812894), Dea Permata Yundira^1^ (050093032), Hanafi Eko Darono^2^
 
-^1^ Mahasiswa Program Studi Sistem Informasi Fakultas Sains dan Teknologi
-^2^ Dosen Pembimbing Program Studi Sistem Informasi FST Universitas Terbuka
+^1^ Mahasiswa Program Studi Sistem Informasi, Fakultas Sains dan Teknologi, Universitas Terbuka
+^2^ Dosen Pembimbing Program Studi Sistem Informasi, Fakultas Sains dan Teknologi, Universitas Terbuka
 
-^1^ Email: [email@ecampus.ut.ac.id]
-^2^ Email: 04000846@ecampus.ut.ac.id
+^1^ Email: 055230541@ecampus.ut.ac.id; 048467065@ecampus.ut.ac.id; 051610794@ecampus.ut.ac.id; 048812894@ecampus.ut.ac.id; 050093032@ecampus.ut.ac.id
+^2^ Email: hanafi.eko.darono@gmail.com
 
 ## Abstrak
 
@@ -243,7 +243,7 @@ Perbandingan dengan penelitian terdahulu disajikan pada Tabel 8. Penelitian ini 
 
 Implikasi teoretis penelitian ini adalah pentingnya memisahkan kebenaran data dari bahasa. LLM berguna untuk memahami pertanyaan dan menyusun jawaban, tetapi tidak dapat dijadikan sumber kebenaran untuk angka stok atau status dokumen. Pemisahan ini sejalan dengan pembagian memori parametrik dan non-parametrik pada RAG (Lewis et al., 2020), tetapi diperluas menjadi pembagian tanggung jawab antar layanan. Implikasi praktisnya, UMKM dapat memperoleh antarmuka chat tanpa mengorbankan integritas data, asalkan ada backend yang memvalidasi setiap permintaan dan ada admin yang mengonfirmasi dokumen.
 
-Keterbatasan penelitian ini perlu dinyatakan terbuka. Pertama, pengembangan dilakukan oleh satu orang dalam waktu terbatas, sehingga tidak ada pengujian independen oleh pihak kedua. Kedua, survei melibatkan 10 responden yang dipilih secara purposif; hasilnya indikatif, bukan generalisasi statistik. Ketiga, evaluasi belum mencakup pilot jangka panjang, sehingga KPI-2 dan KPI-5 belum dapat diukur. Keempat, enam berkas uji integrasi belum dijalankan karena lingkungan tidak menyediakan basis data. Kelima, ketergantungan pada API model bahasa menimbulkan risiko biaya, latensi, dan perubahan kebijakan penyedia. Keenam, keamanan prompt injection dan penyalahgunaan kanal chat belum diuji secara khusus. Ketujuh, pilihan Telegram tidak sejalan dengan preferensi mayoritas responden yang memilih WhatsApp.
+Keterbatasan penelitian ini perlu dinyatakan terbuka. Pertama, pengembangan dan pengujian dilakukan oleh tim penulis sendiri dalam waktu terbatas, sehingga tidak ada pengujian independen oleh pihak ketiga. Kedua, survei melibatkan 10 responden yang dipilih secara purposif; hasilnya indikatif, bukan generalisasi statistik. Ketiga, evaluasi belum mencakup pilot jangka panjang, sehingga KPI-2 dan KPI-5 belum dapat diukur. Keempat, enam berkas uji integrasi belum dijalankan karena lingkungan tidak menyediakan basis data. Kelima, ketergantungan pada API model bahasa menimbulkan risiko biaya, latensi, dan perubahan kebijakan penyedia. Keenam, keamanan prompt injection dan penyalahgunaan kanal chat belum diuji secara khusus. Ketujuh, pilihan Telegram tidak sejalan dengan preferensi mayoritas responden yang memilih WhatsApp.
 
 ## Penutup
 

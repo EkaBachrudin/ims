@@ -1,0 +1,323 @@
+TY  - CONF
+TI  - Language Models Are Few-Shot Learners
+AU  - Brown, Tom B.
+AU  - Mann, Benjamin
+AU  - Ryder, Nick
+AU  - Subbiah, Melanie
+AU  - Kaplan, Jared
+AU  - Dhariwal, Prafulla
+AU  - Neelakantan, Arvind
+AU  - Shyam, Pranav
+AU  - Sastry, Girish
+AU  - Askell, Amanda
+AU  - Agarwal, Sandhini
+AU  - Herbert-Voss, Ariel
+AU  - Krueger, Gretchen
+AU  - Henighan, Tom
+AU  - Child, Rewon
+AU  - Ramesh, Aditya
+AU  - Ziegler, Daniel M.
+AU  - Wu, Jeffrey
+AU  - Winter, Clemens
+AU  - Amodei, Dario
+T2  - Advances in Neural Information Processing Systems
+VL  - 33
+PY  - 2020
+UR  - https://arxiv.org/abs/2005.14165
+ID  - brown2020fewshot
+ER  -
+
+TY  - JOUR
+TI  - A Decade of Agile Methodologies: Towards Explaining Agile Software Development
+AU  - Dingsøyr, Torgeir
+AU  - Nerur, Sridhar
+AU  - Balijepally, VenuGopal
+AU  - Moe, Nils Brede
+JO  - Journal of Systems and Software
+VL  - 85
+IS  - 6
+SP  - 1213
+EP  - 1221
+PY  - 2012
+DO  - 10.1016/j.jss.2012.02.033
+UR  - https://doi.org/10.1016/j.jss.2012.02.033
+ID  - dingsoyr2012agile
+ER  -
+
+TY  - CONF
+TI  - RAGAS: Automated Evaluation of Retrieval Augmented Generation
+AU  - Es, Shahul
+AU  - James, Jithin
+AU  - Espinosa-Anke, Luis
+AU  - Schockaert, Steven
+T2  - Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics: System Demonstrations
+SP  - 150
+EP  - 158
+PY  - 2024
+DO  - 10.18653/v1/2024.eacl-demo.16
+UR  - https://doi.org/10.18653/v1/2024.eacl-demo.16
+ID  - es2024ragas
+ER  -
+
+TY  - JOUR
+TI  - Organizing Warehouse Management
+AU  - Faber, Nynke
+AU  - de Koster, M. B. M.
+AU  - Smidts, Ale
+JO  - International Journal of Operations & Production Management
+VL  - 33
+IS  - 9
+SP  - 1230
+EP  - 1256
+PY  - 2013
+DO  - 10.1108/IJOPM-12-2011-0471
+UR  - https://doi.org/10.1108/IJOPM-12-2011-0471
+ID  - faber2013organizing
+ER  -
+
+TY  - RPRT
+TI  - Retrieval-Augmented Generation for Large Language Models: A Survey
+AU  - Gao, Yunfan
+AU  - Xiong, Yun
+AU  - Gao, Xinyu
+AU  - Jia, Kangxiang
+AU  - Pan, Jinliu
+AU  - Bi, Yuxi
+AU  - Dai, Yi
+AU  - Sun, Jiawei
+AU  - Wang, Meng
+AU  - Wang, Haofen
+PY  - 2023
+UR  - https://arxiv.org/abs/2312.10997
+ID  - gao2023ragsurvey
+ER  -
+
+TY  - JOUR
+TI  - Research on Warehouse Operation: A Comprehensive Review
+AU  - Gu, Jixin
+AU  - Goetschalckx, Marc
+AU  - McGinnis, Leon F.
+JO  - European Journal of Operational Research
+VL  - 177
+IS  - 1
+SP  - 1
+EP  - 21
+PY  - 2007
+DO  - 10.1016/j.ejor.2006.02.025
+UR  - https://doi.org/10.1016/j.ejor.2006.02.025
+ID  - gu2007research
+ER  -
+
+TY  - JOUR
+TI  - ERP-Based Management Information System for MSMEs in Indonesia: A Systematic Literature Review
+AU  - Hasanah, N.
+AU  - Saputra, D. I. S.
+AU  - Hiiyatin, D. L.
+JO  - RIGGS: Journal of Artificial Intelligence and Digital Business
+VL  - 2
+IS  - 2
+SP  - 36
+EP  - 42
+PY  - 2024
+DO  - 10.31004/riggs.v2i2.224
+UR  - https://doi.org/10.31004/riggs.v2i2.224
+ID  - hasanah2024erp
+ER  -
+
+TY  - JOUR
+TI  - Design Science in Information Systems Research
+AU  - Hevner, Alan R.
+AU  - March, Salvatore T.
+AU  - Park, Jinsoo
+AU  - Ram, Sudha
+JO  - MIS Quarterly
+VL  - 28
+IS  - 1
+SP  - 75
+EP  - 105
+PY  - 2004
+DO  - 10.2307/25148625
+UR  - https://doi.org/10.2307/25148625
+ID  - hevner2004design
+ER  -
+
+TY  - JOUR
+TI  - Survey of Hallucination in Natural Language Generation
+AU  - Ji, Ziwei
+AU  - Lee, Nayeon
+AU  - Frieske, Rita
+AU  - Yu, Tiezheng
+AU  - Su, Dan
+AU  - Xu, Yan
+AU  - Ishii, Etsuko
+AU  - Bang, Yejin
+AU  - Madotto, Andrea
+AU  - Fung, Pascale
+JO  - ACM Computing Surveys
+VL  - 55
+IS  - 12
+SP  - 1
+EP  - 38
+PY  - 2023
+DO  - 10.1145/3571730
+UR  - https://doi.org/10.1145/3571730
+ID  - ji2023survey
+ER  -
+
+TY  - CONF
+TI  - Dense Passage Retrieval for Open-Domain Question Answering
+AU  - Karpukhin, Vladimir
+AU  - Oğuz, Barlas
+AU  - Min, Sewon
+AU  - Lewis, Patrick
+AU  - Wu, Ledell
+AU  - Edunov, Sergey
+AU  - Chen, Danqi
+AU  - Yih, Wen-tau
+T2  - Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing
+SP  - 6769
+EP  - 6781
+PY  - 2020
+DO  - 10.18653/v1/2020.emnlp-main.550
+UR  - https://doi.org/10.18653/v1/2020.emnlp-main.550
+ID  - karpukhin2020dense
+ER  -
+
+TY  - CONF
+TI  - Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks
+AU  - Lewis, Patrick
+AU  - Perez, Ethan
+AU  - Piktus, Aleksandra
+AU  - Petroni, Fabio
+AU  - Karpukhin, Vladimir
+AU  - Goyal, Naman
+AU  - Küttler, Heinrich
+AU  - Lewis, Mike
+AU  - Yih, Wen-tau
+AU  - Rocktäschel, Tim
+AU  - Riedel, Sebastian
+AU  - Kiela, Douwe
+T2  - Advances in Neural Information Processing Systems
+VL  - 33
+PY  - 2020
+UR  - https://arxiv.org/abs/2005.11401
+ID  - lewis2020rag
+ER  -
+
+TY  - RPRT
+TI  - Augmented Language Models: A Survey
+AU  - Mialon, Grégoire
+AU  - Dessì, Roberto
+AU  - Lomeli, Maria
+AU  - Nalmpantis, Christoforos
+AU  - Pasunuru, Ram
+AU  - Raileanu, Roberta
+AU  - Rozière, Baptiste
+AU  - Schick, Timo
+AU  - Dwivedi-Yu, Jane
+AU  - Celikyilmaz, Asli
+AU  - Grave, Edouard
+AU  - LeCun, Yann
+AU  - Scialom, Thomas
+PY  - 2023
+UR  - https://arxiv.org/abs/2302.07842
+ID  - mialon2023alm
+ER  -
+
+TY  - JOUR
+TI  - A Design Science Research Methodology for Information Systems Research
+AU  - Peffers, Ken
+AU  - Tuunanen, Tuure
+AU  - Rothenberger, Marcus A.
+AU  - Chatterjee, Samir
+JO  - Journal of Management Information Systems
+VL  - 24
+IS  - 3
+SP  - 45
+EP  - 77
+PY  - 2007
+DO  - 10.2753/MIS0742-1222240302
+UR  - https://doi.org/10.2753/MIS0742-1222240302
+ID  - peffers2007design
+ER  -
+
+TY  - JOUR
+TI  - Digital Transformation of MSMEs in Indonesia: A Systematic Literature Review
+AU  - Purnomo, S.
+AU  - Nurmalitasari, N.
+AU  - Nurchim, N.
+JO  - Journal of Management and Digital Business
+VL  - 4
+IS  - 2
+SP  - 301
+EP  - 312
+PY  - 2024
+DO  - 10.53088/jmdb.v4i2.1121
+UR  - https://doi.org/10.53088/jmdb.v4i2.1121
+ID  - purnomo2024digital
+ER  -
+
+TY  - JOUR
+TI  - Guidelines for Conducting and Reporting Case Study Research in Software Engineering
+AU  - Runeson, Per
+AU  - Höst, Martin
+JO  - Empirical Software Engineering
+VL  - 14
+IS  - 2
+SP  - 131
+EP  - 164
+PY  - 2009
+DO  - 10.1007/s10664-008-9102-8
+UR  - https://doi.org/10.1007/s10664-008-9102-8
+ID  - runeson2009guidelines
+ER  -
+
+TY  - CONF
+TI  - Toolformer: Language Models Can Teach Themselves to Use Tools
+AU  - Schick, Timo
+AU  - Dwivedi-Yu, Jane
+AU  - Dessì, Roberto
+AU  - Raileanu, Roberta
+AU  - Lomeli, Maria
+AU  - Zettlemoyer, Luke
+AU  - Cancedda, Nicola
+AU  - Scialom, Thomas
+T2  - Advances in Neural Information Processing Systems
+VL  - 36
+PY  - 2023
+UR  - https://arxiv.org/abs/2302.04761
+ID  - schick2023toolformer
+ER  -
+
+TY  - CONF
+TI  - Retrieval Augmentation Reduces Hallucination in Conversation
+AU  - Shuster, Kurt
+AU  - Poff, Spencer
+AU  - Chen, Moya
+AU  - Kiela, Douwe
+AU  - Weston, Jason
+T2  - Findings of the Association for Computational Linguistics: EMNLP 2021
+SP  - 3784
+EP  - 3803
+PY  - 2021
+DO  - 10.18653/v1/2021.findings-emnlp.320
+UR  - https://doi.org/10.18653/v1/2021.findings-emnlp.320
+ID  - shuster2021retrieval
+ER  -
+
+TY  - CONF
+TI  - Attention Is All You Need
+AU  - Vaswani, Ashish
+AU  - Shazeer, Noam
+AU  - Parmar, Niki
+AU  - Uszkoreit, Jakob
+AU  - Jones, Llion
+AU  - Gomez, Aidan N.
+AU  - Kaiser, Lukasz
+AU  - Polosukhin, Illia
+T2  - Advances in Neural Information Processing Systems
+VL  - 30
+PY  - 2017
+UR  - https://arxiv.org/abs/1706.03762
+ID  - vaswani2017attention
+ER  -
